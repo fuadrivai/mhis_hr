@@ -42,14 +42,17 @@ class PayslipImplement implements PayslipService
             $payslip->save();
 
             $user = User::where('email', $request->email)->first();
-            $device_token = Session::select('device_id')->where('user_id', $user->id)->get();
-            for ($i = 0; $i < count($device_token); $i++) {
-                $data = [
-                    "title" => "Payment Slip Periode $request->periode",
-                    "body" => "Berikut kami kirimkan Slip gaji atas nama $user->name",
-                ];
-                sendMessage($device_token[$i]->device_id, $data);
+            if(isset($user)){
+                $device_token = Session::select('device_id')->where('user_id', $user->id)->get();
+                for ($i = 0; $i < count($device_token); $i++) {
+                    $data = [
+                        "title" => "Payment Slip Periode $request->periode",
+                        "body" => "Berikut kami kirimkan Slip gaji atas nama $user->name",
+                    ];
+                    sendMessage($device_token[$i]->device_id, $data);
+                }
             }
+            
             return response()->json($payslip);
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
