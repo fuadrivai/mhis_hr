@@ -24,3 +24,23 @@ function reloadJsonDataTable(dtable, json) {
     dtable.clear().draw();
     dtable.rows.add(json).draw();
 }
+
+function getQueryString() {
+    location.queryString = {};
+    location.search.substring(1).split("&").forEach(function (pair) {
+        if (pair === "") return;
+        var parts = pair.split("=");
+        location.queryString[parts[0]] = parts[1] && decodeURIComponent(parts[1].replace(/\+/g, " "));
+    });
+    return location.queryString;
+}
+
+function navigate(query) {
+    let params = "?";
+    for (const key in query) {
+        params += `${key}=${query[key]}&`
+    }
+    let loc = window.location;
+    params = params.replace(/.$/, "")
+    window.location = `${loc.origin}${loc.pathname}${params}`
+}

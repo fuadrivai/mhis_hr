@@ -232,7 +232,7 @@
                         </p>
                     </div>
                     <div class="col text-center">
-                        <a href="/employee/{{$emp->id}}" class="btn btn-info"><i class="fa fa-pencil"></i> Edit</a>
+                        <a href="/employee/{{$emp->id}}" class="btn btn-sm btn-info"><i class="fa fa-pencil"></i> Edit</a>
                     </div>
                 </div>
             </div>
