@@ -1,9 +1,12 @@
 @extends('layouts.main-layout')
 @section('content-class')
-    <link href="/plugins/nprogress/nprogress.css" rel="stylesheet">
+    {{-- <link href="/plugins/nprogress/nprogress.css" rel="stylesheet">
     <link href="/plugins/iCheck/skins/flat/green.css" rel="stylesheet">
     <link href="/plugins/switchery/dist/switchery.min.css" rel="stylesheet">
-    
+     --}}
+
+    <link href="/plugins/jquery-smartwizard-master/dist/css/smart_wizard_all.css" rel="stylesheet">
+    <link href="/plugins/iCheck/skins/flat/green.css" rel="stylesheet">
 @endsection
 
 @section('content-child')
@@ -16,35 +19,36 @@
         <div class="clearfix"></div>
     </div>
     <div class="x_content">
-      <div id="wizard" class="form_wizard wizard_horizontal">
-        <ul class="wizard_steps">
-            <li>
-              <a href="#step-1">
-                  <span class="step_no">1</span>
-                  <span class="step_descr">Personal Data</span>
+      <div id="smartwizard" dir="rtl-">
+        <ul class="nav nav-progress">
+            <li class="nav-item">
+              <a class="nav-link" href="#step-1">
+                <div class="num">1</div>
+                Personal Data
               </a>
             </li>
-          <li>
-            <a href="#step-2">
-              <span class="step_no">2</span>
-              <span class="step_descr">Employment Data</span>
-            </a>
-          </li>
-          <li>
-            <a href="#step-3">
-              <span class="step_no">3</span>
-              <span class="step_descr">Payroll Data</span>
-            </a>
-          </li>
-          <li>
-            <a href="#step-4">
-              <span class="step_no">4</span>
-              <span class="step_descr">Invite Employee</span>
-            </a>
-          </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#step-2">
+                <span class="num">2</span>
+                Employment Data
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#step-3">
+                <span class="num">3</span>
+                Payroll Data
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link " href="#step-4">
+                <span class="num">4</span>
+                Invite Employee
+              </a>
+            </li>
         </ul>
-        <div id="step-1">
-          <form class="form-horizontal form-label-left">
+        <div class="tab-content">
+          <div id="step-1" class="tab-pane" role="tabpanel" aria-labelledby="step-1">
+          <form id="form-1" class="row row-cols-1 ms-5 me-5 needs-validation" novalidate>
             <div class="row justify-content-center">
               <div class="col-md-8 col-sm-12">
                 <div class="row pb-3">
@@ -188,8 +192,8 @@
             </div>
           </form>
         </div>
-        <div id="step-2">
-          <form action="">
+        <div id="step-2" class="tab-pane" role="tabpanel" aria-labelledby="step-2">
+          <form id="form-2" class="row row-cols-1 ms-5 me-5 needs-validation" novalidate>
             <div class="row justify-content-center">
               <div class="col-md-8 col-sm-12">
                 <div class="row pb-3">
@@ -263,6 +267,22 @@
                     </div>
                   </div>
                   <div class="col-md-4 col-sm-12">
+                    <div class="form-group">
+                      <label for="">Schedule</label>
+                      <select name="level" id="level" class="form-control select2">
+                        <option value="permanent">Permanent</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-4 col-sm-12">
+                    <div class="form-group">
+                      <label for="">Approval Line</label>
+                      <select name="level" id="level" class="form-control select2">
+                        <option value="permanent">Permanent</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-4 col-sm-12">
                     <div class="form-group has-feedback">
                       <label for="">Join Date*</label>
 											<input type="text" readonly required class="form-control date-picker has-feedback-left" id="inputSuccess2" placeholder="Join Date">
@@ -283,29 +303,13 @@
 											<span style="top: 25px" class="fa fa-calendar form-control-feedback left" aria-hidden="true"></span>
                     </div>
                   </div>
-                  <div class="col-md-6 col-sm-12">
-                    <div class="form-group">
-                      <label for="">Schedule</label>
-                      <select name="level" id="level" class="form-control select2">
-                        <option value="permanent">Permanent</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="col-md-6 col-sm-12">
-                    <div class="form-group">
-                      <label for="">Approval</label>
-                      <select name="level" id="level" class="form-control select2">
-                        <option value="permanent">Permanent</option>
-                      </select>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
           </form>
         </div>
-        <div id="step-3">
-          <form action="">
+        <div id="step-3" class="tab-pane" role="tabpanel" aria-labelledby="step-3">
+          <form id="form-3" class="row row-cols-1 ms-5 me-5 needs-validation" novalidate>
             <div class="row justify-content-center">
               <div class="col-md-8 col-sm-12">
                 <div class="row pb-3">
@@ -392,8 +396,10 @@
             </div>
           </form>
         </div>
-        <div id="step-4">
-          
+        <div id="step-4" class="tab-pane" role="tabpanel" aria-labelledby="step-4">
+          <form id="form-4" class="row row-cols-1 ms-5 me-5 needs-validation" novalidate>
+          </form>
+        </div>
         </div>
       </div>
     </div>
@@ -401,14 +407,81 @@
 @endsection
 
 @section('content-script')
-    <script src="/plugins/jQuery-Smart-Wizard/js/jquery.smartWizard.js"></script>
+    <script src="/plugins/jquery-smartwizard-master/dist/js/jquery.smartWizard.js"></script>
     <script src="/plugins/iCheck/icheck.min.js"></script>
-    <script src="/plugins/switchery/dist/switchery.min.js"></script>
+    {{-- <script src="/plugins/switchery/dist/switchery.min.js"></script> --}}
     
 
     <script>
       $(document).ready(function () {
-        $('.stepContainer').css('height',"1050px")
+        $('#smartwizard').smartWizard({
+            selected: 0,
+            theme: 'arrows',
+            transition: {
+              animation:'none'
+            },
+            toolbar: {
+              showNextButton: true,
+              showPreviousButton: true,
+              position: 'bottom',
+              extraHtml: `<button class="btn btn-success" id="btnFinish" disabled onclick="onSubmit()">Submit</button>
+                          <button class="btn btn-danger" id="btnCancel" onclick="onCancel()">Cancel</button>`
+            },
+            anchor: {
+                enableNavigation: true,
+                enableNavigationAlways: false,
+                enableDoneState: true,
+                markPreviousStepsAsDone: true,
+                unDoneOnBackNavigation: true,
+                enableDoneStateNavigation: true
+            },
+        });
+        // $("#smartwizard").on("leaveStep", function(e, anchorObject, currentStepIdx, nextStepIdx, stepDirection) {
+        //   // Validate only on forward movement  
+        //   if (stepDirection == 'forward') {
+        //     let form = document.getElementById('form-' + (currentStepIdx + 1));
+        //     if (form) {
+        //       if (!form.checkValidity()) {
+        //         form.classList.add('was-validated');
+        //         $('#smartwizard').smartWizard("setState", [currentStepIdx], 'error');
+        //         $("#smartwizard").smartWizard('fixHeight');
+        //         return false;
+        //       }
+        //       $('#smartwizard').smartWizard("unsetState", [currentStepIdx], 'error');
+        //     }
+        //   }
+        // });
+
+            // Step show event
+        $("#smartwizard").on("showStep", function(e, anchorObject, stepIndex, stepDirection, stepPosition) {
+          $("#prev-btn").removeClass('disabled').prop('disabled', false);
+          $("#next-btn").removeClass('disabled').prop('disabled', false);
+          if(stepPosition === 'first') {
+              $("#prev-btn").addClass('disabled').prop('disabled', true);
+          } else if(stepPosition === 'last') {
+              $("#next-btn").addClass('disabled').prop('disabled', true);
+          } else {
+              $("#prev-btn").removeClass('disabled').prop('disabled', false);
+              $("#next-btn").removeClass('disabled').prop('disabled', false);
+          }
+          // Get step info from Smart Wizard
+          let stepInfo = $('#smartwizard').smartWizard("getStepInfo");
+          $("#sw-current-step").text(stepInfo.currentStep + 1);
+          $("#sw-total-step").text(stepInfo.totalSteps);
+          if (stepPosition == 'last') {
+            showConfirm();
+            $("#btnFinish").prop('disabled', false);
+          } else {
+            $("#btnFinish").prop('disabled', true);
+          }
+          // Focus first name
+          if (stepIndex == 1) {
+            setTimeout(() => {
+              $('#first-name').focus();
+            }, 0);
+          }
+        });
+        // $('.stepContainer').css('height',"1050px")
         // $('.stepContainer').removeClass('stepContainer')
       })
     </script>
