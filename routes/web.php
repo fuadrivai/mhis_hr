@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BankController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HomeController;
@@ -54,5 +55,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
         Route::get('shift/get', [ShiftController::class, 'get']);
         Route::resource('shift', ShiftController::class);
+
+        Route::resource('bank', BankController::class);
     });
 });

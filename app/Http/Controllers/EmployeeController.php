@@ -7,6 +7,7 @@ use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Imports\EmployeeImport;
 use App\Models\Personal;
+use App\Services\BankService;
 use App\Services\BranchService;
 use App\Services\EmployeeService;
 use App\Services\JobLevelService;
@@ -31,19 +32,22 @@ class EmployeeController extends Controller
     private PositionService $positionService;
     private JobLevelService $levelService;
     private ReligionService $religionService;
+    private BankService $bankService;
 
     public function __construct(
         BranchService $branchService,
         OrganizationService $organizationService,
         PositionService $positionService,
         JobLevelService $levelService,
-        ReligionService $religionService
+        ReligionService $religionService,
+        BankService $bankService
     ) {
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
         $this->positionService = $positionService;
         $this->levelService = $levelService;
         $this->religionService = $religionService;
+        $this->bankService = $bankService;
     }
     public function filterLocation(UtilitiesRequest $request)
     {
@@ -169,6 +173,7 @@ class EmployeeController extends Controller
         $organizations = $this->organizationService->get()->getContent();
         $positions = $this->positionService->get()->getContent();
         $levels = $this->levelService->get()->getContent();
+        $banks = $this->bankService->get()->getContent();
         return view('employee.form', [
             "title" => "Add Employee",
             "religions" => json_decode($religions, true),
@@ -176,6 +181,7 @@ class EmployeeController extends Controller
             "organizations" => json_decode($organizations, true),
             "positions" => json_decode($positions, true),
             "levels" => json_decode($levels, true),
+            "banks" => json_decode($banks, true),
         ]);
     }
 
@@ -185,9 +191,44 @@ class EmployeeController extends Controller
      * @param  \App\Http\Requests\StoreEmployeeRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreEmployeeRequest $request)
+    public function store(Request $request)
     {
-        //
+
+        // $personal = Personal::where('email', $request('email'))->first();
+        // if (!isset($personal)) {
+        //     $personal = new Personal();
+        //     $personal->fullname = $row[1];
+        //     $personal->barcode = $row[2];
+        //     $personal->email = $row[11];
+        //     $personal->address = $row[15];
+        //     $personal->current_address = $row[16];
+        //     $personal->birth_place = $row[14];
+        //     $personal->birth_date = $row[12];
+        //     $personal->phone = $row[28];
+        //     $personal->mobile_phone = $row[27];
+        //     $personal->gendre = $row[32] == "Male" ? "1" : "2";
+        //     $personal->blood_type = $row[34] == "" ? null : $row[34];
+        //     $personal->religion_id = $religion->id;
+        //     $personal->identity_number = $row[26];
+        //     switch ($row[32]) {
+        //         case 'Single':
+        //             $personal->marital_status = 1;
+        //             break;
+        //         case 'Merried':
+        //             $personal->marital_status = 2;
+        //             break;
+        //         case 'Widow':
+        //             $personal->marital_status = 3;
+        //             break;
+        //         case 'Widower':
+        //             $personal->marital_status = 3;
+        //             break;
+        //         default:
+        //             $personal->marital_status = 1;
+        //             break;
+        //     }
+        //     $personal->save();
+        // }
     }
 
     /**

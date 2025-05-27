@@ -16,12 +16,12 @@ class Shift extends Model
         'show_in_request' => 'boolean',
     ];
 
-    public function schedule_durations()
+    public function schedule_duration()
     {
-        $this->schedule_duration = diffTime($this->schedule_in, $this->schedule_out);
+       return diffTime($this->schedule_in, $this->schedule_out);
     }
-    public function break_durations()
+    public function break_duration()
     {
-        $this->break_duration = diffTime($this->break_start, $this->break_end);
+        return diffTime($this->break_start, $this->break_end);
     }
 }
