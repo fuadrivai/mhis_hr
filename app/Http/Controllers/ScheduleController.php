@@ -7,6 +7,8 @@ use App\Http\Requests\StoreScheduleRequest;
 use App\Http\Requests\UpdateScheduleRequest;
 use App\Services\ScheduleService;
 use App\Services\ShiftService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
 
 class ScheduleController extends Controller
 {
@@ -24,8 +26,10 @@ class ScheduleController extends Controller
     }
     public function index()
     {
+        $data = $this->scheduleService->get()->getContent();
         return view('settings.time.schedule.index', [
-            "title" => "Time Schedule"
+            "title" => "Time Schedule",
+            "data" => json_decode($data, true),
         ]);
     }
 
@@ -49,9 +53,16 @@ class ScheduleController extends Controller
      * @param  \App\Http\Requests\StoreScheduleRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreScheduleRequest $request)
+    public function store(Request $request)
     {
-        //
+        
+        try {
+            $jsonData = json_decode($request['json-data'],true);
+            $this->scheduleService->post($jsonData);
+            return Redirect::to('schedule');
+        } catch (\Throwable $th) {
+            return back()->with('message', $th->getMessage());
+        }
     }
 
     /**

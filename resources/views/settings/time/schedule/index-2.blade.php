@@ -39,43 +39,46 @@
                             </div>
                             <div class="row">
                                 <div class="col-sm-12">
-                                    <table id="tbl-shift" class="table table-striped table-bordered table-sm"
-                                        style="width: 100%">
-                                        <thead>
-                                            <tr>
-                                                <th>NO</th>
-                                                <th>Shift name</th>
-                                                <th>Code</th>
-                                                <th class="text-center">Working hour</th>
-                                                <th class="text-center">Break hour</th>
-                                                <th class="text-center">Action</th>
-                                            </tr>
-                                        </thead>
-
-                                        <body>
-                                            @foreach ($data as $item)
+                                    <div class="table-responsive card-box">
+                                        <table id="tbl-shift" class="table table-striped table-bordered table-sm"
+                                            style="width: 100%">
+                                            <thead>
                                                 <tr>
-                                                    <td>{{ $loop->iteration }}</td>
-                                                    <td>{{ $item['name'] }}</td>
-                                                    <td>{{ $item['code'] }}</td>
-                                                    <td class="text-center">{{ $item['schedule_in'] }} -
-                                                        {{ $item['schedule_out'] }}
-                                                        <br> {!! \App\Helpers\diffTime($item['schedule_in'], $item['schedule_out']) !!}
-                                                    </td>
-                                                    <td class="text-center">{{ $item['break_start'] }} -
-                                                        {{ $item['break_end'] }}
-                                                        <br> {!! \App\Helpers\diffTime($item['break_start'], $item['break_end']) !!}
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <a href="/shift/{{ $item['id'] }}/edit"
-                                                            class="btn btn-success btn-sm">
-                                                            <i class="fa fa-pencil"></i>
-                                                        </a>
-                                                    </td>
+                                                    <th>NO</th>
+                                                    <th>Shift name</th>
+                                                    <th>Code</th>
+                                                    <th class="text-center">Working hour</th>
+                                                    <th class="text-center">Break hour</th>
+                                                    <th class="text-center">Action</th>
                                                 </tr>
-                                            @endforeach
-                                        </body>
-                                    </table>
+                                            </thead>
+
+                                            <body>
+                                                @foreach ($data as $item)
+                                                    <tr>
+                                                        <td>{{ $loop->iteration }}</td>
+                                                        <td>{{ $item['name'] }}</td>
+                                                        <td>{{ $item['code'] }}</td>
+                                                        <td class="text-center">{{ $item['schedule_in'] }} -
+                                                            {{ $item['schedule_out'] }}
+                                                            <br> {!! \App\Helpers\diffTime($item['schedule_in'], $item['schedule_out']) !!}
+                                                        </td>
+                                                        <td class="text-center">{{ $item['break_start'] }} -
+                                                            {{ $item['break_end'] }}
+                                                            <br> {!! \App\Helpers\diffTime($item['break_start'], $item['break_end']) !!}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <a href="/shift/{{ $item['id'] }}/edit"
+                                                                class="btn btn-success btn-sm">
+                                                                <i class="fa fa-pencil"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </body>
+                                        </table>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>

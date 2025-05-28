@@ -46,7 +46,7 @@
                             <label for="">Schedule in</label>
                             <input type="text" value="{{ old('schedule_in', $data['schedule_in'] ?? '') }}"
                                 name="schedule_in" required class="form-control has-feedback-left time-picker"
-                                id="schedule-in" placeholder="00:00">
+                                id="schedule-in" min="00:00" max="23:59" placeholder="00:00">
                             <span style="top: 25px" class="fa fa-clock-o form-control-feedback left"
                                 aria-hidden="true"></span>
                         </div>
@@ -66,8 +66,9 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="">Break start</label>
-                            <input type="text" value="{{ old('break_start', $data['break_start'] ?? '') }}" id="break-start"
-                                name="break_start" class="form-control has-feedback-left time-picker" placeholder="00:00">
+                            <input type="text" value="{{ old('break_start', $data['break_start'] ?? '') }}"
+                                id="break-start" name="break_start" class="form-control has-feedback-left time-picker"
+                                placeholder="00:00">
                             <span style="top: 25px" class="fa fa-clock-o form-control-feedback left"
                                 aria-hidden="true"></span>
                         </div>
