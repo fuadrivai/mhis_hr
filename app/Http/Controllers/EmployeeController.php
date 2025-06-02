@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
-use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Imports\EmployeeImport;
 use App\Models\Personal;
@@ -14,6 +13,7 @@ use App\Services\JobLevelService;
 use App\Services\OrganizationService;
 use App\Services\PositionService;
 use App\Services\ReligionService;
+use App\Services\ScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Maatwebsite\Excel\Facades\Excel;
@@ -33,6 +33,7 @@ class EmployeeController extends Controller
     private JobLevelService $levelService;
     private ReligionService $religionService;
     private BankService $bankService;
+    private ScheduleService $scheduleService;
 
     public function __construct(
         BranchService $branchService,
@@ -40,7 +41,8 @@ class EmployeeController extends Controller
         PositionService $positionService,
         JobLevelService $levelService,
         ReligionService $religionService,
-        BankService $bankService
+        BankService $bankService,
+        ScheduleService $scheduleService,
     ) {
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
@@ -48,6 +50,7 @@ class EmployeeController extends Controller
         $this->levelService = $levelService;
         $this->religionService = $religionService;
         $this->bankService = $bankService;
+        $this->scheduleService = $scheduleService;
     }
     public function filterLocation(UtilitiesRequest $request)
     {
@@ -174,6 +177,12 @@ class EmployeeController extends Controller
         $positions = $this->positionService->get()->getContent();
         $levels = $this->levelService->get()->getContent();
         $banks = $this->bankService->get()->getContent();
+        $schedules = $this->scheduleService->get()->getContent();
+        $employees = Employee::with(['user', 'personal', 'employment'])->orderBy(
+            Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
+            'asc'
+        )->get();
+
         return view('employee.form', [
             "title" => "Add Employee",
             "religions" => json_decode($religions, true),
@@ -182,6 +191,8 @@ class EmployeeController extends Controller
             "positions" => json_decode($positions, true),
             "levels" => json_decode($levels, true),
             "banks" => json_decode($banks, true),
+            "schedules"=>json_decode($schedules, true),
+            "employees"=>$employees,
         ]);
     }
 

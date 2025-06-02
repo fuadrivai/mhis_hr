@@ -43,7 +43,8 @@
                 </ul>
                 <div class="tab-content">
                     <div id="step-1" class="tab-pane" role="tabpanel" aria-labelledby="step-1">
-                        <form id="form-1" class="row row-cols-1 ms-5 me-5 needs-validation" novalidate>
+                        <form id="form-1" class="row row-cols-1 ms-5 me-5 needs-validation" autocomplete="off"
+                            novalidate>
                             <div class="row justify-content-center">
                                 <div class="col-md-8 col-sm-12">
                                     <div class="row pb-3">
@@ -118,7 +119,7 @@
                                             <div class="form-group">
                                                 <label for="">Marital status</label>
                                                 <select name="marital-status" class="form-control select2"
-                                                    id="marital-status">
+                                                    id="marital-status" style="width: 100%">
                                                     <option value="1">Single</option>
                                                     <option value="2">Merried</option>
                                                     <option value="3">Widow</option>
@@ -129,7 +130,8 @@
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">Blood type</label>
-                                                <select name="blood-type" class="form-control select2" id="blood-type">
+                                                <select name="blood-type" class="form-control select2" id="blood-type"
+                                                    style="width: 100%">
                                                     <option value="">-- Select blood type --</option>
                                                     <option value="A">A</option>
                                                     <option value="B">B</option>
@@ -141,7 +143,8 @@
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">Religion</label>
-                                                <select name="religion" class="form-control select2" id="religion">
+                                                <select name="religion" class="form-control select2" id="religion"
+                                                    style="width: 100%">
                                                     @foreach ($religions as $item)
                                                         <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
                                                     @endforeach
@@ -215,7 +218,8 @@
                         </form>
                     </div>
                     <div id="step-2" class="tab-pane" role="tabpanel" aria-labelledby="step-2">
-                        <form id="form-2" class="row row-cols-1 ms-5 me-5 needs-validation" novalidate>
+                        <form id="form-2" class="row row-cols-1 ms-5 me-5 needs-validation" autocomplete="off"
+                            novalidate>
                             <div class="row justify-content-center">
                                 <div class="col-md-8 col-sm-12">
                                     <div class="row pb-3">
@@ -241,9 +245,9 @@
                                         </div>
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
-                                                <label for="">Branch*</label>
+                                                <label for="">Branch</label>
                                                 <select name="branch" id="branch" required
-                                                    class="form-control select2">
+                                                    class="form-control select2" style="width: 100%">
                                                     @foreach ($branches as $item)
                                                         <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
                                                     @endforeach
@@ -252,9 +256,9 @@
                                         </div>
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
-                                                <label for="">Organization*</label>
+                                                <label for="">Organization</label>
                                                 <select name="organization" id="organization" required
-                                                    class="form-control select2">
+                                                    class="form-control select2" style="width: 100%">
                                                     @foreach ($organizations as $item)
                                                         <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
                                                     @endforeach
@@ -263,9 +267,9 @@
                                         </div>
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
-                                                <label for="">Job position*</label>
+                                                <label for="">Job position</label>
                                                 <select name="position" id="position" required
-                                                    class="form-control select2">
+                                                    class="form-control select2" style="width: 100%">
                                                     @foreach ($positions as $item)
                                                         <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
                                                     @endforeach
@@ -274,9 +278,9 @@
                                         </div>
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
-                                                <label for="">Job level*</label>
+                                                <label for="">Job level</label>
                                                 <select name="level" id="level" required
-                                                    class="form-control select2">
+                                                    class="form-control select2" style="width: 100%">
                                                     @foreach ($levels as $item)
                                                         <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
                                                     @endforeach
@@ -285,9 +289,9 @@
                                         </div>
                                         <div class="col-md-4 col-sm-12">
                                             <div class="form-group">
-                                                <label for="">Employment status*</label>
+                                                <label for="">Employment status</label>
                                                 <select name="employee-status" id="employee-status" required
-                                                    class="form-control select2">
+                                                    class="form-control select2" style="width: 100%">
                                                     <option value="permanent">Permanent</option>
                                                     <option value="contract">Contract</option>
                                                     <option value="freelance">Freelance</option>
@@ -298,23 +302,30 @@
                                         <div class="col-md-4 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">Schedule</label>
-                                                <select name="schedule" id="schedule" class="form-control select2">
-                                                    <option value="">Permanent</option>
+                                                <select name="schedule" id="schedule" class="form-control select2"
+                                                    style="width: 100%">
+                                                    @foreach ($schedules as $item)
+                                                        <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
+                                                    @endforeach
                                                 </select>
                                             </div>
                                         </div>
                                         <div class="col-md-4 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">Approval Line</label>
-                                                <select name="approval" id="approval" class="form-control select2">
-                                                    <option value="">Permanent</option>
+                                                <select name="approval" id="approval" class="form-control select2"
+                                                    style="width: 100%">
+                                                    @foreach ($employees as $item)
+                                                        <option value="{{ $item['personal']['id'] }}">
+                                                            {{ $item['personal']['fullname'] }}</option>
+                                                    @endforeach
                                                 </select>
                                             </div>
                                         </div>
                                         <div class="col-md-4 col-sm-12">
                                             <div class="form-group has-feedback">
                                                 <label for="">Join Date*</label>
-                                                <input type="text" readonly required
+                                                <input type="text" required
                                                     class="form-control date-picker has-feedback-left" id="join-date"
                                                     placeholder="Join Date">
                                                 <span style="top: 25px" class="fa fa-calendar form-control-feedback left"
@@ -345,7 +356,8 @@
                         </form>
                     </div>
                     <div id="step-3" class="tab-pane" role="tabpanel" aria-labelledby="step-3">
-                        <form id="form-3" class="row row-cols-1 ms-5 me-5 needs-validation" novalidate>
+                        <form id="form-3" class="row row-cols-1 ms-5 me-5 needs-validation" autocomplete="off"
+                            novalidate>
                             <div class="row justify-content-center">
                                 <div class="col-md-8 col-sm-12">
                                     <div class="row pb-3">
@@ -358,7 +370,8 @@
                                         <div class="col-md-4 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">Bank Name</label>
-                                                <select name="bank" id="bank" class="form-control select2">
+                                                <select name="bank" id="bank" class="form-control select2"
+                                                    style="width: 100%">
                                                     @foreach ($banks as $item)
                                                         <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
                                                     @endforeach
@@ -389,7 +402,8 @@
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">PTKP Status</label>
-                                                <select name="ptkp-status" id="ptkp-status" class="form-control select2">
+                                                <select name="ptkp-status" id="ptkp-status" class="form-control select2"
+                                                    style="width: 100%">
                                                     <option value="1">TK/0</option>
                                                     <option value="2">TK/1</option>
                                                     <option value="3">TK/2</option>
@@ -405,7 +419,7 @@
                                             <div class="form-group">
                                                 <label for="">Employment tax status</label>
                                                 <select name="employment-tax-status" id="employment-tax-status"
-                                                    class="form-control select2">
+                                                    class="form-control select2" style="width: 100%">
                                                     <option value="0">Pegawai Tetap</option>
                                                     <option value="1">Pegawai Tidak Tetap</option>
                                                     <option value="2">Bukan Pegawai yang Bersifat Berkesinambunga
@@ -527,16 +541,22 @@
             });
 
             $("#state_selector").on("change", function() {
-                $('#smartwizard').smartWizard("setState", [$('#step_to_style').val()], $(this).val(), !$(
-                    '#is_reset').prop("checked"));
+                $('#smartwizard').smartWizard("setState",
+                    [$('#step_to_style').val()], $(this).val(), !$('#is_reset').prop("checked"));
                 return true;
             });
 
             $("#style_selector").on("change", function() {
-                $('#smartwizard').smartWizard("setStyle", [$('#step_to_style').val()], $(this).val(), !$(
-                    '#is_reset').prop("checked"));
+                $('#smartwizard').smartWizard("setStyle",
+                    [$('#step_to_style').val()], $(this).val(), !$('#is_reset').prop("checked"));
                 return true;
             });
+
+            $("#check-redentian").on('change', function() {
+                let val = $(this).prop('checked');
+                let address = $('#address').val();
+                $('#current-address').val(val ? address : '');
+            })
         })
 
         function onSubmit() {
@@ -607,8 +627,6 @@
                 employment: employment,
                 payrollInfo: payrollInfo
             }
-
-            console.log(data)
         }
     </script>
 @endsection
