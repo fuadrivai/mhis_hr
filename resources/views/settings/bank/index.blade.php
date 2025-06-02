@@ -67,12 +67,12 @@
                 $('#id').val(id);
                 $('#name').val(name);
                 $('#form-method').append(`@method('put')`);
-                $('#form-data').attr('action', `/bank/${id}`)
+                $('#form-data').attr('action', `/setting/bank/${id}`)
             });
 
             $('.btn-add').on('click', function() {
                 $('#form-method').append(`@method('post')`);
-                $('#form-data').attr('action', "/bank")
+                $('#form-data').attr('action', "/setting/bank")
             });
         })
     </script>

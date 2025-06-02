@@ -50,7 +50,7 @@ class OrganizationController extends Controller
     {
         try {
             $this->organizationService->post($request);
-            return Redirect::to('organization');
+            return Redirect::to('setting/organization');
         } catch (\Throwable $th) {
             return back()->with('message', $th->getMessage());
         }
@@ -88,7 +88,7 @@ class OrganizationController extends Controller
     public function update($id, Request $request)
     {
         $this->organizationService->put($id, $request);
-        return Redirect::to('organization');
+        return Redirect::to('setting/organization');
     }
 
     /**

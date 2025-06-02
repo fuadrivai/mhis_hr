@@ -51,7 +51,7 @@ class ReligionController extends Controller
     {
         try {
             $this->religionSevice->post($request);
-            return Redirect::to('religion');
+            return Redirect::to('setting/religion');
         } catch (\Throwable $th) {
             return back()->with('message', $th->getMessage());
         }
@@ -89,7 +89,7 @@ class ReligionController extends Controller
     public function update($id, Request $request)
     {
         $this->religionSevice->put($id, $request);
-        return Redirect::to('religion');
+        return Redirect::to('setting/religion');
     }
 
     /**

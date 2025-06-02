@@ -59,7 +59,7 @@ class ScheduleController extends Controller
         try {
             $jsonData = json_decode($request['json-data'],true);
             $this->scheduleService->post($jsonData);
-            return Redirect::to('schedule');
+            return Redirect::to('setting/schedule');
         } catch (\Throwable $th) {
             return back()->with('message', $th->getMessage());
         }

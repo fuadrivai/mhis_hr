@@ -46,16 +46,22 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('employee/filter', [EmployeeController::class, 'filterLocation']);
         Route::resource('employee', EmployeeController::class);
 
-        Route::resource('religion', ReligionController::class);
-        Route::resource('level', JobLevelController::class);
-        Route::resource('position', PositionController::class);
-        Route::resource('organization', OrganizationController::class);
-        Route::resource('branch', BranchController::class);
-        Route::resource('schedule', ScheduleController::class);
-
         Route::get('shift/get', [ShiftController::class, 'get']);
-        Route::resource('shift', ShiftController::class);
 
-        Route::resource('bank', BankController::class);
+        Route::group(['prefix' => 'setting'], function () {
+            Route::resource('bank', BankController::class);
+            Route::resource('religion', ReligionController::class);
+            Route::resource('level', JobLevelController::class);
+            Route::resource('position', PositionController::class);
+            Route::resource('organization', OrganizationController::class);
+            Route::resource('branch', BranchController::class);
+
+            Route::resource('schedule', ScheduleController::class);
+            Route::resource('shift', ShiftController::class);
+
+            Route::resource('bank', BankController::class);
+        });
+
+        
     });
 });

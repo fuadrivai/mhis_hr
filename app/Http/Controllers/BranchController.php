@@ -50,7 +50,7 @@ class BranchController extends Controller
     {
         try {
             $this->branchService->post($request);
-            return Redirect::to('branch');
+            return Redirect::to('setting/branch');
         } catch (\Throwable $th) {
             return back()->with('message', $th->getMessage());
         }
@@ -88,7 +88,7 @@ class BranchController extends Controller
     public function update($id, Request $request)
     {
         $this->branchService->put($id, $request);
-        return Redirect::to('branch');
+        return Redirect::to('setting/branch');
     }
 
     /**

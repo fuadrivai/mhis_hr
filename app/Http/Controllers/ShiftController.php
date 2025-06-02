@@ -63,7 +63,7 @@ class ShiftController extends Controller
     {
         try {
             $this->shiftService->post($request);
-            return Redirect::to('shift');
+            return Redirect::to('setting/shift');
         } catch (\Throwable $th) {
             // dd($th->getMessage());
             // Log::info('Form Data:', $th->getMessage());
@@ -108,7 +108,7 @@ class ShiftController extends Controller
     {
         try {
             $this->shiftService->put($id, $request);
-            return Redirect::to('shift');
+            return Redirect::to('setting/shift');
         } catch (\Throwable $th) {
             // dd($th->getMessage());
             // Log::info('Form Data:', $th->getMessage());

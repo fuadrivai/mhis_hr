@@ -63,26 +63,31 @@
                                                 href="/employee">Employee</a></li>
                                     </ul>
                                 </li>
-                                <li><a><i class="fa fa-gears"></i> Settings <span class="fa fa-chevron-down"></span></a>
-                                    <ul class="nav child_menu">
+                                <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i class="fa fa-gears"></i>
+                                        Settings <span class="fa fa-chevron-down"></span></a>
+                                    <ul style="display: {{ Request::is('setting*') ? 'block' : 'none' }}"
+                                        class="nav child_menu">
                                         <li><a>Company<span class="fa fa-chevron-down"></span></a>
                                             <ul class="nav child_menu">
-                                                <li><a href="/company">Company Info</a></li>
-                                                <li><a href="/branch">Branch</a></li>
-                                                <li><a href="/organization">Organization</a></li>
-                                                <li><a href="/position">Job Position</a></li>
-                                                <li><a href="/level">Job Level</a></li>
-                                                <li><a href="/religion">Religion</a></li>
+                                                <li><a href="/setting/company">Company Info</a></li>
+                                                <li><a href="/setting/branch">Branch</a></li>
+                                                <li><a href="/setting/organization">Organization</a></li>
+                                                <li><a href="/setting/position">Job Position</a></li>
+                                                <li><a href="/setting/level">Job Level</a></li>
+                                                <li><a href="/setting/religion">Religion</a></li>
                                             </ul>
                                         </li>
-                                        <li><a>Time<span class="fa fa-chevron-down"></span></a>
-                                            <ul class="nav child_menu">
-                                                <li><a href="/schedule">Schedule</a></li>
-                                                <li><a href="/timeoff">Time off</a></li>
-                                                <li><a href="/holiday">Holiday</a></li>
+
+                                        <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
+                                                    class="fa fa-chevron-down"></span></a>
+                                            <ul style="display: {{ Request::is('setting*') ? 'block' : 'none' }}"
+                                                class="nav child_menu">
+                                                <li><a href="/setting/schedule">Schedule</a></li>
+                                                <li><a href="/setting/timeoff">Time off</a></li>
+                                                <li><a href="/setting/holiday">Holiday</a></li>
                                             </ul>
                                         </li>
-                                        <li><a href="/bank">Bank</a></li>
+                                        <li><a href="/setting/bank">Bank</a></li>
                                     </ul>
                                 </li>
                                 <li><a href="/user"><i class="fa fa-user"></i> Management User </a></li>

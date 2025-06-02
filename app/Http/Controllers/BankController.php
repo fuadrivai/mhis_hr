@@ -51,7 +51,7 @@ class BankController extends Controller
     {
         try {
             $this->bankService->post($request);
-            return Redirect::to('bank');
+            return Redirect::to('setting/bank');
         } catch (\Throwable $th) {
             return back()->with('message', $th->getMessage());
         }
@@ -89,7 +89,7 @@ class BankController extends Controller
     public function update($id, Request $request)
     {
         $this->bankService->put($id, $request);
-        return Redirect::to('bank');
+        return Redirect::to('setting/bank');
     }
 
     /**

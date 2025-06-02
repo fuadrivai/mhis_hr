@@ -13,9 +13,10 @@
                         aria-controls="custom-tabs-five-normal" aria-selected="true">
                         Schedule
                     </a>
+
                 </li>
                 <li class="nav-item" role="presentation">
-                    <a class="nav-link" href="/shift" role="tab" aria-controls="custom-tabs-five-normal"
+                    <a class="nav-link" href="/setting/shift" role="tab" aria-controls="custom-tabs-five-normal"
                         aria-selected="false">
                         Shift
                     </a>
@@ -27,7 +28,7 @@
                         <div class="x_content">
                             <div class="row">
                                 <div class="col-12 text-right">
-                                    <a href="/schedule/create" class="btn btn-success btn-sm text-white btn-add"><i
+                                    <a href="/setting/schedule/create" class="btn btn-success btn-sm text-white btn-add"><i
                                             class="fa fa-plus"></i> Add Schedule</a>
                                 </div>
                             </div>

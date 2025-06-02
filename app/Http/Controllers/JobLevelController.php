@@ -50,7 +50,7 @@ class JobLevelController extends Controller
     {
         try {
             $this->jobLevelService->post($request);
-            return Redirect::to('level');
+            return Redirect::to('/setting/level');
         } catch (\Throwable $th) {
             return back()->with('message', $th->getMessage());
         }
@@ -88,7 +88,7 @@ class JobLevelController extends Controller
     public function update($id, Request $request)
     {
         $this->jobLevelService->put($id, $request);
-        return Redirect::to('level');
+        return Redirect::to('/setting/level');
     }
 
     /**

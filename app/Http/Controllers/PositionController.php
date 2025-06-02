@@ -51,7 +51,7 @@ class PositionController extends Controller
     {
         try {
             $this->positionService->post($request);
-            return Redirect::to('position');
+            return Redirect::to('setting/position');
         } catch (\Throwable $th) {
             return back()->with('message', $th->getMessage());
         }
@@ -89,7 +89,7 @@ class PositionController extends Controller
     public function update($id, Request $request)
     {
         $this->positionService->put($id, $request);
-        return Redirect::to('position');
+        return Redirect::to('setting/position');
     }
 
     /**
