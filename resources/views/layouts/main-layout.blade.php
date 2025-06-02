@@ -80,7 +80,10 @@
 
                                         <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
                                                     class="fa fa-chevron-down"></span></a>
-                                            <ul style="display: {{ Request::is('setting*') ? 'block' : 'none' }}"
+                                            <?php
+                                            $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*');
+                                            ?>
+                                            <ul style="display: {{ $isBlock ? 'block' : 'none' }}"
                                                 class="nav child_menu">
                                                 <li><a href="/setting/schedule">Schedule</a></li>
                                                 <li><a href="/setting/timeoff">Time off</a></li>

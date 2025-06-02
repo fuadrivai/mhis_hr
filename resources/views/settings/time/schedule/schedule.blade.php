@@ -11,10 +11,11 @@
             <div class="clearfix"></div>
         </div>
         <div class="x_content">
-            <form id="form-schedule" action="/schedule" autocomplete="off" method="POST">
+            <form id="form-schedule" action="{{ !isset($data) ? '/setting/schedule' : "/setting/schedule/$data->id" }}"
+                autocomplete="off" method="POST">
                 @csrf
-                @if (isset($data['id']))
-                    <input class="d-none" name="id" id="id" type="text" value="{{ $data['id'] }}">
+                @if (isset($data->id))
+                    <input class="d-none" name="id" id="id" type="text" value="{{ $data->id }}">
                     @method('PUT')
                 @endif
                 <div class="row">
@@ -24,13 +25,13 @@
                                 <div class="form-group">
                                     <label for="">Shift name</label>
                                     <input type="text" id="name" name="name"
-                                        value="{{ old('name', $data['name'] ?? '') }}" required class="form-control">
+                                        value="{{ old('name', $data->name ?? '') }}" required class="form-control">
                                 </div>
                             </div>
                             <div class="col-12">
                                 <div class="form-group">
                                     <label for="">Effective Date</label>
-                                    <input type="text" value="{{ old('effective_date', $data['effective_date'] ?? '') }}"
+                                    <input type="text" value="{{ old('effective_date', $data->effective_date ?? '') }}"
                                         name="effective-date" required class="form-control has-feedback-left date-picker"
                                         id="effective-date">
                                     <span style="top: 25px" class="fa fa-calendar form-control-feedback left"
@@ -39,7 +40,8 @@
                                 <div class="form-group">
                                     <div class="checkbox">
                                         <label>
-                                            <input id="national-holiday" name="national-holiday" type="checkbox"
+                                            <input {{ $data?->ignore_national_holiday ?? false ? 'checked' : '' }}
+                                                id="national-holiday" name="national-holiday" type="checkbox"
                                                 value="">
                                             Ignore national hiloday
                                         </label>
@@ -48,8 +50,8 @@
                                 <div class="form-group">
                                     <div class="checkbox">
                                         <label>
-                                            <input id="company-holiday" name="company-holiday" type="checkbox"
-                                                value="">
+                                            <input {{ $data?->ignore_company_holiday ?? false ? 'checked' : '' }}
+                                                id="company-holiday" name="company-holiday" type="checkbox" value="">
                                             Ignore company hiloday
                                         </label>
                                     </div>
@@ -57,8 +59,8 @@
                                 <div class="form-group">
                                     <div class="checkbox">
                                         <label>
-                                            <input id="special-holiday" name="special-holiday" type="checkbox"
-                                                value="">
+                                            <input {{ $data?->ignore_special_holiday ?? false ? 'checked' : '' }}
+                                                id="special-holiday" name="special-holiday" type="checkbox" value="">
                                             Ignore special hiloday
                                         </label>
                                     </div>
@@ -71,7 +73,8 @@
                             <div class="col-12">
                                 <div class="form-group">
                                     <label for="">Description</label>
-                                    <textarea name="description" id="description" class="form-control" cols="30" rows="4"></textarea>
+                                    <textarea value="{{ old('description', $data->description ?? '') }}" name="description" id="description"
+                                        class="form-control" cols="30" rows="4"></textarea>
                                 </div>
                             </div>
                             <div class="col-12 d-none">
@@ -91,17 +94,21 @@
                     </div>
                 </div>
                 <div class="row">
-                    <table id="tbl-datatable" class="table table-striped table-bordered table-sm">
-                        <thead>
-                            <tr>
-                                <th>Day</th>
-                                <th>Shift</th>
-                                <th>Working Hour</th>
-                                <th>Break Hour</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                    </table>
+                    <div class="col-12">
+                        <div class="table-responsive card-box">
+                            <table id="tbl-datatable" class="table table-striped table-bordered table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Day</th>
+                                        <th>Shift</th>
+                                        <th>Working Hour</th>
+                                        <th>Break Hour</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
                 </div>
                 <div class="row pb-2 pt-2">
                     <div class="col-md-6 text-left">
@@ -128,10 +135,9 @@
         let schedule = {
             details: []
         }
-        let shifts = [];
-
+        let shifts = {!! $shifts !!}
+        let appData = @json(isset($data) ? $data : null);
         $(document).ready(function() {
-            getShift();
             tbldata = $("#tbl-datatable").DataTable({
                 paging: false,
                 searching: false,
@@ -140,19 +146,20 @@
                 data: schedule.details,
                 columns: [{
                         data: "day",
-                        defaultContent: "-"
+                        defaultContent: "-",
+                        className: "text-center"
                     },
                     {
                         data: "shift",
                         defaultContent: "-",
                         mRender: function(data, type, full) {
-                            let select = '<select class="form-control select-shift" data-id="' +
-                                data.id + '">';
+                            let select =
+                                `<select class="form-control select-shift" data-id="${data?.id??''}">`
                             select +=
                                 `<option value="">-- select shift --</option>`
                             shifts.forEach(option => {
                                 select +=
-                                    `<option value="${option.id}" ${option.id==data.id?'selected':''}>${option.name}</option>`
+                                    `<option value="${option.id}" ${(option.id==data?.id??'')?'selected':''}>${option.name}</option>`
                             });
                             select += '</select>';
                             return select;
@@ -164,9 +171,9 @@
                         className: "text-center",
                         mRender: function(data, type, full) {
                             if ((Object.keys(data).length != 0)) {
-                                return `${data.schedule_in} - ${data.schedule_out} <br> ${diffTime(data.schedule_in, data.schedule_out)}`
+                                return `<label class="font-weight-bold">${data.schedule_in} - ${data.schedule_out}</label> (${diffTime(data.schedule_in, data.schedule_out)})`
                             } else {
-                                return "-"
+                                return ""
                             }
                         }
                     },
@@ -176,9 +183,9 @@
                         className: "text-center",
                         mRender: function(data, type, full) {
                             if ((Object.keys(data).length != 0)) {
-                                return `${data?.break_start??""} - ${data?.break_end??""} <br> ${diffTime(data.break_start, data.break_end)}`
+                                return `<label class="font-weight-bold">${data?.break_start??""} - ${data?.break_end??""}</label> (${diffTime(data.break_start, data.break_end)})`
                             } else {
-                                return "-"
+                                return ""
                             }
                         }
                     },
@@ -192,6 +199,11 @@
                     },
                 ]
             });
+
+            if (appData) {
+                schedule = appData;
+                reloadJsonDataTable(tbldata, schedule.details);
+            }
 
             $('#btn-add-shift').on('click', function() {
                 let detail = {
@@ -217,6 +229,7 @@
                 data.shift = filterShift[0];
                 reloadJsonDataTable(tbldata, schedule.details);
             })
+
             $('#tbl-datatable').on('click', '.delete-schedule', function() {
                 let data = tbldata.row($(this).parents('tr')).index();
                 schedule.details.splice(data, 1);
@@ -244,12 +257,5 @@
                 $('#json-data').val(JSON.stringify(schedule));
             })
         })
-
-        function getShift() {
-            ajax(null, `{{ URL::to('shift/get') }}`, "GET",
-                function(json) {
-                    shifts = json;
-                })
-        }
     </script>
 @endsection

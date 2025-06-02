@@ -16,4 +16,9 @@ class Schedule extends Model
         'ignore_national_holiday' => 'boolean',
     ];
 
+
+    public function details()
+    {
+        return $this->hasMany(ScheduleDetail::class);
+    }
 }

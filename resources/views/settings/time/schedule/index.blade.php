@@ -13,7 +13,6 @@
                         aria-controls="custom-tabs-five-normal" aria-selected="true">
                         Schedule
                     </a>
-
                 </li>
                 <li class="nav-item" role="presentation">
                     <a class="nav-link" href="/setting/shift" role="tab" aria-controls="custom-tabs-five-normal"
@@ -51,20 +50,16 @@
                                             <body>
                                                 @foreach ($data as $item)
                                                     <tr>
-                                                        <td>{{ $loop->iteration }}</td>
+                                                        <td class="text-center">{{ $loop->iteration }}</td>
                                                         <td>{{ $item['name'] }}</td>
-                                                        <td>{{ $item['effective_date'] }}</td>
-                                                        <td>1</td>
+                                                        <td class="text-center">{{ $item['effective_date'] }}</td>
+                                                        <td class="text-center">{{ $item['count_detail'] }}</td>
                                                         <td>{{ $item['description'] }}</td>
-                                                        <td>
-                                                            <button data-id ="{{ $item['id'] }}"
-                                                                data-desc="{{ $item['description'] }}"
-                                                                data-name="{{ $item['name'] }}"
-                                                                data-code="{{ $item['code'] }}" data-toggle="modal"
-                                                                data-target="#modal-data" type="button"
-                                                                class="btn btn-success btn-sm text-white btn-data">
+                                                        <td class="text-center">
+                                                            <a href="/setting/schedule/{{ $item['id'] }}/edit"
+                                                                class="btn btn-success btn-sm text-white">
                                                                 <i class="fa fa-pencil"></i>
-                                                            </button>
+                                                            </a>
                                                         </td>
                                                     </tr>
                                                 @endforeach
@@ -84,7 +79,6 @@
     <script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
     <script src="/plugins/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
     <script src="/plugins/moment/min/moment.min.js"></script>
-
 
     <script>
         $(document).ready(function() {

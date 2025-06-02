@@ -9,4 +9,10 @@ class ScheduleDetail extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+    protected $with = ['shift'];
+
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class);
+    }
 }

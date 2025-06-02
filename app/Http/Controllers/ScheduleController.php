@@ -43,7 +43,7 @@ class ScheduleController extends Controller
         $data = $this->shiftService->get()->getContent();
         return view('settings.time.schedule.schedule', [
             "title" => "Time Schedule",
-            "shifts" => json_decode($data, true)
+            "shifts" => $data
         ]);
     }
 
@@ -82,9 +82,15 @@ class ScheduleController extends Controller
      * @param  \App\Models\Schedule  $schedule
      * @return \Illuminate\Http\Response
      */
-    public function edit(Schedule $schedule)
+    public function edit($id)
     {
-        //
+        $schedule = $this->scheduleService->show($id)->getContent();
+        $shifts = $this->shiftService->get()->getContent();
+        return view('settings.time.schedule.schedule', [
+            "title" => "Time Schedule",
+            "data"=>json_decode($schedule,false),
+            "shifts"=>$shifts
+        ]);
     }
 
     /**
@@ -94,9 +100,15 @@ class ScheduleController extends Controller
      * @param  \App\Models\Schedule  $schedule
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdateScheduleRequest $request, Schedule $schedule)
+    public function update(Request $request)
     {
-        //
+        try {
+            $jsonData = json_decode($request['json-data'],true);
+            $this->scheduleService->put($request['id'], $jsonData);
+            return Redirect::to('setting/schedule');
+        } catch (\Throwable $th) {
+            return back()->with('message', $th->getMessage());
+        }
     }
 
     /**
