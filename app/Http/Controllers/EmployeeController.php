@@ -34,6 +34,7 @@ class EmployeeController extends Controller
     private ReligionService $religionService;
     private BankService $bankService;
     private ScheduleService $scheduleService;
+    private EmployeeService $employeeService;
 
     public function __construct(
         BranchService $branchService,
@@ -43,6 +44,7 @@ class EmployeeController extends Controller
         ReligionService $religionService,
         BankService $bankService,
         ScheduleService $scheduleService,
+        EmployeeService $employeeService,
     ) {
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
@@ -51,6 +53,7 @@ class EmployeeController extends Controller
         $this->religionService = $religionService;
         $this->bankService = $bankService;
         $this->scheduleService = $scheduleService;
+        $this->employeeService = $employeeService;
     }
     public function filterLocation(UtilitiesRequest $request)
     {
@@ -205,41 +208,12 @@ class EmployeeController extends Controller
     public function store(Request $request)
     {
 
-        // $personal = Personal::where('email', $request('email'))->first();
-        // if (!isset($personal)) {
-        //     $personal = new Personal();
-        //     $personal->fullname = $row[1];
-        //     $personal->barcode = $row[2];
-        //     $personal->email = $row[11];
-        //     $personal->address = $row[15];
-        //     $personal->current_address = $row[16];
-        //     $personal->birth_place = $row[14];
-        //     $personal->birth_date = $row[12];
-        //     $personal->phone = $row[28];
-        //     $personal->mobile_phone = $row[27];
-        //     $personal->gendre = $row[32] == "Male" ? "1" : "2";
-        //     $personal->blood_type = $row[34] == "" ? null : $row[34];
-        //     $personal->religion_id = $religion->id;
-        //     $personal->identity_number = $row[26];
-        //     switch ($row[32]) {
-        //         case 'Single':
-        //             $personal->marital_status = 1;
-        //             break;
-        //         case 'Merried':
-        //             $personal->marital_status = 2;
-        //             break;
-        //         case 'Widow':
-        //             $personal->marital_status = 3;
-        //             break;
-        //         case 'Widower':
-        //             $personal->marital_status = 3;
-        //             break;
-        //         default:
-        //             $personal->marital_status = 1;
-        //             break;
-        //     }
-        //     $personal->save();
-        // }
+        try {
+            return $this->employeeService->post($request)->getContent();
+            // return Redirect::to('employee');
+        } catch (\Throwable $th) {
+            return response()->json(["message"=>$th->getMessage()]);
+        }
     }
 
     /**

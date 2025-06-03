@@ -160,14 +160,25 @@
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-6 col-sm-12">
+                                        <div class="col-md-4 col-sm-12">
+                                            <div class="form-group">
+                                                <label for="">Identity Type</label>
+                                                <select name="identity-type" class="form-control select2"
+                                                    id="identity-type" style="width: 100%">
+                                                    <option value="ktp">KTP</option>
+                                                    <option value="sim">SIM</option>
+                                                    <option value="passport">Passport</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">NIK (NPWP 16 digit)*</label>
                                                 <input id="nik" name="nik" required type="text"
                                                     class="form-control">
                                             </div>
                                         </div>
-                                        <div class="col-md-6 col-sm-12">
+                                        <div class="col-md-4 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">Passport number</label>
                                                 <input id="passport-number" name="passport-number" type="text"
@@ -232,7 +243,7 @@
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">Employee ID*</label>
-                                                <input id="employee_id" name="employee_id" required type="text"
+                                                <input id="employee-id" name="employee-id" required type="text"
                                                     class="form-control" placeholder="Employee ID">
                                             </div>
                                         </div>
@@ -460,8 +471,34 @@
                             </div>
                         </form>
                     </div>
-                    <div id="step-4" class="tab-pane" role="tabpanel" aria-labelledby="step-4">
-                        <form id="form-4" class="row row-cols-1 ms-5 me-5 needs-validation" novalidate>
+                    <div id="step-3" class="tab-pane" role="tabpanel" aria-labelledby="step-3">
+                        <form id="form-3" class="row row-cols-1 ms-5 me-5 needs-validation justify-content-center"
+                            autocomplete="off" novalidate>
+                            <div class="col-md-8 col-sm-12">
+                                <div class="row pt-5 justify-content-center">
+                                    <div class="col-12 text-center">
+                                        <i class="fa fa-envelope text-primary"
+                                            style="font-size: clamp(5rem,15vw,15vw)"></i>
+                                    </div>
+                                    <div class="col-12 text-center">
+                                        <p class="font-weight-bold">Invite employee to MHIS HUB</p>
+                                        <p>Before submitting, you need to invite the employee to be able to access the
+                                            MHIS Hub account.</p>
+                                    </div>
+                                    <div class="col-8 text-center">
+                                        <div class="alert alert-dark" role="alert">
+                                            <div class="form-group">
+                                                <div class="checkbox">
+                                                    <p>
+                                                        <input id="create-account" name="create-account" type="checkbox"
+                                                            value=""> Invite to access MHIS Hub
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -586,6 +623,7 @@
                 maritalStatus: $('#marital-status').val(),
                 bloodType: $('#blood-type').val(),
                 religionId: $('#religion').val(),
+                identityType: $('#identity-type').val(),
                 identityNumber: $('#nik').val(),
                 expiredDateIdentityId: expiredDateIdentityId,
                 postalCode: $('#postal-code').val(),
@@ -593,26 +631,26 @@
             }
 
             let employment = {
-                employeeId: $('#barcode').val(),
+                employeeId: $('#employee-id').val(),
                 organizationId: $('#organization').val(),
-                organizationName: "",
+                organizationName: $('#organization option:selected').text(),
                 jobPositionId: $('#position').val(),
-                jobPositionName: "",
+                jobPositionName: $('#position option:selected').text(),
                 approvalLine: $('#approval').val(),
-                approvalLineName: "",
+                approvalLineName: $.trim($('#approval option:selected').text()),
                 jobLevelId: $('#level').val(),
-                jobLevelName: "",
+                jobLevelName: $('#level option:selected').text(),
                 branchId: $('#branch').val(),
-                branchName: "",
-                employmentStatus: $('#employment-status').val(),
+                branchName: $('#branch option:selected').text(),
+                employmentStatus: $('#employee-status').val(),
                 joinDate: joinDate,
                 endDate: endDate,
-                signDate: signDate,
+                signDate: signDate
             }
 
             let payrollInfo = {
                 bankId: $('#bank').val(),
-                bankName: "",
+                bankName: $('#bank option:selected').text(),
                 accountHolder: $('#account-holder').val(),
                 accountNumber: $('#account-number').val(),
                 npwp: $('#npwp').val(),
@@ -622,11 +660,25 @@
                 employmentTaxStatus: $('#employment-tax-status').val()
             }
 
-            let data = {
+            let employee = {
                 personal: personal,
                 employment: employment,
-                payrollInfo: payrollInfo
+                payrollInfo: payrollInfo,
+                schedule: $('#schedule').val(),
+                approvalLine: $('#approval').val(),
+                inviteAccount: $('#create-account').prop('checked')
             }
+
+            console.log(employee)
+
+            ajax(employee, `{{ URL::to('/employee') }}`, "POST",
+                function(item) {
+                    console.log(item)
+                },
+                function(json) {
+                    console.log(json)
+                }
+            )
         }
     </script>
 @endsection
