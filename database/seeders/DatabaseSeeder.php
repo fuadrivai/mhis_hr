@@ -27,5 +27,8 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
             'password' => '$2y$10$zMzXBaCLSTLnNJnPIYsN6OJHisOlgA/g6LW2kWsYN11Zq4aF2FjDS', // mutiaraharapan
         ]);
+
+        $this->call([RelationshipSeeder::class]);
+        $this->call([DegreeSeeder::class]);
     }
 }

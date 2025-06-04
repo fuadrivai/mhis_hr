@@ -16,4 +16,12 @@ class Personal extends Model
     {
         return $this->belongsTo(Religion::class);
     }
+    public function families()
+    {
+        return $this->hasMany(Family::class);
+    }
+    public function emergency_contacts()
+    {
+        return $this->hasMany(EmergencyContact::class);
+    }
 }

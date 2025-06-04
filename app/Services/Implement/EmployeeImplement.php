@@ -89,7 +89,6 @@ class EmployeeImplement implements EmployeeService
         $employee->save();
 
         return response()->json($employee);
-        // $personal->save();
     }
     function put($request) {}
     function delete($id) {}
