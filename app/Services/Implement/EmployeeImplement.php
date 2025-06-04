@@ -13,7 +13,9 @@ class EmployeeImplement implements EmployeeService
 {
     function get($request) {}
     function paginate($request) {}
-    function show($id) {}
+    function show($id) {
+        
+    }
 
     function post($request) {
 

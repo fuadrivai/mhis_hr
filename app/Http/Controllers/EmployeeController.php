@@ -224,7 +224,10 @@ class EmployeeController extends Controller
      */
     public function show(Employee $employee)
     {
-        //
+        // return view('employee.info', [
+        //     "title" => "Add Employee",
+        //     "data"=>$employee,
+        // ]);
     }
 
     /**
@@ -235,7 +238,10 @@ class EmployeeController extends Controller
      */
     public function edit(Employee $employee)
     {
-        //
+        return view('employee.info', [
+            "title" => "Employee Information",
+            "data"=>$employee,
+        ]);
     }
 
     /**
@@ -282,5 +288,23 @@ class EmployeeController extends Controller
 
         // alihkan halaman kembali
         return Redirect::to('employee');
+    }
+
+    public function personal($id)
+    {
+
+        $employee = Employee::with(['personal'])->find($id);
+        return view('employee.personal', [
+            "title" => "Personal",
+            "data"=>$employee,
+        ]);
+    }
+    public function employment($id)
+    {
+        $employee = Employee::with(['employment'])->find($id);
+        return view('employee.info', [
+            "title" => "Employment",
+            "data"=>$employee,
+        ]);
     }
 }

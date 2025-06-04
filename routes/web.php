@@ -45,6 +45,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::post('employee/import', [EmployeeController::class, 'import_excel']);
         Route::get('employee/filter', [EmployeeController::class, 'filterLocation']);
         Route::resource('employee', EmployeeController::class);
+        
 
         Route::get('shift/get', [ShiftController::class, 'get']);
 
@@ -60,6 +61,16 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::resource('shift', ShiftController::class);
 
             Route::resource('bank', BankController::class);
+        });
+
+        Route::group(['prefix' => 'profile'], function () {
+            Route::get('personal/{id}', [EmployeeController::class, 'personal']);
+            Route::get('employment/{id}', [EmployeeController::class, 'employment']);
+            Route::get('education/{id}', [EmployeeController::class, 'education']);
+            Route::get('portofolio/{id}', [EmployeeController::class, 'portofolio']);
+            Route::get('payrol-info/{id}', [EmployeeController::class, 'payrol_info']);
+            Route::get('attendance/{id}', [EmployeeController::class, 'attendance']);
+            Route::get('timeoff/{id}', [EmployeeController::class, 'timeoff']);
         });
 
         

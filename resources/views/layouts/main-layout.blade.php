@@ -77,7 +77,6 @@
                                                 <li><a href="/setting/religion">Religion</a></li>
                                             </ul>
                                         </li>
-
                                         <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
                                                     class="fa fa-chevron-down"></span></a>
                                             <?php
