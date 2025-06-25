@@ -44,7 +44,7 @@ class EmployeeController extends Controller
         ReligionService $religionService,
         BankService $bankService,
         ScheduleService $scheduleService,
-        EmployeeService $employeeService,
+        EmployeeService $employeeService
     ) {
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
@@ -194,8 +194,8 @@ class EmployeeController extends Controller
             "positions" => json_decode($positions, true),
             "levels" => json_decode($levels, true),
             "banks" => json_decode($banks, true),
-            "schedules"=>json_decode($schedules, true),
-            "employees"=>$employees,
+            "schedules" => json_decode($schedules, true),
+            "employees" => $employees,
         ]);
     }
 
@@ -212,7 +212,7 @@ class EmployeeController extends Controller
             return $this->employeeService->post($request)->getContent();
             // return Redirect::to('employee');
         } catch (\Throwable $th) {
-            return response()->json(["message"=>$th->getMessage()]);
+            return response()->json(["message" => $th->getMessage()]);
         }
     }
 
@@ -240,7 +240,7 @@ class EmployeeController extends Controller
     {
         return view('employee.info', [
             "title" => "Employee Information",
-            "data"=>$employee,
+            "data" => $employee,
         ]);
     }
 
@@ -294,17 +294,25 @@ class EmployeeController extends Controller
     {
 
         $employee = Employee::with(['personal'])->find($id);
+        $religions = $this->religionService->get()->getContent();
         return view('employee.personal', [
             "title" => "Personal",
-            "data"=>$employee,
+            "data" => $employee,
+            "religions" => json_decode($religions, true),
         ]);
     }
     public function employment($id)
     {
         $employee = Employee::with(['employment'])->find($id);
-        return view('employee.info', [
+        $organizations = $this->organizationService->get()->getContent();
+        $positions = $this->positionService->get()->getContent();
+        $levels = $this->levelService->get()->getContent();
+        return view('employee.employment', [
             "title" => "Employment",
-            "data"=>$employee,
+            "data" => $employee,
+            "organizations" => json_decode($organizations, true),
+            "positions" => json_decode($positions, true),
+            "levels" => json_decode($levels, true),
         ]);
     }
 }
