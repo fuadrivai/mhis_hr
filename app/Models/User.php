@@ -16,6 +16,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Session::class);
     }
 
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
     /**
      * The attributes that are mass assignable.
      *

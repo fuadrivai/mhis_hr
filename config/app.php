@@ -161,6 +161,7 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
+        Illuminate\View\ViewServiceProvider::class,
 
         /*
          * Package Service Providers...
@@ -192,6 +193,7 @@ return [
         App\Providers\ShiftProvider::class,
         App\Providers\ScheduleProvider::class,
         App\Providers\BankProvider::class,
+        App\Providers\SignatureProvider::class,
     ],
 
     /*

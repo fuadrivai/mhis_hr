@@ -93,6 +93,7 @@
                                     </ul>
                                 </li>
                                 <li><a href="/user"><i class="fa fa-user"></i> Management User </a></li>
+                                <li><a href="/signature"><i class="fa fa-qrcode"></i> E Signature </a></li>
                             </ul>
                         </div>
 

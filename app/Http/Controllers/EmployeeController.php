@@ -74,7 +74,9 @@ class EmployeeController extends Controller
         $levels = $this->levelService->get()->getContent();
 
         // get employees
-        $employees = Employee::with(['user', 'personal', 'employment'])->orderBy(
+        $employees = Employee::with(['user', 'personal', 'employment'])->whereHas('employment', function ($query) {
+            $query->where('status', 1);
+        })->orderBy(
             Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
             'asc'
         );

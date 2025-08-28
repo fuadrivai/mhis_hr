@@ -13,6 +13,7 @@ use App\Http\Controllers\PositionController;
 use App\Http\Controllers\ReligionController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,7 +46,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::post('employee/import', [EmployeeController::class, 'import_excel']);
         Route::get('employee/filter', [EmployeeController::class, 'filterLocation']);
         Route::resource('employee', EmployeeController::class);
-        
+
 
         Route::get('shift/get', [ShiftController::class, 'get']);
 
@@ -73,6 +74,6 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('timeoff/{id}', [EmployeeController::class, 'timeoff']);
         });
 
-        
+        Route::resource('signature', SignatureController::class);
     });
 });
