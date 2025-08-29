@@ -57,7 +57,7 @@ class EmployeeController extends Controller
     }
     public function filterLocation(UtilitiesRequest $request)
     {
-        $employees = Employee::where('pin_location_id', null);
+        $employees = Employee::whereNull('pin_location_id', null);
         if ($request->ajax()) {
             return datatables()->of($employees->with(['user', 'personal', 'employment']))
                 ->make(true);
