@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -27,5 +28,22 @@ class Employment extends Model
     public function job_level()
     {
         return $this->belongsTo(JobLevel::class);
+    }
+
+    public function joinDate()
+    {
+        $joinDate = Carbon::parse($this->join_date);
+        return $joinDate->format('d F Y');
+    }
+    public function endDate()
+    {
+        $endDate = Carbon::parse($this->end_date);
+        return $endDate->format('d F Y');
+    }
+
+    public function age()
+    {
+        $age = Carbon::parse($this->join_date)->diff(Carbon::now());
+        return "$age->y years $age->m months";
     }
 }

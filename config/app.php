@@ -178,6 +178,7 @@ return [
         App\Providers\AuthProvider::class,
         App\Providers\GsheetLinkProvider::class,
         App\Providers\PersonProvider::class,
+        App\Providers\PersonalProvider::class,
         App\Providers\AttendanceProvider::class,
         App\Providers\PayslipProvider::class,
         App\Providers\AnnouncementCategoryProvicder::class,

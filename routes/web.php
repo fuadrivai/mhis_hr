@@ -66,6 +66,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
         Route::group(['prefix' => 'profile'], function () {
             Route::get('personal/{id}', [EmployeeController::class, 'personal']);
+            Route::put('personal', [EmployeeController::class, 'personal_put']);
+
             Route::get('employment/{id}', [EmployeeController::class, 'employment']);
             Route::get('education/{id}', [EmployeeController::class, 'education']);
             Route::get('portofolio/{id}', [EmployeeController::class, 'portofolio']);

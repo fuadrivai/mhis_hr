@@ -59,7 +59,9 @@
                                                     <select name="organization" class="form-control select2"
                                                         id="organization" style="width: 100%">
                                                         @foreach ($organizations as $item)
-                                                            <option value="{{ $item['id'] }}">{{ $item['name'] }}
+                                                            <option
+                                                                {{ $data['employment']['organization_name'] == $item['name'] ? 'selected' : '' }}
+                                                                value="{{ $item['id'] }}">{{ $item['name'] }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -68,7 +70,7 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-md-4 col-12">
-                                                <p><i class="fa fa-envelope text-info"></i> Job position</p>
+                                                <p><i class="fa fa-briefcase text-info"></i> Job position</p>
                                             </div>
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['employment']['job_position_name'] ?? '-' }}
@@ -77,7 +79,9 @@
                                                     <select name="position" class="form-control select2" id="position"
                                                         style="width: 100%">
                                                         @foreach ($positions as $item)
-                                                            <option value="{{ $item['id'] }}">{{ $item['name'] }}
+                                                            <option
+                                                                {{ $data['employment']['job_position_name'] == $item['name'] ? 'selected' : '' }}
+                                                                value="{{ $item['id'] }}">{{ $item['name'] }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -86,7 +90,7 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-md-4 col-12">
-                                                <p><i class="fa fa-envelope text-info"></i> Job level</p>
+                                                <p><i class="fa fa-sitemap text-info"></i> Job level</p>
                                             </div>
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['employment']['job_level_name'] ?? '-' }}
@@ -95,7 +99,9 @@
                                                     <select name="level" class="form-control select2" id="level"
                                                         style="width: 100%">
                                                         @foreach ($levels as $item)
-                                                            <option value="{{ $item['id'] }}">{{ $item['name'] }}
+                                                            <option
+                                                                {{ $data['employment']['job_level_name'] == $item['name'] ? 'selected' : '' }}
+                                                                value="{{ $item['id'] }}">{{ $item['name'] }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -104,7 +110,7 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-md-4 col-12">
-                                                <p><i class="fa fa-envelope text-info"></i> Employment status</p>
+                                                <p><i class="fa fa-hourglass-half text-info"></i> Employment status</p>
                                             </div>
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['employment']['employment_status'] ?? '-' }}
@@ -112,12 +118,103 @@
                                                 <div class="form-group data-form d-none">
                                                     <select name="level" class="form-control select2" id="level"
                                                         style="width: 100%">
-                                                        @foreach ($levels as $item)
-                                                            <option value="{{ $item['id'] }}">{{ $item['name'] }}
+                                                        <option
+                                                            {{ $data['employment']['employment_status'] == 'permanent' ? 'selected' : '' }}
+                                                            value="permanent">Permanent</option>
+                                                        <option
+                                                            {{ $data['employment']['employment_status'] == 'contract' ? 'selected' : '' }}
+                                                            value="contract">Contract</option>
+                                                        <option
+                                                            {{ $data['employment']['employment_status'] == 'probation' ? 'selected' : '' }}
+                                                            value="probation">Probation</option>
+                                                        <option
+                                                            {{ $data['employment']['employment_status'] == 'freelance' ? 'selected' : '' }}
+                                                            value="freelance">Freelance</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 col-12">
+                                                <p><i class="fa fa-hourglass-half text-info"></i> Branch</p>
+                                            </div>
+                                            <div class="col-md-8 col-12">
+                                                <p class="data-text">{{ $data['employment']['branch_name'] ?? '-' }}
+                                                </p>
+                                                <div class="form-group data-form d-none">
+                                                    <select name="branch" class="form-control select2" id="branch"
+                                                        style="width: 100%">
+                                                        @foreach ($branches as $item)
+                                                            <option
+                                                                {{ $data['employment']['branch_name'] == $item['name'] ? 'selected' : '' }}
+                                                                value="{{ $item['id'] }}">{{ $item['name'] }}
                                                             </option>
                                                         @endforeach
                                                     </select>
                                                 </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 col-12">
+                                                <p><i class="fa fa-calendar text-info"></i> Join Date</p>
+                                            </div>
+                                            <div class="col-md-8 col-12">
+                                                <p class="data-text">
+                                                    {{ $data['employment']->joinDate() ?? '-' }} - <span
+                                                        class="badge badge-secondary">
+                                                        {{ $data['employment']->age() ?? '-' }}</span>
+                                                </p>
+                                                <div class="form-group data-form d-none">
+                                                    <input type="text" class="form-control date-picker"
+                                                        name="join_date" id="join-date"
+                                                        value="{{ $data['employment']->joinDate() }}" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 col-12">
+                                                <p><i class="fa fa-calendar text-info"></i> End employment status date</p>
+                                            </div>
+                                            <div class="col-md-8 col-12">
+                                                <p class="data-text">
+                                                    {{ $data['employment']->endDate() ?? '-' }}
+                                                </p>
+                                                <div class="form-group data-form d-none">
+                                                    <input type="text" class="form-control date-picker"
+                                                        name="end_date" id="end-date"
+                                                        value="{{ $data['employment']->endDate() }}" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 col-12">
+                                                <p><i class="fa fa-hourglass-half text-info"></i> Approval line</p>
+                                            </div>
+                                            <div class="col-md-8 col-12">
+                                                <p class="data-text">
+                                                    {{ $data['employment']['approval_line_name'] ?? '-' }}
+                                                </p>
+                                                <div class="input-group flex-nowrap data-form d-none">
+
+                                                    <input type="text" class="form-control" name="approval_line"
+                                                        id="approval-line" placeholder="approval line"
+                                                        aria-label="approval line" aria-describedby="addon-wrapping">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary" type="button"
+                                                            id="button-addon2"><i class="fa fa-edit"> Change
+                                                                data</i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row data-form d-none">
+                                            <div class="col-12 text-right">
+                                                <button type="button" onclick="closeForm()"
+                                                    class="btn btn-secondary btn-sm"><i class="fa fa-times"></i> Cancel
+                                                </button>
+                                                <button type="submit" class="btn btn-success btn-sm"><i
+                                                        class="fa fa-save"></i> Submit
+                                                </button>
                                             </div>
                                         </div>
                                     </div>

@@ -40,7 +40,7 @@ class Personal extends Model
     public function expiredIdentity()
     {
         $date = $this->expired_date_identity_id;
-        $strDate = "-";
+        $strDate = null;
         if (isset($date)) {
             $strDate = Carbon::parse($date)->format('d F Y');
         }
@@ -77,7 +77,7 @@ class Personal extends Model
                 $status = "female";
                 break;
             default;
-                $status = "Male";
+                $status = "male";
         }
 
         return $status;

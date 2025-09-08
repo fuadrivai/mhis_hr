@@ -38,7 +38,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <form action="" autocomplete="off" method="POST">
+                            <form action="/profile/personal" autocomplete="off" method="POST">
                                 @csrf
                                 @if (isset($data['personal']['id']))
                                     <input class="d-none" name="id" id="id" type="text"
@@ -62,14 +62,14 @@
                                                     <div class="col-md-6 col-12">
                                                         <div class="form-group">
                                                             <input type="text" placeholder="First Name"
-                                                                class="form-control" name="first-name" id="first-name"
+                                                                class="form-control" name="first_name" id="first-name"
                                                                 required value="{{ $data['personal']->first_name }}" />
                                                         </div>
                                                     </div>
                                                     <div class="col-md-6 col-12">
                                                         <div class="form-group">
                                                             <input type="text" placeholder="Last Name"
-                                                                class="form-control" name="last-name" id="last-name"
+                                                                class="form-control" name="last_name" id="last-name"
                                                                 value="{{ $data['personal']->last_name }}" />
                                                         </div>
                                                     </div>
@@ -96,7 +96,7 @@
                                                 <p class="data-text">{{ $data['personal']['mobile_phone'] ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <input required type="text" class="form-control"
-                                                        name="mobile-phone" id="mobile-phone"
+                                                        name="mobile_phone" id="mobile-phone"
                                                         value="{{ $data['personal']->mobile_phone }}" />
                                                 </div>
                                             </div>
@@ -120,8 +120,8 @@
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['personal']['birth_place'] ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
-                                                    <input type="text" class="form-control" name="email"
-                                                        id="email" required
+                                                    <input type="text" class="form-control" name="birth_place"
+                                                        id="birth-place" required
                                                         value="{{ $data['personal']->birth_place }}" />
                                                 </div>
                                             </div>
@@ -137,8 +137,8 @@
                                                         {{ $data['personal']->age() ?? '-' }}</span>
                                                 </p>
                                                 <div class="form-group data-form d-none">
-                                                    <input type="text" class="form-control date-picker"
-                                                        name="birth-date" id="birth-date"
+                                                    <input required type="text" class="form-control date-picker"
+                                                        name="birth_date" id="birth-date"
                                                         value="{{ $data['personal']->birthDate() }}" />
                                                 </div>
                                             </div>
@@ -152,16 +152,22 @@
                                                 <p class="data-text">{{ ucfirst($data['personal']->gender()) }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <p>
-                                                        <label for="genderM">Male : </label>
-                                                        <input type="radio" class="flat" name="gender"
-                                                            id="genderM" value="1"
-                                                            {{ $data['personal']->gendre == 1 ? 'checked' : '' }}
-                                                            required />
-                                                        <label for="genderF">Female :</label>
-                                                        <input type="radio" class="flat" name="gender"
-                                                            id="genderF"
-                                                            {{ $data['personal']->gendre == 2 ? 'checked' : '' }}
-                                                            value="2" required />
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" name="gendre"
+                                                            id="gender1" value="male"
+                                                            {{ $data['personal']->gender() == 'male' ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="gender1">
+                                                            Male
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" name="gendre"
+                                                            id="gender2" value="female"
+                                                            {{ $data['personal']->gender() == 'female' ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="gender2">
+                                                            Female
+                                                        </label>
+                                                    </div>
                                                     </p>
                                                 </div>
                                             </div>
@@ -173,7 +179,7 @@
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['personal']->maritalStatus() }}</p>
                                                 <div class="form-group data-form d-none">
-                                                    <select name="marital-status" class="form-control select2"
+                                                    <select required name="marital_status" class="form-control select2"
                                                         id="marital-status" style="width: 100%">
                                                         <option
                                                             {{ $data['personal']->marital_status == '1' ? 'selected' : '' }}
@@ -198,7 +204,7 @@
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['personal']->blood_type ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
-                                                    <select name="blood-type" class="form-control select2"
+                                                    <select name="blood_type" class="form-control select2"
                                                         id="blood-type" style="width: 100%">
                                                         <option value="">-- Select blood type --</option>
                                                         <option
@@ -224,8 +230,8 @@
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['personal']->religion->name ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
-                                                    <select name="religion" class="form-control select2" id="religion"
-                                                        style="width: 100%">
+                                                    <select required name="religion_id" class="form-control select2"
+                                                        id="religion_id" style="width: 100%">
                                                         @foreach ($religions as $item)
                                                             <option value="{{ $item['id'] }}">{{ $item['name'] }}
                                                             </option>
@@ -249,8 +255,8 @@
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['personal']->identity_number ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
-                                                    <input type="text" class="form-control" name="identity-number"
-                                                        id="identity-number" required
+                                                    <input type="text" class="form-control" name="identity_number"
+                                                        id="identity-number"
                                                         value="{{ $data['personal']->identity_number }}" />
                                                 </div>
                                             </div>
@@ -262,7 +268,7 @@
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['personal']->passport_number ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
-                                                    <input type="text" class="form-control" name="passport-number"
+                                                    <input type="text" class="form-control" name="passport_number"
                                                         id="passport-number"
                                                         value="{{ $data['personal']->passport_number }}" />
                                                 </div>
@@ -276,7 +282,7 @@
                                                 <p class="data-text">{{ $data['personal']->expiredIdentity() }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <input type="text" class="form-control date-picker"
-                                                        name="passport-expired-date" id="passport-expired-date"
+                                                        name="expired_date_identity_id" id="expired-date-identity-id"
                                                         value="{{ $data['personal']->expiredIdentity() }}" />
                                                 </div>
                                             </div>
@@ -288,7 +294,7 @@
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['personal']->postal_code ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
-                                                    <input type="text" class="form-control" name="postal-code"
+                                                    <input type="text" class="form-control" name="postal_code"
                                                         id="postal-code" value="{{ $data['personal']->postal_code }}" />
                                                 </div>
                                             </div>
@@ -311,7 +317,7 @@
                                             <div class="col-md-8 col-12">
                                                 <p class="data-text">{{ $data['personal']->current_address ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
-                                                    <textarea name="current-address" id="current-address" class="form-control" rows="3">{{ $data['personal']->current_address }}</textarea>
+                                                    <textarea name="current_address" id="current-address" class="form-control" rows="3">{{ $data['personal']->current_address }}</textarea>
                                                 </div>
                                             </div>
                                         </div>
@@ -356,10 +362,6 @@
                             </div>
                         </div>
                         <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
-                            xxFood truck fixie locavore, accusamus mcsweeney's marfa nulla single-origin coffee squid.
-                            Exercitation +1 labore velit, blog sartorial PBR leggings next level wes anderson artisan four
-                            loko farm-to-table craft beer twee. Qui photo
-                            booth letterpress, commodo enim craft beer mlkshk
                         </div>
                     </div>
                 </div>
