@@ -70,7 +70,7 @@ function sendMessage($deviceToken, $d)
 {
     $credential = new ServiceAccountCredentials(
         "https://www.googleapis.com/auth/firebase.messaging",
-        json_decode(file_get_contents(storage_path('mhis-hub-a9bd4a8c1038.json')), true)
+        json_decode(file_get_contents(storage_path('mhis-hub-73a9a67cee5e.json')), true)
     );
     $token = $credential->fetchAuthToken(HttpHandlerFactory::build());
     $ch = curl_init("https://fcm.googleapis.com/v1/projects/mhis-hub/messages:send");
