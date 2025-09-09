@@ -31,8 +31,9 @@
                             <div class="col-12">
                                 <div class="form-group">
                                     <label for="">Effective Date</label>
-                                    <input type="text" value="{{ old('effective_date', $data->effective_date ?? '') }}"
-                                        name="effective-date" required class="form-control has-feedback-left date-picker"
+                                    <input type="text"
+                                        value="{{ old('effective_date', isset($data) ? $data->effectiveDate() : '') }}"
+                                        name="effective_date" required class="form-control has-feedback-left date-picker"
                                         id="effective-date">
                                     <span style="top: 25px" class="fa fa-calendar form-control-feedback left"
                                         aria-hidden="true"></span>
@@ -40,28 +41,28 @@
                                 <div class="form-group">
                                     <div class="checkbox">
                                         <label>
-                                            <input {{ $data?->ignore_national_holiday ?? false ? 'checked' : '' }}
-                                                id="national-holiday" name="national-holiday" type="checkbox"
+                                            <input {{ $data->ignore_national_holiday ?? false ? 'checked' : '' }}
+                                                id="national-holiday" name="national_holiday" type="checkbox"
                                                 value="">
-                                            Ignore national hiloday
+                                            Ignore national holiday
                                         </label>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <div class="checkbox">
                                         <label>
-                                            <input {{ $data?->ignore_company_holiday ?? false ? 'checked' : '' }}
-                                                id="company-holiday" name="company-holiday" type="checkbox" value="">
-                                            Ignore company hiloday
+                                            <input {{ $data->ignore_company_holiday ?? false ? 'checked' : '' }}
+                                                id="company-holiday" name="company_holiday" type="checkbox" value="">
+                                            Ignore company holiday
                                         </label>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <div class="checkbox">
                                         <label>
-                                            <input {{ $data?->ignore_special_holiday ?? false ? 'checked' : '' }}
-                                                id="special-holiday" name="special-holiday" type="checkbox" value="">
-                                            Ignore special hiloday
+                                            <input {{ $data->ignore_special_holiday ?? false ? 'checked' : '' }}
+                                                id="special-holiday" name="special_holiday" type="checkbox" value="">
+                                            Ignore special holiday
                                         </label>
                                     </div>
                                 </div>
@@ -73,8 +74,7 @@
                             <div class="col-12">
                                 <div class="form-group">
                                     <label for="">Description</label>
-                                    <textarea value="{{ old('description', $data->description ?? '') }}" name="description" id="description"
-                                        class="form-control" cols="30" rows="4"></textarea>
+                                    <textarea name="description" id="description" class="form-control" cols="30" rows="4">{{ old('description', $data->description ?? '') }}</textarea>
                                 </div>
                             </div>
                             <div class="col-12 d-none">
@@ -159,7 +159,7 @@
                                 `<option value="">-- select shift --</option>`
                             shifts.forEach(option => {
                                 select +=
-                                    `<option value="${option.id}" ${(option.id==data?.id??'')?'selected':''}>${option.name}</option>`
+                                    `<option value="${option.id}" ${(option.id==data?.id??'')?'selected':''}>${option.name} <small>${option.schedule_in} - ${option.schedule_out}</small></option>`
                             });
                             select += '</select>';
                             return select;

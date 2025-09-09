@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Schedule;
-use App\Http\Requests\StoreScheduleRequest;
-use App\Http\Requests\UpdateScheduleRequest;
 use App\Services\ScheduleService;
 use App\Services\ShiftService;
 use Illuminate\Http\Request;
@@ -26,10 +24,10 @@ class ScheduleController extends Controller
     }
     public function index()
     {
-        $data = $this->scheduleService->get()->getContent();
+        $data = $this->scheduleService->get();
         return view('settings.time.schedule.index', [
             "title" => "Time Schedule",
-            "data" => json_decode($data, true),
+            "data" => $data,
         ]);
     }
 
@@ -40,7 +38,7 @@ class ScheduleController extends Controller
      */
     public function create()
     {
-        $data = $this->shiftService->get()->getContent();
+        $data = $this->shiftService->get();
         return view('settings.time.schedule.schedule', [
             "title" => "Time Schedule",
             "shifts" => $data
@@ -55,9 +53,9 @@ class ScheduleController extends Controller
      */
     public function store(Request $request)
     {
-        
+
         try {
-            $jsonData = json_decode($request['json-data'],true);
+            $jsonData = json_decode($request['json-data'], true);
             $this->scheduleService->post($jsonData);
             return Redirect::to('setting/schedule');
         } catch (\Throwable $th) {
@@ -84,12 +82,12 @@ class ScheduleController extends Controller
      */
     public function edit($id)
     {
-        $schedule = $this->scheduleService->show($id)->getContent();
-        $shifts = $this->shiftService->get()->getContent();
+        $schedule = $this->scheduleService->show($id);
+        $shifts = $this->shiftService->get();
         return view('settings.time.schedule.schedule', [
             "title" => "Time Schedule",
-            "data"=>json_decode($schedule,false),
-            "shifts"=>$shifts
+            "data" => $schedule,
+            "shifts" => $shifts
         ]);
     }
 
@@ -103,7 +101,7 @@ class ScheduleController extends Controller
     public function update(Request $request)
     {
         try {
-            $jsonData = json_decode($request['json-data'],true);
+            $jsonData = json_decode($request['json-data'], true);
             $this->scheduleService->put($request['id'], $jsonData);
             return Redirect::to('setting/schedule');
         } catch (\Throwable $th) {

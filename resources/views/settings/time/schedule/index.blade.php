@@ -52,7 +52,7 @@
                                                     <tr>
                                                         <td class="text-center">{{ $loop->iteration }}</td>
                                                         <td>{{ $item['name'] }}</td>
-                                                        <td class="text-center">{{ $item['effective_date'] }}</td>
+                                                        <td class="text-center">{{ $item->effectiveDate() }}</td>
                                                         <td class="text-center">{{ $item['count_detail'] }}</td>
                                                         <td>{{ $item['description'] }}</td>
                                                         <td class="text-center">

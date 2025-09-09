@@ -24,10 +24,10 @@ class ShiftController extends Controller
 
     public function index()
     {
-        $data = $this->shiftService->get()->getContent();
+        $data = $this->shiftService->get();
         return view('settings.time.schedule.index-2', [
             "title" => "Time Shift",
-            "data" => json_decode($data, true),
+            "data" => $data,
         ]);
     }
 

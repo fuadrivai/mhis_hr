@@ -9,7 +9,8 @@
             <div class="clearfix"></div>
         </div>
         <div class="x_content">
-            <form autocomplete="OFF" action={{ isset($data) ? '/shift/' . $data['id'] : '/shift' }} method="POST">
+            <form autocomplete="OFF" action={{ isset($data) ? '/setting/shift/' . $data['id'] : '/setting/shift' }}
+                method="POST">
                 @csrf
                 @if (isset($data['id']))
                     <input class="d-none" name="id" id="id" type="text" value="{{ $data['id'] }}">
@@ -36,6 +37,7 @@
                             <select name="shift_label" class="form-control" id="shift-label">
                                 <option value="wfo">WFO</option>
                                 <option value="wfh">WFH</option>
+                                <option value="none">None</option>
                             </select>
                         </div>
                     </div>

@@ -10,10 +10,10 @@ class ShiftImplement implements ShiftService
     function get()
     {
         try {
-            $shifts = Shift::all();
+            // $shifts = Shift::all();
             // dd($shifts);
             // Log::info('Form Data:', $shifts);
-            return response()->json($shifts);
+            return Shift::all();
         } catch (\Throwable $th) {
             // dd($th->getMessage());
             // Log::info('Form Data:', $th->getMessage());

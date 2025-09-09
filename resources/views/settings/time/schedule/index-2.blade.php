@@ -57,18 +57,19 @@
                                                 @foreach ($data as $item)
                                                     <tr>
                                                         <td>{{ $loop->iteration }}</td>
-                                                        <td>{{ $item['name'] }}</td>
-                                                        <td>{{ $item['code'] }}</td>
-                                                        <td class="text-center">{{ $item['schedule_in'] }} -
-                                                            {{ $item['schedule_out'] }}
-                                                            <br> {!! \App\Helpers\diffTime($item['schedule_in'], $item['schedule_out']) !!}
+                                                        <td>{{ $item->name }}</td>
+                                                        <td>{{ $item->code }}</td>
+                                                        <td class="text-center">{{ $item->schedule_in }} -
+                                                            {{ $item->schedule_out }}
+                                                            {{-- <br> {!! \App\Helpers\diffTime($item->schedule_in, $item->schedule_out) !!} --}}
+                                                            <br> {{ $item->schedule_duration() }}
                                                         </td>
-                                                        <td class="text-center">{{ $item['break_start'] }} -
-                                                            {{ $item['break_end'] }}
-                                                            <br> {!! \App\Helpers\diffTime($item['break_start'], $item['break_end']) !!}
+                                                        <td class="text-center">{{ $item->break_start }} -
+                                                            {{ $item->break_end }}
+                                                            <br> {{ $item->break_duration() }}
                                                         </td>
                                                         <td class="text-center">
-                                                            <a href="/shift/{{ $item['id'] }}/edit"
+                                                            <a href="/setting/shift/{{ $item->id }}/edit"
                                                                 class="btn btn-success btn-sm">
                                                                 <i class="fa fa-pencil"></i>
                                                             </a>
