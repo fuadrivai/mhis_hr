@@ -11,13 +11,16 @@ use App\Services\EmployeeService;
 
 class EmployeeImplement implements EmployeeService
 {
-    function get($request) {}
-    function paginate($request) {}
-    function show($id) {
-        
+    function get($request)
+    {
+        $employees = Employee::with(['personal', 'employment', 'activeSchedule'])->get();
+        return $employees;
     }
+    function paginate($request) {}
+    function show($id) {}
 
-    function post($request) {
+    function post($request)
+    {
 
         $personal = new Personal();
         $personal->religion_id = $request['personal']['religionId'];

@@ -27,4 +27,19 @@ class Employee extends Model
     {
         return $this->belongsTo(PinLocation::class);
     }
+    public function schedules()
+    {
+        return $this->hasMany(EmployeeSchedule::class);
+    }
+
+    public function activeSchedule()
+    {
+        return $this->hasOne(EmployeeSchedule::class)
+            ->where('effective_start_date', '<=', now())
+            ->where(function ($q) {
+                $q->whereNull('effective_end_date')
+                    ->orWhere('effective_end_date', '>=', now());
+            })
+            ->latest('effective_start_date');
+    }
 }

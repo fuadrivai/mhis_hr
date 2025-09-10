@@ -11,7 +11,6 @@ use App\Services\BranchService;
 use App\Services\EmployeeService;
 use App\Services\JobLevelService;
 use App\Services\OrganizationService;
-use App\Services\PersonalService;
 use App\Services\PositionService;
 use App\Services\ReligionService;
 use App\Services\ScheduleService;
@@ -36,7 +35,6 @@ class EmployeeController extends Controller
     private BankService $bankService;
     private ScheduleService $scheduleService;
     private EmployeeService $employeeService;
-    private PersonalService $personalService;
 
     public function __construct(
         BranchService $branchService,
@@ -46,8 +44,7 @@ class EmployeeController extends Controller
         ReligionService $religionService,
         BankService $bankService,
         ScheduleService $scheduleService,
-        EmployeeService $employeeService,
-        PersonalService $personalService
+        EmployeeService $employeeService
     ) {
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
@@ -57,7 +54,6 @@ class EmployeeController extends Controller
         $this->bankService = $bankService;
         $this->scheduleService = $scheduleService;
         $this->employeeService = $employeeService;
-        $this->personalService = $personalService;
     }
     public function filterLocation(UtilitiesRequest $request)
     {
@@ -298,7 +294,6 @@ class EmployeeController extends Controller
 
     public function personal($id)
     {
-
         $employee = Employee::with(['personal'])->find($id);
         $religions = $this->religionService->get()->getContent();
         return view('employee.personal', [
@@ -308,34 +303,6 @@ class EmployeeController extends Controller
         ]);
     }
 
-    public function personal_put(Request $request)
-    {
-        $validated = $request->validate([
-            'id' => 'required|exists:personals,id',
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'mobile_phone' => 'required|string|max:50',
-            'email' => 'required|email|max:255',
-            'birth_place' => 'required|string|max:255',
-            'birth_date' => 'required|date',
-            'gendre' => 'nullable|string|max:20',
-            'marital_status' => 'required|string|max:50',
-            'blood_type' => 'nullable|string|max:5',
-            'religion_id' => 'required|integer',
-            'identity_number' => 'nullable|string|max:100',
-            'passport_number' => 'nullable|string|max:100',
-            'expired_date_identity_id' => 'nullable|date',
-            'postal_code' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'current_address' => 'nullable|string',
-        ]);
-        $personal =  $this->personalService->put($validated)->getContent();
-        return response()->json($personal);
-
-        // $personal = $this->personalService->put($validated);
-        // return response()->json($personal);
-    }
     public function employment($id)
     {
         $employee = Employee::with(['employment'])->find($id);

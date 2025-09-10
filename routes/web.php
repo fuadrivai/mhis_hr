@@ -5,9 +5,11 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeScheduleController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobLevelController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\PinLocationController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\ReligionController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\UserController;
+use Faker\Provider\ar_EG\Person;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,6 +49,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::post('employee/import', [EmployeeController::class, 'import_excel']);
         Route::get('employee/filter', [EmployeeController::class, 'filterLocation']);
         Route::resource('employee', EmployeeController::class);
+        Route::resource('scheduler', EmployeeScheduleController::class);
 
 
         Route::get('shift/get', [ShiftController::class, 'get']);
@@ -66,7 +70,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
         Route::group(['prefix' => 'profile'], function () {
             Route::get('personal/{id}', [EmployeeController::class, 'personal']);
-            Route::put('personal', [EmployeeController::class, 'personal_put']);
+            Route::put('personal', [PersonalController::class, 'update']);
 
             Route::get('employment/{id}', [EmployeeController::class, 'employment']);
             Route::get('education/{id}', [EmployeeController::class, 'education']);

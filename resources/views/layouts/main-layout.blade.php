@@ -61,6 +61,8 @@
                                         style="display: {{ Request::is('employee*') ? 'block' : 'none' }}">
                                         <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
                                                 href="/employee">Employee</a></li>
+                                        <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
+                                                href="/scheduler">Scheduler</a></li>
                                     </ul>
                                 </li>
                                 <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i class="fa fa-gears"></i>
