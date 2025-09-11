@@ -19,7 +19,7 @@ class CreateTableEmployeeSchedule extends Migration
             $table->foreignId('schedule_id');
             $table->string('schedule_name')->comment('The name of the schedule assigned to the employee');
             $table->date('effective_start_date')->comment('The date when the schedule becomes effective for the employee');
-            $table->date('effective_end_date')->comment('The date when the schedule ends for the employee');
+            $table->date('effective_end_date')->comment('The date when the schedule ends for the employee')->nullable();
             $table->timestamps();
         });
     }

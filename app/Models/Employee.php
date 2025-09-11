@@ -31,7 +31,6 @@ class Employee extends Model
     {
         return $this->hasMany(EmployeeSchedule::class);
     }
-
     public function activeSchedule()
     {
         return $this->hasOne(EmployeeSchedule::class)
@@ -40,6 +39,7 @@ class Employee extends Model
                 $q->whereNull('effective_end_date')
                     ->orWhere('effective_end_date', '>=', now());
             })
-            ->latest('effective_start_date');
+            ->orderByDesc('effective_start_date')
+            ->withDefault(); // <= biar gak error kalau null
     }
 }

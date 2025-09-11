@@ -15,7 +15,6 @@
     <link href="/plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet">
     <!-- NProgress -->
     <link href="/plugins/nprogress/nprogress.css" rel="stylesheet">
-    <link rel="stylesheet" href="/plugins/toastr/toastr.css">
     <link href="/plugins/bootstrap-datepicker/css/bootstrap-datepicker.css" rel="stylesheet">
     <link href="/plugins/bootstrap-datepicker/css/jquery.timepicker.css" rel="stylesheet">
     {{-- <link href="/plugins/bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" rel="stylesheet"> --}}
@@ -182,11 +181,11 @@
 
     <!-- Custom Theme Scripts -->
     <script src="/build/js/custom.min.js"></script>
-    <script src="/plugins/toastr/toastr.min.js"></script>
     {{-- <script src="/plugins/jquery-validate/jquery.validate.min.js"></script> --}}
     <script src="/plugins/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
     <script src="/plugins/bootstrap-datepicker/js/jquery.timepicker.min.js"></script>
     <script src="/plugins/select2/dist/js/select2.full.min.js"></script>
+    <script src="/plugins/bootstrap-notify/bootstrap-notify.min.js"></script>
     <script src="/js/script.js?v=1.1.3"></script>
     @yield('content-script')
 </body>

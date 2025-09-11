@@ -53,6 +53,10 @@ $(document).ready(function(){
         scrollbar: false
     });
 
+    $('.modal').on('hidden.bs.modal', function (event) {
+		resetForm($('.modal form'))
+	})
+
 })
 
 
@@ -70,7 +74,7 @@ function ajax(data, url, method, callback, callbackError) {
         },
         error: function (err) {
             callbackError == null ?
-                toastr.error(err?.responseJSON?.message ?? "Tidak Dapat Mengakses Server")
+            sweetAlert("Error", err?.responseJSON?.message ?? "Please try again later", "error")
                 : callbackError(err);
         }
     });
@@ -110,4 +114,36 @@ function diffTime(start,end) {
     let minutes = duration.minutes();
 
     return `${hours}h ${minutes}m`
+}
+
+function resetForm(form) {
+	form.find("input").val("");
+	form.find("input[type='checkbox']").prop("checked", false);
+	form.find("textarea").val("");
+	form.find("select").prop('selectedIndex', 0).trigger('change');
+	form.find(".error").removeClass("error");
+	form.find("#handling-error").remove();
+}
+
+function sweetAlert(title, text, type ="success") {
+    var color = type === "success" ? "success" : "danger";
+    var content = {
+        title: title,
+        message: text,
+        icon: "fa fa-bell",
+        target: "",
+        url: "",
+        close: true,
+        autoClose: true,
+        duration: 1000
+    };
+    return $.notify(content, {
+      type: color,
+      placement: {
+        from: "top",
+        align: "right",
+      },
+      time: 1000,
+      delay: 0,
+    });
 }

@@ -69,9 +69,10 @@ class ScheduleController extends Controller
      * @param  \App\Models\Schedule  $schedule
      * @return \Illuminate\Http\Response
      */
-    public function show(Schedule $schedule)
+    public function show($id)
     {
-        //
+        $schedule = $this->scheduleService->show($id);
+        return response()->json($schedule);
     }
 
     /**

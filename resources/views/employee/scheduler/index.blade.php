@@ -52,13 +52,17 @@
                                         <td><img class="img" src="/images/user.png" alt="profile">
                                             <span class="employee-name">{{ $item->personal->fullname }}</span>
                                         </td>
-                                        <td>{{ $item->personal->barcode }}</td>
+                                        <td>{{ $item->employment->employee_id }}</td>
                                         <td>{{ $item->employment->branch->name }}</td>
                                         <td>{{ $item->employment->organization->name }}</td>
-                                        <td>{{ $item->employment->activeSchedule->name ?? '--' }}</td>
+                                        <td><a class="btn-schedule" href="#"
+                                                data-schedule="{{ optional($item->activeSchedule)->schedule_id }}"
+                                                data-toggle="modal"
+                                                data-target="#modal-shift">{{ optional($item->activeSchedule)->schedule_name }}</a>
+                                        </td>
                                         <td>
                                             <button type="button" data-id="{{ $item->id }}"
-                                                class="btn btn-info btn-sm text-white">
+                                                class="btn btn-info btn-sm btn-assign">
                                                 Assign</button>
                                         </td>
                                     </tr>
@@ -81,26 +85,63 @@
                     </div>
                     <div class="modal-header">
                         <h5 class="modal-title" id="modal-dataLabel">Assign Schedule</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <button type="button" aria-hidden="true" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <div id="form-password" class="form-group">
-                            <label for="name">Code</label>
-                            <input type="text" id="employee_id" class="form-control d-none" name="employee_id" />
+                        <input type="text" id="employee_id" class="form-control d-none" name="employee_id" />
+                        <div class="form-group">
+                            <label for="name">Work Schedule</label>
+                            <select name="schedule_id" id="schedule_id" class="form-control" required>
+                                <option value="" disabled selected>--Select Schedule--</option>
+                                @foreach ($schedules as $item)
+                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <div id="form-password" class="form-group">
-                            <label for="name">Name</label>
-                            <input type="text" id="name" class="form-control" name="name" required />
-                        </div>
-                        <div id="form-password" class="form-group">
-                            <label for="name">Address</label>
-                            <input type="text" id="description" class="form-control" name="description" />
+                        <div class="form-group">
+                            <label for="name">Effective Date</label>
+                            <input required type="text" id="effective_date" class="form-control date-picker"
+                                name="effective_date" />
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-shift" tabindex="-1" role="dialog" aria-modal="true"
+        aria-labelledby="modal-dataLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="form-shift">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal-dataLabel">Shift</h5>
+                        <button type="button" aria-hidden="true" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <table id="tbl-shift" class="table table-striped table-bordered" style="width: 100%">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Shift name</th>
+                                    <th class="text-center">Schedule in</th>
+                                    <th class="text-center">Schedule out</th>
+                                    <th class="text-center">Break start</th>
+                                    <th class="text-center">Break end</th>
+                                </tr>
+                            </thead>
+
+                            <body></body>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary"> Close</button>
                     </div>
                 </form>
             </div>
@@ -111,30 +152,97 @@
 @section('content-script')
     <script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
     <script src="/plugins/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
-    <script src="/plugins/moment/min/moment.min.js"></script>
-
-
     <script>
+        let scheduleDetails = [];
         $(document).ready(function() {
             tbldata = $("#tbl-datatable").DataTable();
-
-            $("#tbl-datatable").on('click', '.btn-data', function() {
-                let id = $(this).attr('data-id');
-                let name = $(this).attr('data-name');
-                let code = $(this).attr('data-code');
-                let desc = $(this).attr('data-desc');
-                $('#id').val(id);
-                $('#name').val(name);
-                $('#code').val(code);
-                $('#description').val(desc);
-                $('#form-method').append(`@method('put')`);
-                $('#form-data').attr('action', `/setting/branch/${id}`)
+            $('#checkAll').click(function() {
+                $('.row-check').prop('checked', this.checked);
             });
 
-            $('.btn-add').on('click', function() {
-                $('#form-method').append(`@method('post')`);
-                $('#form-data').attr('action', "/setting/branch")
+            $("#tbl-datatable").on('click', '.btn-assign', function() {
+                let id = $(this).data('id');
+                $("#employee_id").val(id);
+                $("#modal-data").modal('show');
+            });
+
+            $("#form-data").submit(function(e) {
+                e.preventDefault();
+                let employeeSchedule = {
+                    employee_id: $("#employee_id").val(),
+                    schedule_id: $("#schedule_id").val(),
+                    schedule_name: $("#schedule_id option:selected").text(),
+                    effective_start_date: moment($("#effective_date").val(), "DD MMMM YYYY").format(
+                        "YYYY-MM-DD"),
+                };
+                let url = "{{ route('scheduler.store') }}";
+                ajax(employeeSchedule, url, "POST",
+                    function(json) {
+                        $("#modal-data").modal('hide');
+                        sweetAlert("Success", 'Schedule assigned successfully.');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    },
+                    function(xhr) {
+                        let res = xhr.responseJSON;
+                        $("#modal-data").modal('hide');
+                        if (res && res.message) {
+                            sweetAlert("Error", res.message, "error");
+                        } else {
+                            sweetAlert("Error", "Something went wrong", "error");
+                        }
+                    });
+
+            });
+            tblShift = $("#tbl-shift").DataTable({
+                paging: false,
+                searching: false,
+                length: false,
+                info: false,
+                data: scheduleDetails,
+                columns: [{
+                        data: "shift_name",
+                        defaultContent: "-",
+                    },
+                    {
+                        data: "shift.schedule_in",
+                        defaultContent: "-",
+                    },
+                    {
+                        data: "shift.schedule_out",
+                        defaultContent: "-",
+                    },
+                    {
+                        data: "shift.break_start",
+                        defaultContent: "-",
+                    },
+                    {
+                        data: "shift.break_end",
+                        defaultContent: "-",
+                    },
+                ],
+                order: [
+                    [0, "desc"]
+                ],
+                columnDefs: [{
+                    targets: "_all",
+                    className: "text-center align-middle"
+                }]
+            });
+
+            $("#tbl-datatable").on('click', '.btn-schedule', function() {
+                let id = $(this).data('schedule');
+                getSchedule(id);
             });
         })
+
+        function getSchedule(id) {
+            let url = `{{ URL::to('setting/schedule/') }}/${id}`;
+            ajax({}, url, "GET", function(json) {
+                scheduleDetails = json.details;
+                reloadJsonDataTable(tblShift, scheduleDetails);
+            });
+        }
     </script>
 @endsection

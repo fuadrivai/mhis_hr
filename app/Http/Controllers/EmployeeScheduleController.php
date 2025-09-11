@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\EmployeeSchedule;
+use App\Services\EmployeeScheduleService;
 use App\Services\EmployeeService;
 use App\Services\ScheduleService;
 use Illuminate\Http\Request;
@@ -15,11 +16,13 @@ class EmployeeScheduleController extends Controller
      * @return \Illuminate\Http\Response
      */
     private EmployeeService $employeeService;
+    private EmployeeScheduleService $employeeScheduleService;
     private ScheduleService $scheduleService;
 
-    public function __construct(EmployeeService $employeeService, ScheduleService $scheduleService)
+    public function __construct(EmployeeService $employeeService, EmployeeScheduleService $employeeScheduleService, ScheduleService $scheduleService)
     {
         $this->employeeService = $employeeService;
+        $this->employeeScheduleService = $employeeScheduleService;
         $this->scheduleService = $scheduleService;
     }
 
@@ -52,7 +55,24 @@ class EmployeeScheduleController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try {
+            $validated = $request->validate([
+                'employee_id' => 'required|exists:employees,id',
+                'schedule_id' => 'required|exists:schedules,id',
+                'schedule_name' => 'required|string|max:255',
+                'effective_start_date' => 'required|date',
+            ]);
+
+            $data = $this->employeeScheduleService->post($validated);
+
+            return response()->json($data);
+        } catch (\Throwable $th) {
+            $status = ($th->getCode() && $th->getCode() >= 100 && $th->getCode() < 600) ? $th->getCode() : 500;
+            return response()->json([
+                'error' => 'Failed to assign schedule',
+                'message' => $th->getMessage()
+            ], $status);
+        }
     }
 
     /**
