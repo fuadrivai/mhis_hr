@@ -69,7 +69,7 @@ class EmployeeScheduleController extends Controller
         } catch (\Throwable $th) {
             $status = ($th->getCode() && $th->getCode() >= 100 && $th->getCode() < 600) ? $th->getCode() : 500;
             return response()->json([
-                'error' => 'Failed to assign schedule',
+                'status' => 'Failed to assign schedule',
                 'message' => $th->getMessage()
             ], $status);
         }

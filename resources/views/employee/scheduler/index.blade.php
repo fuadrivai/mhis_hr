@@ -2,6 +2,7 @@
 @section('content-class')
     <link href="/plugins/datatables.net-bs/css/dataTables.bootstrap.min.css" rel="stylesheet">
     <link href="/plugins/datatables.net-buttons-bs/css/buttons.bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap4.min.css">
     <style>
         td img {
             width: 35px;
@@ -19,16 +20,6 @@
 @section('content-child')
     <div class="col-md-12 col-sm-12">
         <div class="x_panel">
-            <div class="x_title">
-                <ul class="nav navbar-right panel_toolbox">
-                    <li>
-                        <button data-toggle="modal" data-target="#modal-data" type="button"
-                            class="btn btn-success btn-sm text-white btn-add"><i class="fa fa-plus"></i> Assign
-                            Schedule</button>
-                    </li>
-                </ul>
-                <div class="clearfix"></div>
-            </div>
             <div class="x_content">
                 <div class="row">
                     <div class="col-sm-12">
@@ -152,12 +143,55 @@
 @section('content-script')
     <script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
     <script src="/plugins/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap4.min.js"></script>
     <script>
+        let checkedList = new Set();
         let scheduleDetails = [];
         $(document).ready(function() {
-            tbldata = $("#tbl-datatable").DataTable();
+            tbldata = $("#tbl-datatable").DataTable({
+                lengthMenu: [
+                    [10, 25, 50, 100, 500],
+                    [10, 25, 50, 100, 500]
+                ],
+                pageLength: 25,
+                ordering: false,
+                dom: '<"row"<"col-sm-6 d-flex align-items-center"lB><"col-sm-6"f>>tip',
+                buttons: [{
+                    text: '<span id="selected-info" class="ml-2 text-white"></span> - Assign Schedule  <i class="fa fa-plus-circle"></i>',
+                    attr: {
+                        id: 'btn-assign'
+                    },
+                    className: 'btn btn-success ml-2 btn-sm font-weight-bold d-none',
+                    action: function() {
+                        $("#employee_id").val(Array.from(checkedList).join(','));
+                        $('#modal-data').modal('show');
+                    }
+                }]
+            });
             $('#checkAll').click(function() {
-                $('.row-check').prop('checked', this.checked);
+                let checked = this.checked;
+                $('#tbl-datatable .row-check').prop('checked', checked);
+                $('#tbl-datatable .row-check').each(function() {
+                    let id = $(this).val();
+                    if (checked) {
+                        checkedList.add(id);
+                    } else {
+                        checkedList.delete(id);
+                    }
+                });
+                updateInfo();
+            });
+
+            $('#tbl-datatable').on('change', '.row-check', function() {
+                let checked = this.checked;
+                let id = $(this).val();
+                if (checked) {
+                    checkedList.add(id);
+                } else {
+                    checkedList.delete(id);
+                }
+                updateInfo();
             });
 
             $("#tbl-datatable").on('click', '.btn-assign', function() {
@@ -243,6 +277,13 @@
                 scheduleDetails = json.details;
                 reloadJsonDataTable(tblShift, scheduleDetails);
             });
+        }
+
+        function updateInfo() {
+            let count = checkedList.size;
+            let btnAssign = $('.x_panel').find("#btn-assign");
+            btnAssign.toggleClass('d-none', count === 0);
+            btnAssign.find('#selected-info').text(count > 0 ? `${count} Employee Selected` : '');
         }
     </script>
 @endsection

@@ -21,24 +21,31 @@ class EmployeeScheduleImplement implements EmployeeScheduleService
 
     public function post($request)
     {
-        $schedule = EmployeeSchedule::where('employee_id', $request['employee_id'])
-            ->where('effective_start_date', '<=', $request['effective_start_date'])
+        $ids = explode(',', $request['employee_id']);
+        $schedule = EmployeeSchedule::whereIn('employee_id', $ids)
+            ->where('effective_start_date', '>=', $request['effective_start_date'])
             ->orderBy('effective_start_date', 'desc')
             ->first();
 
-        if ($schedule && Carbon::parse($request['effective_start_date'])->lte(Carbon::parse($schedule->effective_start_date))) {
+        $date1 = Carbon::parse($request['effective_start_date']);
+        $date2 = Carbon::parse($schedule->effective_start_date ?? null);
+        if (isset($schedule) && ($date1->lte($date2))) {
             throw new \Exception("Effective date must be greater than " . $schedule->effectiveDate(), 400);
-        } else {
-            $employeeSchedule = new EmployeeSchedule();
-            $employeeSchedule->employee_id = $request['employee_id'];
-            $employeeSchedule->schedule_id = $request['schedule_id'];
-            $employeeSchedule->schedule_name = $request['schedule_name'] ?? null;
-            $employeeSchedule->effective_start_date = $request['effective_start_date'];
-            $employeeSchedule->save();
-            return $employeeSchedule;
         }
-    }
 
+        $data = [];
+        foreach ($ids as $id) {
+            $data[] = [
+                'employee_id' => $id,
+                'schedule_id' => $request['schedule_id'],
+                'schedule_name' => $request['schedule_name'] ?? null,
+                'effective_start_date' => $request['effective_start_date'],
+            ];
+        }
+
+        EmployeeSchedule::insert($data);
+        return ["status" => "success", "message" => "input data success"];
+    }
 
     public function put($request)
     {
