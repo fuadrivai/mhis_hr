@@ -2,7 +2,6 @@
 @section('content-class')
     <link href="/plugins/datatables.net-bs/css/dataTables.bootstrap.min.css" rel="stylesheet">
     <link href="/plugins/datatables.net-buttons-bs/css/buttons.bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap4.min.css">
     <style>
         td img {
             width: 35px;
@@ -143,8 +142,7 @@
 @section('content-script')
     <script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
     <script src="/plugins/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap4.min.js"></script>
+    <script src="/plugins/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
     <script>
         let checkedList = new Set();
         let scheduleDetails = [];

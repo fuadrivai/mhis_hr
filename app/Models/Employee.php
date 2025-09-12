@@ -27,6 +27,10 @@ class Employee extends Model
     {
         return $this->belongsTo(PinLocation::class);
     }
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
     public function schedules()
     {
         return $this->hasMany(EmployeeSchedule::class);

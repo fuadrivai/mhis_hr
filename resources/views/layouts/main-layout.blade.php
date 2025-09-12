@@ -88,6 +88,7 @@
                                                 <li><a href="/setting/schedule">Schedule</a></li>
                                                 <li><a href="/setting/timeoff">Time off</a></li>
                                                 <li><a href="/setting/holiday">Holiday</a></li>
+                                                <li><a href="/setting/location">Live Attendance</a></li>
                                             </ul>
                                         </li>
                                         <li><a href="/setting/bank">Bank</a></li>

@@ -8,6 +8,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeScheduleController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobLevelController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\PinLocationController;
@@ -64,6 +65,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
             Route::resource('schedule', ScheduleController::class);
             Route::resource('shift', ShiftController::class);
+            Route::resource('location', LocationController::class);
 
             Route::resource('bank', BankController::class);
         });

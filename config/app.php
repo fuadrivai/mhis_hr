@@ -196,6 +196,7 @@ return [
         App\Providers\BankProvider::class,
         App\Providers\SignatureProvider::class,
         App\Providers\EmployeeScheduleProvider::class,
+        App\Providers\LocationProvider::class,
     ],
 
     /*
