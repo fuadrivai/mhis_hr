@@ -6,6 +6,7 @@ use App\Models\Location;
 use App\Http\Requests\StoreLocationRequest;
 use App\Http\Requests\UpdateLocationRequest;
 use App\Services\LocationService;
+use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
 
 class LocationController extends Controller
 {
@@ -34,9 +35,17 @@ class LocationController extends Controller
      */
     public function create()
     {
-        return view('settings.time.location.form', ['title' => "Add New Location"]);
+        return view('settings.time.location.form', ['title' => "Location Form"]);
     }
 
+    function filterEmployee(UtilitiesRequest $request)
+    {
+        $employees =  $locations  = $this->locationService->filterEmployee();
+        if ($request->ajax()) {
+            return datatables()->of($employees->with(['user', 'personal', 'employment']))
+                ->make(true);
+        }
+    }
     /**
      * Store a newly created resource in storage.
      *

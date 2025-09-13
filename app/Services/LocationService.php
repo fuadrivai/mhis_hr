@@ -5,6 +5,7 @@ namespace App\Services;
 interface LocationService
 {
     function get();
+    function filterEmployee();
     function show($id);
     function post($request);
     function put($request);

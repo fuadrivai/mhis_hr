@@ -65,6 +65,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
             Route::resource('schedule', ScheduleController::class);
             Route::resource('shift', ShiftController::class);
+            Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);
             Route::resource('location', LocationController::class);
 
             Route::resource('bank', BankController::class);

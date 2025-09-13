@@ -2,6 +2,7 @@
 
 namespace App\Services\Implement;
 
+use App\Models\Employee;
 use App\Models\Location;
 use App\Services\LocationService;
 
@@ -20,4 +21,9 @@ class LocationImplement implements LocationService
     function post($request) {}
     function put($request) {}
     function delete($id) {}
+    function filterEmployee()
+    {
+        $employees = Employee::whereNull('location_id');
+        return $employees;
+    }
 }

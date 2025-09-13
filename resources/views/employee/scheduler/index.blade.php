@@ -225,7 +225,6 @@
                             sweetAlert("Error", "Something went wrong", "error");
                         }
                     });
-
             });
             tblShift = $("#tbl-shift").DataTable({
                 paging: false,
