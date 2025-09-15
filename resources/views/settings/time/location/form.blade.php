@@ -17,6 +17,7 @@
                 <div class="row">
                     <div class="col-md-6 col-12">
                         <div class="form-group">
+                            <input type="text" hidden id="id" value="{{ isset($location) ? $location->id : '' }}">
                             <label for="name">Location Setting Name</label>
                             <input required type="text" id="name"
                                 value="{{ isset($location) ? $location->name : '' }}" class="form-control" name="name" />
@@ -27,14 +28,14 @@
                             <label for="">GPS Location</label>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="need_location" id="flexible"
-                                    value="false">
+                                    value="false" {{ ($location->need_location ?? '') == false ? 'checked' : '' }}>
                                 <label class="form-check-label" for="flexible">
                                     Flexible
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="need_location" id="set-location"
-                                    value="false">
+                                    value="true" {{ ($location->need_location ?? '') == true ? 'checked' : '' }}>
                                 <label class="form-check-label" for="set-location">
                                     Set Location
                                 </label>
@@ -46,33 +47,38 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div class="page-title">
-            <div class="title_left">
-                <h3>Location</h3>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12">
-        <div class="x_panel">
-            <div class="x_content">
-                <div class="row">
-                    <div class="col-12">
-                        <button data-toggle="modal" data-target="#right-modal-location" type="button"
-                            class="btn btn-success btn-sm text-white btn-add-user"><i class="fa fa-map-marker"></i>
-                            Add Location</button>
+    <div class="col-12" id="location-area">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title">
+                    <div class="title_left">
+                        <h3>Location</h3>
                     </div>
-                    <table id="tbl-location" class="table table-striped table-bordered table-sm" style="width: 100%">
-                        <thead>
-                            <tr>
-                                <th>Location Name</th>
-                                <th>Address</th>
-                                <th>Radius</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                    </table>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="x_panel">
+                    <div class="x_content">
+                        <div class="row">
+                            <div class="col-12">
+                                <button data-toggle="modal" data-target="#right-modal-location" type="button"
+                                    class="btn btn-success btn-sm text-white btn-add-user"><i class="fa fa-map-marker"></i>
+                                    Add Location</button>
+                            </div>
+                            <table id="tbl-location" class="table table-striped table-bordered table-sm"
+                                style="width: 100%">
+                                <thead>
+                                    <tr>
+                                        <th>Location Name</th>
+                                        <th>Address</th>
+                                        <th>Radius</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -114,10 +120,17 @@
         </div>
     </div>
 
+    <div class="col-12">
+        <div class="form-group text-center">
+            <button onclick="submitLocation()" type="button" class="btn btn-primary">
+                <i class="fa fa-save"></i> Save
+            </button>
+        </div>
+    </div>
+
     <div class="modal modal-right fade" id="right-modal-location" tabindex="-1" role="dialog"
         aria-labelledby="right_modal_lg">
         <div class="modal-dialog modal-lg" role="document">
-
             <div class="modal-content">
                 <form id="form-location" autocomplete="off">
                     <div class="modal-header">
@@ -211,6 +224,7 @@
                 </div>
                 <div class="modal-footer modal-footer-fixed">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="btn-submit-employee">Submit</button>
                 </div>
             </div>
         </div>
@@ -220,6 +234,7 @@
     <!-- prettier-ignore -->
     <script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
     <script src="/plugins/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
+    <script src="/plugins/loadingoverlay/loadingoverlay.min.js"></script>
     <script>
         (g => {
             let h, a, k, p = "The Google Maps JavaScript API",
@@ -258,12 +273,8 @@
             employees: []
         };
         let selectedEmployess = [];
-        let dataId = "<?= isset($location) ? $location->id : null ?>";
-        let pinLocation = {
-            id: "<?= isset($location) ? $location->id : null ?>",
-            employees: [],
-        };
         let map;
+        let locationId = $('#id').val();
         $(document).ready(function() {
             tblLocation = $("#tbl-location").DataTable({
                 searching: false,
@@ -281,7 +292,10 @@
                     },
                     {
                         data: "radius",
-                        defaultContent: "--"
+                        defaultContent: "--",
+                        mRender: function(data, type, full) {
+                            return `${parseInt(data)} meters`
+                        }
                     },
                     {
                         data: 'id',
@@ -292,46 +306,11 @@
                     }
                 ]
             })
-            initMap();
 
-            $('#form-location').on('submit', function(e) {
-                e.preventDefault();
-                let loc = {
-                    name: $('#name-detail').val(),
-                    radius: $('#radius').val(),
-                    latitude: $('#latitude').val(),
-                    longitude: $('#longitude').val(),
-                    description: $('#description').val(),
-                    address: $('#address').val(),
-                }
-                objLocation.details.push(loc);
-                reloadJsonDataTable(tblLocation, objLocation.details);
-                $("#right-modal-location").modal('hide')
-            })
-
-            $("#tbl-location").on('click', '.btn-delete-location', function() {
-                let data = tblLocation.row($(this).parents('tr')).index();
-                objLocation.details.splice(data, 1);
-                reloadJsonDataTable(tblLocation, objLocation.details);
-            })
-
-            $('#right-modal-user').on('hidden.bs.modal', function(e) {
-                $("#tbl-employee").DataTable().destroy();
-            })
-
-            $('#checkAll').click(function() {
-                let checked = this.checked;
-                $('#right-modal-user #tbl-employee .input-check').prop('checked', checked);
-                $('#right-modal-user #tbl-employee .input-check').each(function() {
-                    let id = $(this).data('id');
-                    if (checked) {
-                        selectedEmployess.push(id);
-                    } else {
-                        selectedEmployess = selectedEmployess.filter(e => e !== id);
-                    }
-                });
-            });
             $('#right-modal-user').on('show.bs.modal', function(e) {
+                selectedEmployess = objLocation.employees.map(emp => ({
+                    ...emp
+                }));
                 tblUser = $("#tbl-employee").DataTable({
                     processing: true,
                     serverSide: true,
@@ -379,8 +358,8 @@
                         var api = this.api();
                         var node = api.rows().nodes()
                         for (var i = 0; i < node.length; i++) {
-                            let dataId = $(node[i]).find('input').attr('data-id')
-                            let isExist = objLocation.employees.some(item => item.id == dataId)
+                            let empId = $(node[i]).find('input').attr('data-id')
+                            let isExist = objLocation.employees.some(item => item.id == empId)
                             if (isExist) {
                                 $(node[i]).find('input').prop('checked', true)
                             }
@@ -432,54 +411,130 @@
                 ],
             });
 
+            initMap();
+
+            $('input[name="need_location"]').on('change', function() {
+                let checked = $(this).val();
+                $('#location-area').toggleClass('d-none', checked != 'true');
+            })
+
+            $('#form-location').on('submit', function(e) {
+                e.preventDefault();
+                let loc = {
+                    name: $('#name-detail').val(),
+                    radius: $('#radius').val(),
+                    latitude: $('#latitude').val(),
+                    longitude: $('#longitude').val(),
+                    description: $('#description').val(),
+                    address: $('#address').val(),
+                }
+                objLocation.details.push(loc);
+                reloadJsonDataTable(tblLocation, objLocation.details);
+                $("#right-modal-location").modal('hide')
+            })
+
+            $("#tbl-location").on('click', '.btn-delete-location', function() {
+                let data = tblLocation.row($(this).parents('tr')).index();
+                objLocation.details.splice(data, 1);
+                reloadJsonDataTable(tblLocation, objLocation.details);
+            })
+
+            $('#right-modal-user').on('hidden.bs.modal', function(e) {
+                $("#tbl-employee").DataTable().destroy();
+            })
+
+            $('#checkAll').on('click', function() {
+                let checked = this.checked;
+                $('#tbl-employee .input-check').prop('checked', checked);
+                let rowsData = tblUser.rows().data().toArray();
+                if (checked) {
+                    rowsData.forEach(employee => {
+                        if (!selectedEmployess.find(e => e.id === employee.id)) {
+                            selectedEmployess.push(employee);
+                        }
+                    });
+                } else {
+                    let idsInPage = rowsData.map(emp => emp.id);
+                    selectedEmployess = selectedEmployess.filter(emp => !idsInPage.includes(emp.id));
+                }
+            });
+
             $('#tbl-employee').on('change', 'td input[type="checkbox"]', function() {
                 let employee = tblUser.row($(this).parents('tr')).data();
                 let val = $(this).prop('checked');
                 if (val == true) {
                     selectedEmployess.push(employee)
                 } else {
-                    selectedEmployess.splice(employee, 1);
+                    selectedEmployess = selectedEmployess.filter(emp => emp.id !== employee.id);
                 }
+            })
+
+            $('#btn-submit-employee').on('click', function() {
+                objLocation.employees = [];
+                selectedEmployess.forEach(emp => {
+                    let isExist = objLocation.employees.some(item => item.id == emp.id)
+                    if (!isExist) {
+                        objLocation.employees.push(emp);
+                    }
+                });
+                reloadJsonDataTable(tblUserLocation, objLocation.employees);
+                $("#right-modal-user").modal('hide')
             })
 
             $("#tbl-employee-location").on('click', '.btn-delete-employee', function() {
                 let data = tblUserLocation.row($(this).parents('tr')).index();
-                pinLocation.employees.splice(data, 1);
-                reloadJsonDataTable(tblUserLocation, pinLocation.employees);
+                objLocation.employees.splice(data, 1);
+                reloadJsonDataTable(tblUserLocation, objLocation.employees);
             })
-            dataId != "" ? getLocationById() : null;
+            locationId != '' && getLocationById();
         })
 
         function getLocationById() {
-            ajax({
-                    id: dataId
-                }, `{{ URL::to('location/show') }}`, "GET",
+            ajax(null, `{{ URL::to('setting/location') }}/${locationId}`, "GET",
                 function(json) {
-                    pinLocation = json;
-                    reloadJsonDataTable(tblUserLocation, pinLocation.employees);
+                    objLocation = json;
+                    reloadJsonDataTable(tblLocation, objLocation.details);
+                    reloadJsonDataTable(tblUserLocation, objLocation.employees);
+                    objLocation.need_location ? $('#location-area').removeClass('d-none') : $('#location-area')
+                        .addClass('d-none');
                 })
         }
 
         function submitLocation() {
-            pinLocation.branch = {
-                id: $('#branch_id').val()
-            };
-            pinLocation.name = $('#name').val();
-            pinLocation.latitude = $('#latitude').val();
-            pinLocation.longitude = $('#longitude').val();
-            pinLocation.radius = $('#radius').val();
-            pinLocation.description = $('#description').val();
-            pinLocation.employees = JSON.stringify(pinLocation.employees);
-            let method = dataId == "" ? "POST" : "PUT";
-            let url = dataId == "" ? "{{ route('location.store') }}" : "{{ URL::to('location/update') }}"
-
-            ajax(pinLocation, url, method, function(json) {
-                toastr.success('Success');
-                reloadJsonDataTable(tblUserLocation, JSON.parse(pinLocation.employees));
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-            })
+            objLocation.name = $('#name').val();
+            objLocation.need_location = $('input[name="need_location"]:checked').val();
+            if (objLocation.need_location == 'true') {
+                if (objLocation.details.length == 0) {
+                    return sweetAlert("Error", "Please add location", "error");
+                }
+            }
+            if (objLocation.employees.length == 0) {
+                return sweetAlert("Error", "Please add employee", "error");
+            }
+            $.LoadingOverlay("show", {
+                image: "",
+                fontawesome: "fa fa-cog fa-spin"
+            });
+            let method = "POST";
+            let url = `{{ URL::to('setting/location') }}`;
+            if (locationId != '') {
+                method = "PUT";
+                url = `{{ URL::to('setting/location') }}/${locationId}`;
+                objLocation.id = locationId;
+            }
+            ajax(objLocation, url, method,
+                function(json) {
+                    $.LoadingOverlay("hide", true);
+                    sweetAlert("Success", "Location saved", "success");
+                    setTimeout(() => {
+                        window.location.href = `{{ URL::to('setting/location') }}`
+                    }, 1000);
+                },
+                function(json) {
+                    $.LoadingOverlay("hide", true);
+                    sweetAlert("Error", "Something went wrong", "error");
+                }
+            )
         }
         async function initMap() {
             const {

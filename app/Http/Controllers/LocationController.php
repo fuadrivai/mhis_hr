@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Location;
-use App\Http\Requests\StoreLocationRequest;
 use App\Http\Requests\UpdateLocationRequest;
 use App\Services\LocationService;
+use Illuminate\Http\Request;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
 
 class LocationController extends Controller
@@ -40,7 +40,7 @@ class LocationController extends Controller
 
     function filterEmployee(UtilitiesRequest $request)
     {
-        $employees =  $locations  = $this->locationService->filterEmployee();
+        $employees =  $this->locationService->filterEmployee();
         if ($request->ajax()) {
             return datatables()->of($employees->with(['user', 'personal', 'employment']))
                 ->make(true);
@@ -52,9 +52,14 @@ class LocationController extends Controller
      * @param  \App\Http\Requests\StoreLocationRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreLocationRequest $request)
+    public function store(Request $request)
     {
-        //
+        try {
+            $location = $this->locationService->post($request);
+            return response()->json($location);
+        } catch (\Throwable $th) {
+            return back()->with('message', $th->getMessage());
+        }
     }
 
     /**
@@ -63,9 +68,14 @@ class LocationController extends Controller
      * @param  \App\Models\Location  $location
      * @return \Illuminate\Http\Response
      */
-    public function show(Location $location)
+    public function show($id)
     {
-        //
+        try {
+            $location = $this->locationService->show($id);
+            return response()->json($location);
+        } catch (\Throwable $th) {
+            return response()->json(["message" => $th->getMessage()], $th->getCode());
+        }
     }
 
     /**
@@ -76,7 +86,7 @@ class LocationController extends Controller
      */
     public function edit(Location $location)
     {
-        //
+        return view('settings.time.location.form', ['title' => "Location Form", 'location' => $location]);
     }
 
     /**
@@ -86,9 +96,14 @@ class LocationController extends Controller
      * @param  \App\Models\Location  $location
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdateLocationRequest $request, Location $location)
+    public function update(Request $request)
     {
-        //
+        try {
+            $location = $this->locationService->put($request);
+            return response()->json($location);
+        } catch (\Throwable $th) {
+            return back()->with('message', $th->getMessage());
+        }
     }
 
     /**
