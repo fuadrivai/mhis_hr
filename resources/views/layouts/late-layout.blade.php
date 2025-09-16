@@ -96,8 +96,7 @@
     <script src="/plugins/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
     <script src="/plugins/bootstrap-datepicker/js/jquery.timepicker.min.js"></script>
     <script src="/plugins/select2/dist/js/select2.full.min.js"></script>
-    <script src="/js/script.js?v=1.2.2"></script>
-
+    <script src="/js/script.js?v=1.1.4"></script>
     <script>
         let dataLatein = [];
         $(document).ready(function() {
