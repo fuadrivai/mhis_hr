@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AttendanceLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\BranchController;
@@ -41,6 +42,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::group(['middleware' => 'auth'], function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/', [HomeController::class, 'index']);
+
+        Route::get('clockin', [AttendanceLogController::class, 'clockin']);
 
         Route::put('/user/reset', [UserController::class, 'resetPassword']);
         Route::resource('user', UserController::class);

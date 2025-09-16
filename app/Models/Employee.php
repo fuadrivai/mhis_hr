@@ -46,4 +46,12 @@ class Employee extends Model
             ->orderByDesc('effective_start_date')
             ->withDefault(); // <= biar gak error kalau null
     }
+    public function logs()
+    {
+        return $this->hasMany(AttendanceLog::class);
+    }
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
 }
