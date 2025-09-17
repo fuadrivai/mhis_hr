@@ -29,40 +29,42 @@ class AttendanceLogImplement implements AttendanceLogService
     public function clock_in($data)
     {
         return DB::transaction(function () use ($data) {
-            $user = Auth::user();
-            $employee = Employee::with(['personal', 'schedules'])->where('user_id', $user->id)->first();
+            $user = $data['user'];
+            $employee = Employee::with(['personal', 'activeSchedule', 'schedules.schedule.details.shift'])->where('user_id', $user->id)->first();
             $today = Carbon::today()->toDateString();
 
-            $attendance = Attendance::firstOrCreate(
-                [
-                    'employee_id' => $employee->id,
-                    'date' => $today,
-                ],
-                [
-                    'user_id' => $user->id ?? null,
-                    'fullname' => $employee->personal->fullname ?? $employee->name,
-                    'shift_name' => $employee->schedule->name ?? '-',
-                    'status' => 'present',
-                    'holiday' => $data['holiday'] ?? false,
-                    'schedule_in' => $data['schedule_in'] ?? null,
-                    'schedule_out' => $data['schedule_out'] ?? null,
-                ]
-            );
+            // $attendance = Attendance::firstOrCreate(
+            //     [
+            //         'employee_id' => $employee->id,
+            //         'date' => $today,
+            //     ],
+            //     [
+            //         'user_id' => $user->id ?? null,
+            //         'fullname' => $employee->personal->fullname ?? $employee->name,
+            //         'shift_name' => $employee->schedule->name ?? '-',
+            //         'status' => 'present',
+            //         'holiday' => $data['holiday'] ?? false,
+            //         'schedule_in' => $data['schedule_in'] ?? null,
+            //         'schedule_out' => $data['schedule_out'] ?? null,
+            //     ]
+            // );
 
-            $now = Carbon::now();
+            // $now = Carbon::now();
 
-            AttendanceLog::create([
-                'employee_id' => $employee->id,
-                'attendance_id' => $attendance->id,
-                'type' => 'check_in',
-                'fullname' => $attendance->fullname,
-                'shift_name' => $attendance->shift_name,
-                'photo' => $data['photo'] ?? null,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
-                'radius' => $data['radius'] ?? null,
-                'clock_datetime' => $now,
-            ]);
+            // AttendanceLog::create([
+            //     'employee_id' => $employee->id,
+            //     'attendance_id' => $attendance->id,
+            //     'type' => 'check_in',
+            //     'fullname' => $attendance->fullname,
+            //     'shift_name' => $attendance->shift_name,
+            //     'photo' => $data['photo'] ?? null,
+            //     'latitude' => $data['latitude'] ?? null,
+            //     'longitude' => $data['longitude'] ?? null,
+            //     'radius' => $data['radius'] ?? null,
+            //     'clock_datetime' => $now,
+            //     'clock_date'=>$now->toDateString(),
+            //     'clock_time'=>$now->toTimeString(),
+            // ]);
 
             // if (!$attendance->check_in || $now->lt(Carbon::parse($attendance->check_in))) {
             //     $attendance->update([
@@ -73,7 +75,7 @@ class AttendanceLogImplement implements AttendanceLogService
             //         'check_in_radius' => $data['radius'] ?? null,
             //     ]);
             // }
-            return $attendance;
+            return $employee;
         });
     }
 

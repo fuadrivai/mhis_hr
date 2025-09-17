@@ -55,7 +55,6 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::resource('employee', EmployeeController::class);
         Route::resource('scheduler', EmployeeScheduleController::class);
 
-
         Route::get('shift/get', [ShiftController::class, 'get']);
 
         Route::group(['prefix' => 'setting'], function () {
