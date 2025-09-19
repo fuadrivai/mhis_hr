@@ -26,14 +26,14 @@ class CreateAttendancesTable extends Migration
             $table->string('schedule_out')->comment('Schedule Out time')->nullable();
 
             // Check-in
-            $table->timestamp('check_in')->nullable();
+            $table->dateTime('check_in')->nullable();
             $table->string('check_in_photo')->nullable();
             $table->decimal('check_in_latitude', 10, 7)->nullable();
             $table->decimal('check_in_longitude', 10, 7)->nullable();
             $table->decimal('check_in_radius', 8, 2)->nullable();
 
             // Check-out
-            $table->timestamp('check_out')->nullable();
+            $table->dateTime('check_out')->nullable();
             $table->string('check_out_photo')->nullable();
             $table->decimal('check_out_latitude', 10, 7)->nullable();
             $table->decimal('check_out_longitude', 10, 7)->nullable();

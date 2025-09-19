@@ -44,7 +44,7 @@ class Employee extends Model
                     ->orWhere('effective_end_date', '>=', now());
             })
             ->orderByDesc('effective_start_date')
-            ->withDefault(); // <= biar gak error kalau null
+            ->withDefault();
     }
     public function logs()
     {

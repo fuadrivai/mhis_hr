@@ -29,53 +29,74 @@ class AttendanceLogImplement implements AttendanceLogService
     public function clock_in($data)
     {
         return DB::transaction(function () use ($data) {
-            $user = $data['user'];
-            $employee = Employee::with(['personal', 'activeSchedule', 'schedules.schedule.details.shift'])->where('user_id', $user->id)->first();
-            $today = Carbon::today()->toDateString();
+            $user = $data['user'];;
+            if (!$user) {
+                return response()->json(['message' => 'Unauthenticated'], 401);
+            }
+            $employee = Employee::with(['personal', 'activeSchedule.schedule.details.shift'])->where('user_id', $user['id'])->first();
 
-            // $attendance = Attendance::firstOrCreate(
-            //     [
-            //         'employee_id' => $employee->id,
-            //         'date' => $today,
-            //     ],
-            //     [
-            //         'user_id' => $user->id ?? null,
-            //         'fullname' => $employee->personal->fullname ?? $employee->name,
-            //         'shift_name' => $employee->schedule->name ?? '-',
-            //         'status' => 'present',
-            //         'holiday' => $data['holiday'] ?? false,
-            //         'schedule_in' => $data['schedule_in'] ?? null,
-            //         'schedule_out' => $data['schedule_out'] ?? null,
-            //     ]
-            // );
+            $shiftLength = $employee->activeSchedule->schedule->count_detail;
 
-            // $now = Carbon::now();
+            $target = Carbon::parse($data['date'])->startOfDay();    // 2025-09-18 00:00:00
+            $effective = Carbon::parse($employee->activeSchedule->effective_start_date)->startOfDay(); // 2025-08-30 00:00:00
 
-            // AttendanceLog::create([
-            //     'employee_id' => $employee->id,
-            //     'attendance_id' => $attendance->id,
-            //     'type' => 'check_in',
-            //     'fullname' => $attendance->fullname,
-            //     'shift_name' => $attendance->shift_name,
-            //     'photo' => $data['photo'] ?? null,
-            //     'latitude' => $data['latitude'] ?? null,
-            //     'longitude' => $data['longitude'] ?? null,
-            //     'radius' => $data['radius'] ?? null,
-            //     'clock_datetime' => $now,
-            //     'clock_date'=>$now->toDateString(),
-            //     'clock_time'=>$now->toTimeString(),
-            // ]);
+            $diffDays = $effective->diffInDays($target, false);
 
-            // if (!$attendance->check_in || $now->lt(Carbon::parse($attendance->check_in))) {
-            //     $attendance->update([
-            //         'check_in' => $now,
-            //         'check_in_photo' => $data['photo'] ?? null,
-            //         'check_in_latitude' => $data['latitude'] ?? null,
-            //         'check_in_longitude' => $data['longitude'] ?? null,
-            //         'check_in_radius' => $data['radius'] ?? null,
-            //     ]);
-            // }
-            return $employee;
+            if ($diffDays < 0) {
+                return response()->json(['message' => 'Your schedule is not yet active on that date'], 400);
+            }
+            $dayNumber = ($diffDays % $shiftLength) + 1;
+            $shiftForToday =  $employee->activeSchedule->schedule->details->where('number', $dayNumber)->first();
+
+            $today = Carbon::parse($data['date'])->toDateString();
+            $time = Carbon::parse($data['date'])->toTimeString();
+            // return $shiftForToday;
+
+            $attendance = Attendance::firstOrCreate(
+                [
+                    'employee_id' => $employee->id,
+                    'date' => $today,
+                ],
+                [
+                    'user_id' => $user['id'] ?? null,
+                    'fullname' => $employee->personal->fullname,
+                    'shift_name' => $employee->activeSchedule->schedule_name ?? '-',
+                    'status' => 'present',
+                    'holiday' => $shiftForToday->shift->holiday ? 1 : 0,
+                    'schedule_in' => $shiftForToday->shift->schedule_in ?? null,
+                    'schedule_out' => $shiftForToday->shift->schedule_out ?? null,
+                ]
+            );
+
+            AttendanceLog::create([
+                'employee_id' => $employee->id,
+                'attendance_id' => $attendance->id,
+                'type' => 'check_in',
+                'fullname' => $attendance->fullname,
+                'shift_name' => $attendance->shift_name,
+                'photo' => $data['photo'] ?? null,
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
+                'radius' => $data['radius'] ?? null,
+                'clock_datetime' => $data['date'],
+                'clock_date' => $today,
+                'time' => $time,
+            ]);
+            $carbonClockDatetime = Carbon::parse($data['date']);
+            $carbonCheckIn = $attendance->check_in
+                ? Carbon::parse($attendance->check_in)
+                : null;
+
+            if (!$attendance->check_in || $carbonClockDatetime->lt($carbonCheckIn)) {
+                $attendance->update([
+                    'check_in' => $carbonClockDatetime,
+                    'check_in_photo' => $data['photo'] ?? null,
+                    'check_in_latitude' => $data['latitude'] ?? null,
+                    'check_in_longitude' => $data['longitude'] ?? null,
+                    'check_in_radius' => $data['radius'] ?? null,
+                ]);
+            }
+            return $attendance;
         });
     }
 
@@ -139,5 +160,16 @@ class AttendanceLogImplement implements AttendanceLogService
     public function delete($id)
     {
         // TODO: Implement delete() method.
+    }
+
+    function getDayNumber($targetDate, $effectiveDate, $length)
+    {
+        $target = Carbon::parse($targetDate)->startOfDay();    // 2025-09-18 00:00:00
+        $effective = Carbon::parse($effectiveDate)->startOfDay(); // 2025-08-30 00:00:00
+
+        $diffDays = $effective->diffInDays($target, false);
+        $dayNumber = ($diffDays % $length) + 1;
+
+        return $dayNumber;
     }
 }

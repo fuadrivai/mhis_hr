@@ -19,7 +19,7 @@ class CreateAttendanceLogsTable extends Migration
             $table->foreignId('employee_id')->comment('Employee ID');
             $table->foreignId('attendance_id')->comment('Attendance ID');
             $table->enum('type', ['check_in', 'check_out']);
-            $table->timestamp('clock_datetime')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('clock_datetime')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->date('clock_date')->comment('Date of clock in/out');
             $table->string('time')->comment('Time of clock in/out');
             $table->boolean('has_location')->default(true);
