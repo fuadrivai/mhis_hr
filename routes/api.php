@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AnnouncementCategoryApiController;
 use App\Http\Controllers\Api\AttendanceApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchApiController;
+use App\Http\Controllers\Api\EmployeeApiController;
 use App\Http\Controllers\Api\GsheetLinkApiController;
 use App\Http\Controllers\Api\JobLevelApiController;
 use App\Http\Controllers\Api\LiveAbsentApiController;
@@ -35,6 +36,8 @@ Route::post('/payslip/post', [PayslipApiController::class, 'post']);
 Route::post('/push/notif', [PushNotificationApiController::class, 'sendMessage']);
 Route::get('attendance/summary', [AttendanceApiController::class, 'getSummaryReport']);
 Route::get('attendance/auth', [AttendanceApiController::class, 'mekariOauth2']);
+
+Route::get('employee/job-level', [EmployeeApiController::class, 'getByJobLevel']);
 
 Route::group(['middleware' => 'auth_login'], function () {
     Route::post('refresh', [AuthController::class, 'refresh']);

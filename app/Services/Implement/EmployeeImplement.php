@@ -98,4 +98,21 @@ class EmployeeImplement implements EmployeeService
     }
     function put($request) {}
     function delete($id) {}
+
+    function getByJobLevel($request)
+    {
+        $jobLevelName = $request['name'];
+        $employees =  Employee::with(['personal', 'employment.job_level'])
+            ->whereHas('employment.job_level', function ($query) use ($jobLevelName) {
+                $query->where('name', $jobLevelName);
+            })
+            ->get();
+        return $employees;
+    }
+    function getByuserId($userId)
+    {
+        $employee = Employee::with(['employment','personal'])
+            ->where('user_id', auth()->id())->first();
+        return $employee;
+    }
 }

@@ -32,7 +32,7 @@
           <section class="login_content">
             <form action="/login" method="post">
                 @csrf
-              <img src="/images/Logo-mh-text.png" alt="" width="200">
+              <img src="/images/logo-mh.png" alt="" width="100">
               <hr>
               <h1><b>Login Form</b></h1>
               <div>

@@ -8,6 +8,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeScheduleController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InternalDocumentController;
 use App\Http\Controllers\JobLevelController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\OrganizationController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\UserController;
+use App\Models\InternalDocument;
 use Faker\Provider\ar_EG\Person;
 use Illuminate\Support\Facades\Route;
 
@@ -86,5 +88,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         });
 
         Route::resource('signature', SignatureController::class);
+
+        Route::resource('internal-document', InternalDocumentController::class);
     });
 });

@@ -95,6 +95,7 @@
                                     </ul>
                                 </li>
                                 <li><a href="/user"><i class="fa fa-user"></i> Management User </a></li>
+                                <li><a href="/internal-document/create"><i class="fa fa-folder"></i> Form Document </a></li>
                                 <li><a href="/signature"><i class="fa fa-qrcode"></i> E Signature </a></li>
                             </ul>
                         </div>
@@ -187,7 +188,7 @@
     <script src="/plugins/bootstrap-datepicker/js/jquery.timepicker.min.js"></script>
     <script src="/plugins/select2/dist/js/select2.full.min.js"></script>
     <script src="/plugins/bootstrap-notify/bootstrap-notify.min.js"></script>
-    <script src="/js/script.js?v=1.1.4"></script>
+    <script src="/js/script.js?v=1.1.5"></script>
     @yield('content-script')
 </body>
 

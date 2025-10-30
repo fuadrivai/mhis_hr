@@ -182,7 +182,7 @@ class EmployeeController extends Controller
         $positions = $this->positionService->get()->getContent();
         $levels = $this->levelService->get()->getContent();
         $banks = $this->bankService->get()->getContent();
-        $schedules = $this->scheduleService->get()->getContent();
+        $schedules = $this->scheduleService->get();
         $employees = Employee::with(['user', 'personal', 'employment'])->orderBy(
             Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
             'asc'

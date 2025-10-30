@@ -198,6 +198,7 @@ return [
         App\Providers\EmployeeScheduleProvider::class,
         App\Providers\LocationProvider::class,
         App\Providers\AttendanceLogProvider::class,
+        App\Providers\InternalDocumentProvider::class,
     ],
 
     /*

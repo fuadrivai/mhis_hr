@@ -18,7 +18,17 @@ class User extends Authenticatable implements JWTSubject
 
     public function employee()
     {
-        return $this->belongsTo(Employee::class);
+        return $this->hasOne(Employee::class);
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user');
+    }
+
+    public function hasRole($role)
+    {
+        return $this->roles()->where('name', $role)->exists();
     }
 
     /**
