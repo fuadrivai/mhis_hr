@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Employment;
 use App\Http\Requests\StoreEmploymentRequest;
-use App\Http\Requests\UpdateEmploymentRequest;
+use App\Services\EmploymentService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
 
 class EmploymentController extends Controller
 {
@@ -13,6 +15,14 @@ class EmploymentController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+
+
+    private EmploymentService $employmentService;
+    public function __construct(EmploymentService $employmentService)
+    {
+        $this->employmentService = $employmentService;
+    }
+
     public function index()
     {
         //
@@ -68,9 +78,27 @@ class EmploymentController extends Controller
      * @param  \App\Models\Employment  $employment
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdateEmploymentRequest $request, Employment $employment)
+    public function update(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'id' => 'required',
+            'organization' => 'required',
+            'organization_name' => 'nullable',
+            'position' => 'required',
+            'job_position_name' => 'nullable',
+            'approval_line' => 'nullable',
+            'approval_line_name' => 'nullable',
+            'level' => 'required',
+            'job_level_name' => 'nullable',
+            'branch' => 'required',
+            'branch_name' => 'nullable',
+            'employment-status' => 'required',
+            'join_date' => 'required',
+            'end_date' => 'nullable',
+        ]);
+        $this->employmentService->put($validated);
+        return Redirect::to('employee');
+        // return response()->json($employment);
     }
 
     /**

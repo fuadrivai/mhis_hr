@@ -7,6 +7,7 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeScheduleController;
+use App\Http\Controllers\EmploymentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalDocumentController;
 use App\Http\Controllers\JobLevelController;
@@ -80,6 +81,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::put('personal', [PersonalController::class, 'update']);
 
             Route::get('employment/{id}', [EmployeeController::class, 'employment']);
+            Route::put('employment', [EmploymentController::class, 'update']);
+
             Route::get('education/{id}', [EmployeeController::class, 'education']);
             Route::get('portofolio/{id}', [EmployeeController::class, 'portofolio']);
             Route::get('payrol-info/{id}', [EmployeeController::class, 'payrol_info']);

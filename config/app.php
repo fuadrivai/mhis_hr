@@ -199,6 +199,7 @@ return [
         App\Providers\LocationProvider::class,
         App\Providers\AttendanceLogProvider::class,
         App\Providers\InternalDocumentProvider::class,
+        App\Providers\EmploymentProvider::class,
     ],
 
     /*
