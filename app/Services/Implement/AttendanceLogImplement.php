@@ -7,7 +7,6 @@ use App\Models\AttendanceLog;
 use App\Models\Employee;
 use App\Services\AttendanceLogService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AttendanceLogImplement implements AttendanceLogService
@@ -34,12 +33,9 @@ class AttendanceLogImplement implements AttendanceLogService
                 return response()->json(['message' => 'Unauthenticated'], 401);
             }
             $employee = Employee::with(['personal', 'activeSchedule.schedule.details.shift'])->where('user_id', $user['id'])->first();
-
             $shiftLength = $employee->activeSchedule->schedule->count_detail;
-
-            $target = Carbon::parse($data['date'])->startOfDay();    // 2025-09-18 00:00:00
-            $effective = Carbon::parse($employee->activeSchedule->effective_start_date)->startOfDay(); // 2025-08-30 00:00:00
-
+            $target = Carbon::parse($data['date'])->startOfDay();
+            $effective = Carbon::parse($employee->activeSchedule->effective_start_date)->startOfDay();
             $diffDays = $effective->diffInDays($target, false);
 
             if ($diffDays < 0) {
@@ -51,6 +47,16 @@ class AttendanceLogImplement implements AttendanceLogService
             $today = Carbon::parse($data['date'])->toDateString();
             $time = Carbon::parse($data['date'])->toTimeString();
             // return $shiftForToday;
+            $isPhoto = (isset($data['photo']) && !empty($data['photo']))|| $data['photo'] !="";
+            if ($isPhoto) {
+                $image = $data['photo'];
+                $image = str_replace('data:image/png;base64,', '', $image);
+                $image = str_replace(' ', '+', $image);
+                $imageName = 'attendance_' . $employee->id . '_' . time() . '.png';
+                $path = storage_path('app/public/attendance_photos/' . $imageName);
+                file_put_contents($path, base64_decode($image));
+                $photoPath = 'attendance_photos/' . $imageName;
+            }
 
             $attendance = Attendance::firstOrCreate(
                 [
@@ -65,16 +71,17 @@ class AttendanceLogImplement implements AttendanceLogService
                     'holiday' => $shiftForToday->shift->holiday ? 1 : 0,
                     'schedule_in' => $shiftForToday->shift->schedule_in ?? null,
                     'schedule_out' => $shiftForToday->shift->schedule_out ?? null,
+                    'check_in_photo' => $photoPath??null,
                 ]
             );
 
-            AttendanceLog::create([
+            $attendanceLog= AttendanceLog::create([
                 'employee_id' => $employee->id,
                 'attendance_id' => $attendance->id,
                 'type' => 'check_in',
                 'fullname' => $attendance->fullname,
                 'shift_name' => $attendance->shift_name,
-                'photo' => $data['photo'] ?? null,
+                'photo' => $photoPath ?? null,
                 'latitude' => $data['latitude'] ?? null,
                 'longitude' => $data['longitude'] ?? null,
                 'radius' => $data['radius'] ?? null,
@@ -90,13 +97,14 @@ class AttendanceLogImplement implements AttendanceLogService
             if (!$attendance->check_in || $carbonClockDatetime->lt($carbonCheckIn)) {
                 $attendance->update([
                     'check_in' => $carbonClockDatetime,
-                    'check_in_photo' => $data['photo'] ?? null,
+                    'check_in_photo' => $photoPath??null,
                     'check_in_latitude' => $data['latitude'] ?? null,
                     'check_in_longitude' => $data['longitude'] ?? null,
                     'check_in_radius' => $data['radius'] ?? null,
                 ]);
             }
-            return $attendance;
+            $attendanceLog->photo = $isPhoto? asset('storage/'. $photoPath):null;
+            return $attendanceLog->load(['attendance', 'employee','employee.employment','employee.personal']);
         });
     }
 

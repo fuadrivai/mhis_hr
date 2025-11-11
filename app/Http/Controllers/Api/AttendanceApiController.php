@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\AttendanceLogService;
 use App\Services\AttendanceService;
 use Illuminate\Http\Request;
@@ -76,6 +77,29 @@ class AttendanceApiController extends Controller
         }
     }
     public function clockOut(Request $request)
+    {
+        $data =  $this->attendanceLogService->clock_out($request);
+        return response()->json($data, 200);
+    }
+
+    public function forObAndSecurityClockIn(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'date'          => 'required|date_format:Y-m-d H:i:s',
+                'latitude'      => 'required|numeric|between:-90,90',
+                'longitude'     => 'required|numeric|between:-180,180',
+                'photo'         => 'nullable|string',
+                'user_id'       => 'required',
+            ]);
+            $validated['user'] = User::find($validated['user_id']);
+            $data =  $this->attendanceLogService->clock_in($validated);
+            return response()->json($data, 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Validation Error', 'errors' => $e->errors()], 422);
+        }
+    }
+    public function forObAndSecurityClockOut(Request $request)
     {
         $data =  $this->attendanceLogService->clock_out($request);
         return response()->json($data, 200);

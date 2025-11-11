@@ -39,6 +39,9 @@ Route::get('attendance/auth', [AttendanceApiController::class, 'mekariOauth2']);
 
 Route::get('employee/job-level', [EmployeeApiController::class, 'getByJobLevel']);
 
+Route::post('attendance/ga/clockin', [AttendanceApiController::class, 'forObAndSecurityClockIn']);
+Route::post('attendance/ga/clockout', [AttendanceApiController::class, 'forObAndSecurityClockOut']);
+
 Route::group(['middleware' => 'auth_login'], function () {
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::post('register', [AuthController::class, 'register']);

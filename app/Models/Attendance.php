@@ -15,6 +15,14 @@ class Attendance extends Model
         'date' => 'date',
         'check_in' => 'datetime:H:i',
         'check_out' => 'datetime:H:i',
+        'employee_id' => 'integer',
+        'user_id' => 'integer',
+        'check_in_latitude' => 'float',
+        'check_in_longitude' => 'float',
+        'check_in_radius' => 'float',
+        'check_out_latitude' => 'float',
+        'check_out_longitude' => 'float',
+        'check_out_radius' => 'float',
     ];
 
     public function employee()

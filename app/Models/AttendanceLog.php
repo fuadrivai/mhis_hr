@@ -13,6 +13,9 @@ class AttendanceLog extends Model
 
     protected $casts = [
         'log_time' => 'datetime',
+        'latitude'=>'float',
+        'longitude'=>'float',
+        'radius'=>'float',
     ];
 
     public function employee()

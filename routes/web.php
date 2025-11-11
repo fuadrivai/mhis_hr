@@ -44,8 +44,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::group(['middleware' => 'auth'], function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/', [HomeController::class, 'index']);
-
         Route::get('clockin', [AttendanceLogController::class, 'clockin']);
+
 
         Route::put('/user/reset', [UserController::class, 'resetPassword']);
         Route::resource('user', UserController::class);
@@ -91,4 +91,21 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
         Route::resource('internal-document', InternalDocumentController::class);
     });
+    
+    Route::get('storage/{path}', function ($path) {
+    $file = storage_path('app/public/' . $path);
+
+    if (!file_exists($file)) {
+        abort(404);
+    }
+
+    $mime = mime_content_type($file);
+
+    return response()->file($file, [
+        'Content-Type' => $mime,
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
+    ]);
+})->where('path', '.*');
 });
