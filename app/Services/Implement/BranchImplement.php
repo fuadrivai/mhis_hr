@@ -10,8 +10,7 @@ class BranchImplement implements BranchService
     function get()
     {
         try {
-            $branchs = Branch::all();
-            return response()->json($branchs);
+            return Branch::all();
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }

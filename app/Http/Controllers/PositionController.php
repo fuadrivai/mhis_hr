@@ -24,9 +24,9 @@ class PositionController extends Controller
 
     public function index()
     {
-        $data = $this->positionService->get()->getContent();
+        $data = $this->positionService->get();
         return view('settings.position', [
-            "data" => json_decode($data, true),
+            "data" => $data,
             "title" => "Setting Position"
         ]);
     }

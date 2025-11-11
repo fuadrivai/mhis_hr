@@ -22,7 +22,8 @@ class BranchApiController extends Controller
     }
     public function index()
     {
-        return $this->branchService->get();
+        $branches = $this->branchService->get();
+        return response()->json($branches);
     }
 
     /**
@@ -33,7 +34,8 @@ class BranchApiController extends Controller
      */
     public function store(Request $request)
     {
-        return $this->branchService->post($request);
+        $branch = $this->branchService->post($request);
+        return response()->json($branch);
     }
 
     /**

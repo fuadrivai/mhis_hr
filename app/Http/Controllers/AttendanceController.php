@@ -2,18 +2,38 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Services\AttendanceService;
+use App\Services\BranchService;
+use App\Services\JobLevelService;
+use App\Services\OrganizationService;
+use App\Services\PositionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
 
 class AttendanceController extends Controller
 {
 
     private AttendanceService $attendanceService;
+    private BranchService $branchService;
+    private OrganizationService $organizationService;
+    private PositionService $positionService;
+    private JobLevelService $jobLevelService;
 
-    public function __construct(AttendanceService $attendanceService)
+    public function __construct(
+        AttendanceService $attendanceService,
+        BranchService $branchService,
+        OrganizationService $organizationService,
+        PositionService $positionService,
+        JobLevelService $jobLevelService
+        )
     {
         $this->attendanceService = $attendanceService;
+        $this->branchService = $branchService;
+        $this->organizationService = $organizationService;
+        $this->positionService = $positionService;
+        $this->jobLevelService = $jobLevelService;
     }
 
     /**
@@ -30,6 +50,37 @@ class AttendanceController extends Controller
             "title" => "Master Employee",
             "date" => $now
         ]);
+    }
+    public function attendance(UtilitiesRequest $request)
+    {
+        $attendances = Attendance::with(['employee.employment','employee.personal']);
+
+        if ($request->date && $request->date != '') {
+            $_date = Carbon::parse($request->date)->format('Y-m-d');
+            $attendances->where('date',$_date);
+        }
+
+        if ($request->ajax()) {
+            return datatables()->of($attendances)->make(true);
+        }
+
+        $branches = $this->branchService->get();
+        $organizations = $this->organizationService->get();
+        $positions = $this->positionService->get();
+        $levels = $this->jobLevelService->get();
+        return view('attendance.index',
+            [
+                "title" => "Attendance data",
+                "branches"=>$branches,
+                "organizations"=> $organizations,
+                "positions"=> $positions,
+                "levels"=> $levels,
+            ]
+        );
+    }
+
+    public function datatable(){
+        
     }
 
     /**

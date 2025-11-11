@@ -260,7 +260,7 @@
                                                 <select name="branch" id="branch" required
                                                     class="form-control select2" style="width: 100%">
                                                     @foreach ($branches as $item)
-                                                        <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
+                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>

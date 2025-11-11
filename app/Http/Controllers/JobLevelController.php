@@ -23,9 +23,9 @@ class JobLevelController extends Controller
 
     public function index()
     {
-        $data = $this->jobLevelService->get()->getContent();
+        $data = $this->jobLevelService->get();
         return view('settings.joblevel', [
-            "data" => json_decode($data, true),
+            "data" => $data,
             "title" => "Setting Job Level"
         ]);
     }

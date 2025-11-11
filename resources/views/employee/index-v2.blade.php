@@ -87,10 +87,10 @@
                                 <select name="branch" id="branch" class="select2 form-control">
                                     <option value="all">All</option>
                                     @foreach ($branches as $org)
-                                        @if ($query['branch'] == $org['id'])
-                                            <option selected value="{{ $org['id'] }}">{{ $org['name'] }}</option>
+                                        @if ($query['branch'] == $org->id)
+                                            <option selected value="{{ $org->id }}">{{ $org->name }}</option>
                                         @else
-                                            <option value="{{ $org['id'] }}">{{ $org['name'] }}</option>
+                                            <option value="{{ $org->id }}">{{ $org->name }}</option>
                                         @endif
                                     @endforeach
                                 </select>
@@ -182,7 +182,7 @@
                                 <div class="col-12">
                                     <p class="m-0 p-0 font-weight-bold">Branch</p>
                                     <p class="m-0 p-0">
-                                        <label for="">{{ $emp->employment->branch_name }}</label>
+                                        <label for="">{{ $emp->employment->branch->name }}</label>
                                     </p>
                                 </div>
                             </div>

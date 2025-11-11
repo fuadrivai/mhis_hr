@@ -68,10 +68,10 @@ class EmployeeController extends Controller
     }
     public function index()
     {
-        $branches = $this->branchService->get()->getContent();
-        $organizations = $this->organizationService->get()->getContent();
-        $positions = $this->positionService->get()->getContent();
-        $levels = $this->levelService->get()->getContent();
+        $branches = $this->branchService->get();
+        $organizations = $this->organizationService->get();
+        $positions = $this->positionService->get();
+        $levels = $this->levelService->get();
 
         // get employees
         $employees = Employee::with(['user', 'personal', 'employment'])->whereHas('employment', function ($query) {
@@ -143,10 +143,10 @@ class EmployeeController extends Controller
 
         return view('employee.index-v2', [
             "title" => "Master Employee",
-            "branches" => json_decode($branches, true),
-            "organizations" => json_decode($organizations, true),
-            "positions" => json_decode($positions, true),
-            "levels" => json_decode($levels, true),
+            "branches" => $branches,
+            "organizations" => $organizations,
+            "positions" => $positions,
+            "levels" => $levels,
             "employees" => $records,
             "search" => request('search'),
             "query" => [
@@ -177,10 +177,10 @@ class EmployeeController extends Controller
     public function create()
     {
         $religions = $this->religionService->get()->getContent();
-        $branches = $this->branchService->get()->getContent();
-        $organizations = $this->organizationService->get()->getContent();
-        $positions = $this->positionService->get()->getContent();
-        $levels = $this->levelService->get()->getContent();
+        $branches = $this->branchService->get();
+        $organizations = $this->organizationService->get();
+        $positions = $this->positionService->get();
+        $levels = $this->levelService->get();
         $banks = $this->bankService->get()->getContent();
         $schedules = $this->scheduleService->get();
         $employees = Employee::with(['user', 'personal', 'employment'])->orderBy(
@@ -191,10 +191,10 @@ class EmployeeController extends Controller
         return view('employee.form', [
             "title" => "Add Employee",
             "religions" => json_decode($religions, true),
-            "branches" => json_decode($branches, true),
-            "organizations" => json_decode($organizations, true),
-            "positions" => json_decode($positions, true),
-            "levels" => json_decode($levels, true),
+            "branches" => $branches,
+            "organizations" => $organizations,
+            "positions" => $positions,
+            "levels" => $levels,
             "banks" => json_decode($banks, true),
             "schedules" => json_decode($schedules, true),
             "employees" => $employees,
@@ -306,17 +306,17 @@ class EmployeeController extends Controller
     public function employment($id)
     {
         $employee = Employee::with(['employment'])->find($id);
-        $organizations = $this->organizationService->get()->getContent();
-        $positions = $this->positionService->get()->getContent();
-        $levels = $this->levelService->get()->getContent();
-        $branches = $this->branchService->get()->getContent();
+        $organizations = $this->organizationService->get();
+        $positions = $this->positionService->get();
+        $levels = $this->levelService->get();
+        $branches = $this->branchService->get();
         return view('employee.employment', [
             "title" => "Employment",
             "data" => $employee,
-            "organizations" => json_decode($organizations, true),
-            "positions" => json_decode($positions, true),
-            "levels" => json_decode($levels, true),
-            "branches" => json_decode($branches, true),
+            "organizations" => $organizations,
+            "positions" => $positions,
+            "levels" => $levels,
+            "branches" => $branches,
         ]);
     }
 }

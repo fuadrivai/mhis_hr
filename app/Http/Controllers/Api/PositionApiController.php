@@ -22,7 +22,8 @@ class PositionApiController extends Controller
     }
     public function index()
     {
-        return $this->positionService->get();
+        $positions = $this->positionService->get();
+        return  response()->json($positions);
     }
 
     /**
@@ -33,7 +34,8 @@ class PositionApiController extends Controller
      */
     public function store(Request $request)
     {
-        return $this->positionService->post($request);
+        $position = $this->positionService->post($request);
+        return response()->json($position);
     }
 
     /**
