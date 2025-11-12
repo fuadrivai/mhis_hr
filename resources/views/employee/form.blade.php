@@ -600,11 +600,14 @@
             let firstName = $('#first-name').val();
             let lastName = $('#last-name').val()
             let fullName = lastName != "" ? `${firstName} ${lastName}` : firstName;
-            let birthDate = moment($('#birth-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
-            let expiredDateIdentityId = moment($('#passport-expired-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
+            let birthDate = $('#birth-date').val() == "" ? null : moment($('#birth-date').val(), "DD MMMM YYYY").format(
+                "YYYY-MM-DD")
+            let expiredDateIdentityId = $('#passport-expired-date').val() == "" ? null : moment($('#passport-expired-date')
+                .val(), "DD MMMM YYYY").format("YYYY-MM-DD")
             let joinDate = moment($('#join-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
             let endDate = moment($('#end-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
-            let signDate = moment($('#sign-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
+            let signDate = $('#sign-date').val() == "" ? null : moment($('#sign-date').val(), "DD MMMM YYYY").format(
+                "YYYY-MM-DD")
 
             let personal = {
                 firstName: firstName,
