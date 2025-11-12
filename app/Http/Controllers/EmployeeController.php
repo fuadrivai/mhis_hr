@@ -211,7 +211,7 @@ class EmployeeController extends Controller
     {
 
         try {
-            return $this->employeeService->post($request)->getContent();
+            $this->employeeService->post($request)->getContent();
             return Redirect::to('employee');
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()]);
