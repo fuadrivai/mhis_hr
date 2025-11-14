@@ -176,7 +176,7 @@
                             <p class="m-0 p-0">NIK : <label class="m-0 p-0 font-weight-bold"
                                     for="">{{ $emp->employment->employee_id ?? '' }}</label></p>
                             <p class="m-0 p-0">DOB : <label class="m-0 p-0 font-weight-bold" for="">
-                                    {{ $emp->personal->birth_date == '' ? '--' : \Carbon\Carbon::parse($emp->personal->birth_date)->format('d F Y') }}
+                                    {{ empty($emp->personal->birth_date) ? '--' : \Carbon\Carbon::parse($emp->personal->birth_date)->format('d F Y') }}
                                 </label></p>
                         </div>
                         <div class="col-2 col-xs-12 text-center">
