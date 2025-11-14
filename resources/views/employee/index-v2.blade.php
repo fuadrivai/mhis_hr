@@ -172,7 +172,7 @@
                             <p class="m-0 p-0 font-weight-bold" for=""><i class="fa fa-envelope text-info"></i>
                                 {{ $emp->personal->email ?? '--' }}</p>
                             <p class="m-0 p-0 font-weight-bold" for=""><i class="fa fa-phone text-info"></i>
-                                {{ $emp->personal->mobile_phone }}</p>
+                                {{ $emp->personal->mobile_phone ?? '--' }}</p>
                             <p class="m-0 p-0">NIK : <label class="m-0 p-0 font-weight-bold"
                                     for="">{{ $emp->employment->employee_id ?? '' }}</label></p>
                             <p class="m-0 p-0">DOB : <label class="m-0 p-0 font-weight-bold" for="">
@@ -184,7 +184,7 @@
                                 <div class="col-12">
                                     <p class="m-0 p-0 font-weight-bold">Branch</p>
                                     <p class="m-0 p-0">
-                                        <label for="">{{ $emp->employment->branch->name }}</label>
+                                        <label for="">{{ $emp->employment->branch->name ?? '--' }}</label>
                                     </p>
                                 </div>
                             </div>
@@ -192,7 +192,7 @@
                                 <div class="col-12">
                                     <p class="m-0 p-0 font-weight-bold">Organization</p>
                                     <p class="m-0 p-0">
-                                        <label for="">{{ $emp->employment->organization_name }}</label>
+                                        <label for="">{{ $emp->employment->organization_name ?? '--' }}</label>
                                     </p>
                                 </div>
                             </div>
@@ -202,7 +202,7 @@
                                 <div class="col-12">
                                     <p class="m-0 p-0 font-weight-bold">Job Position</p>
                                     <p class="m-0 p-0">
-                                        <label for="">{{ $emp->employment->job_position_name }}</label>
+                                        <label for="">{{ $emp->employment->job_position_name ?? '--' }}</label>
                                     </p>
                                 </div>
                             </div>
@@ -210,7 +210,7 @@
                                 <div class="col-12">
                                     <p class="m-0 p-0 font-weight-bold">Job Level</p>
                                     <p class="m-0 p-0">
-                                        <label for="">{{ $emp->employment->job_level_name }}</label>
+                                        <label for="">{{ $emp->employment->job_level_name ?? '--' }}</label>
                                     </p>
                                 </div>
                             </div>
