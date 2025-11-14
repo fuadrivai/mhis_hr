@@ -8,11 +8,18 @@
     <div class="x_panel">
         <div class="x_title">
             <h2>Employee <small>Form</small></h2>
-            <ul class="nav navbar-right panel_toolbox">
+            {{-- <ul class="nav navbar-right panel_toolbox">
                 <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></li>
-            </ul>
+            </ul> --}}
             <div class="clearfix"></div>
         </div>
+        @if (session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
         <div class="x_content">
             <div id="smartwizard" dir="rtl-">
                 <ul class="nav nav-progress">
@@ -83,21 +90,21 @@
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">Mobile Phone*</label>
-                                                <input id="mobile-phone" name="mobile-phone" required class="form-control">
+                                                <input id="mobile-phone" name="mobile-phone" class="form-control">
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
-                                                <label for="">Place of birth*</label>
-                                                <input id="birth-place" name="birth-place" required type="text"
+                                                <label for="">Place of birth</label>
+                                                <input id="birth-place" name="birth-place" type="text"
                                                     class="form-control">
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group has-feedback">
-                                                <label for="">Date of birth*</label>
-                                                <input type="text" required
-                                                    class="form-control has-feedback-left date-picker" id="birth-date">
+                                                <label for="">Date of birth</label>
+                                                <input type="text" class="form-control has-feedback-left date-picker"
+                                                    id="birth-date">
                                                 <span style="top: 25px" class="fa fa-calendar form-control-feedback left"
                                                     aria-hidden="true"></span>
                                             </div>
@@ -605,9 +612,12 @@
             let expiredDateIdentityId = $('#passport-expired-date').val() == "" ? null : moment($('#passport-expired-date')
                 .val(), "DD MMMM YYYY").format("YYYY-MM-DD")
             let joinDate = moment($('#join-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
-            let endDate = moment($('#end-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
+            let endDate = $('#end-date').val() == "" ? null : moment($('#end-date').val(), "DD MMMM YYYY").format(
+                "YYYY-MM-DD")
             let signDate = $('#sign-date').val() == "" ? null : moment($('#sign-date').val(), "DD MMMM YYYY").format(
                 "YYYY-MM-DD")
+
+            let empStatus = $('#employee-status').val();
 
             let personal = {
                 firstName: firstName,
@@ -630,7 +640,7 @@
                 identityNumber: $('#nik').val(),
                 expiredDateIdentityId: expiredDateIdentityId,
                 postalCode: $('#postal-code').val(),
-                passortNumber: $('#passport-number').val()
+                passportNumber: $('#passport-number').val()
             }
 
             let employment = {
@@ -645,9 +655,9 @@
                 jobLevelName: $('#level option:selected').text(),
                 branchId: $('#branch').val(),
                 branchName: $('#branch option:selected').text(),
-                employmentStatus: $('#employee-status').val(),
+                employmentStatus: empStatus,
                 joinDate: joinDate,
-                endDate: endDate,
+                endDate: empStatus == "permanent" ? null : endDate,
                 signDate: signDate
             }
 
@@ -676,10 +686,13 @@
 
             ajax(employee, `{{ URL::to('/employee') }}`, "POST",
                 function(item) {
-                    console.log(item)
+                    sweetAlert("Success", "Employee has been saved successfully.", "success")
+                    setTimeout(() => {
+                        window.location.href = "/employee/create";
+                    }, 1000);
                 },
                 function(json) {
-                    console.log(json)
+                    sweetAlert("Failed", json, "error")
                 }
             )
         }
