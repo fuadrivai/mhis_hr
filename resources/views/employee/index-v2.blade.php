@@ -155,10 +155,12 @@
                         <div class="col col-xs-12">
                             @if (!isset($emp->personal->avatar) || $emp->personal->avatar == '')
                                 <img width="80" src="{{ asset('images/user.png') }}"
-                                    class="rounded float-left img-thumbnail" alt="{{ $emp->personal->fullname ?? '--' }}">
+                                    class="rounded float-left img-thumbnail"
+                                    alt="{{ $emp->personal->fullname ?? '--' }}">
                             @else
                                 <img width="80" src="{{ asset('storage/' . $pr->image) }}"
-                                    class="rounded float-left img-thumbnail" alt="{{ $emp->personal->fullname ?? '--' }}">
+                                    class="rounded float-left img-thumbnail"
+                                    alt="{{ $emp->personal->fullname ?? '--' }}">
                             @endif
                         </div>
                         <div class="col-3 col-xs-12 text-left">
@@ -168,7 +170,7 @@
                             </a>
 
                             <p class="m-0 p-0 font-weight-bold" for=""><i class="fa fa-envelope text-info"></i>
-                                {{ $emp->personal->email }}</p>
+                                {{ $emp->personal->email ?? '--' }}</p>
                             <p class="m-0 p-0 font-weight-bold" for=""><i class="fa fa-phone text-info"></i>
                                 {{ $emp->personal->mobile_phone }}</p>
                             <p class="m-0 p-0">NIK : <label class="m-0 p-0 font-weight-bold"
