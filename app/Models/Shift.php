@@ -15,6 +15,7 @@ class Shift extends Model
     public $casts = [
         'show_in_request' => 'boolean',
         'holiday' => 'boolean',
+        'is_overnight' => 'boolean',
     ];
 
     public function schedule_duration()

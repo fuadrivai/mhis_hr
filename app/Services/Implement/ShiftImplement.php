@@ -40,6 +40,7 @@ class ShiftImplement implements ShiftService
             $shift->schedule_out = $request['schedule_out'];
             $shift->break_start = $request['break_start'];
             $shift->break_end = $request['break_end'];
+            $shift->is_overnight = $request['is_overnight'] ?? 0;
             $shift->show_in_request = 1;
             $shift->save();
             return response()->json($shift);
