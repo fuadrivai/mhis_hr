@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use App\Services\AttendanceService;
 use App\Services\BranchService;
 use App\Services\JobLevelService;
 use App\Services\OrganizationService;
@@ -11,25 +10,24 @@ use App\Services\PositionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
+use Illuminate\Support\Facades\File;
+
 
 class AttendanceController extends Controller
 {
 
-    private AttendanceService $attendanceService;
     private BranchService $branchService;
     private OrganizationService $organizationService;
     private PositionService $positionService;
     private JobLevelService $jobLevelService;
-
+    
     public function __construct(
-        AttendanceService $attendanceService,
         BranchService $branchService,
         OrganizationService $organizationService,
         PositionService $positionService,
         JobLevelService $jobLevelService
         )
     {
-        $this->attendanceService = $attendanceService;
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
         $this->positionService = $positionService;
@@ -50,6 +48,16 @@ class AttendanceController extends Controller
             "title" => "Master Employee",
             "date" => $now
         ]);
+    }
+    public function liveAttendance()
+    {
+        $path = public_path('live-attendance/index.html');
+
+        if (!File::exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($path);
     }
     public function attendance(UtilitiesRequest $request)
     {

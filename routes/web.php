@@ -36,6 +36,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::get('/login', [AuthController::class, 'index'])->middleware('guest')->name('login');
+    Route::get('live-attendance', [AttendanceController::class, 'liveAttendance']);
     Route::resource('attendance', AttendanceController::class);
     Route::post('/login', [AuthController::class, 'authenticate']);
 
