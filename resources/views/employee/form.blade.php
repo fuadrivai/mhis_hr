@@ -604,97 +604,94 @@
         })
 
         function onSubmit() {
-            let firstName = $('#first-name').val();
-            let lastName = $('#last-name').val()
-            let fullName = lastName != "" ? `${firstName} ${lastName}` : firstName;
-            let birthDate = $('#birth-date').val() == "" ? null : moment($('#birth-date').val(), "DD MMMM YYYY").format(
-                "YYYY-MM-DD")
-            let expiredDateIdentityId = $('#passport-expired-date').val() == "" ? null : moment($('#passport-expired-date')
-                .val(), "DD MMMM YYYY").format("YYYY-MM-DD")
-            let joinDate = moment($('#join-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
-            let endDate = $('#end-date').val() == "" ? null : moment($('#end-date').val(), "DD MMMM YYYY").format(
-                "YYYY-MM-DD")
-            let signDate = $('#sign-date').val() == "" ? null : moment($('#sign-date').val(), "DD MMMM YYYY").format(
-                "YYYY-MM-DD")
+            const getVal = id => $(`#${id}`).val() || "";
+            const getDate = id => {
+                const val = getVal(id);
+                return val ? moment(val, "DD MMMM YYYY").format("YYYY-MM-DD") : null;
+            };
+            const getText = id => $(`#${id} option:selected`).text().trim();
 
-            let empStatus = $('#employee-status').val();
+            const firstName = getVal('first-name');
+            const lastName = getVal('last-name');
+            const fullName = lastName ? `${firstName} ${lastName}` : firstName;
 
-            let personal = {
-                firstName: firstName,
-                lastName: lastName,
-                fullName: fullName,
-                barcode: $('#barcode').val(),
-                email: $('#email').val(),
-                address: $('#address').val(),
-                currentAddress: $('#current-address').val(),
-                birthPlace: $('#birth-place').val(),
-                birthDate: birthDate,
-                phone: $('#phone').val(),
+            let empStatus = getVal('employee-status');
+
+            const personal = {
+                firstName,
+                lastName,
+                fullName,
+                barcode: getVal('barcode'),
+                email: getVal('email'),
+                address: getVal('address'),
+                currentAddress: getVal('current-address'),
+                birthPlace: getVal('birth-place'),
+                birthDate: getDate('birth-date'),
+                phone: getVal('phone'),
                 avatar: "",
-                mobilePhone: $('#mobile-phone').val(),
+                mobilePhone: getVal('mobile-phone'),
                 gendre: $('input[name="gender"]').val(),
-                maritalStatus: $('#marital-status').val(),
-                bloodType: $('#blood-type').val(),
-                religionId: $('#religion').val(),
-                identityType: $('#identity-type').val(),
-                identityNumber: $('#nik').val(),
-                expiredDateIdentityId: expiredDateIdentityId,
-                postalCode: $('#postal-code').val(),
-                passportNumber: $('#passport-number').val()
-            }
+                maritalStatus: getVal('marital-status'),
+                bloodType: getVal('blood-type'),
+                religionId: getVal('religion'),
+                identityType: getVal('identity-type'),
+                identityNumber: getVal('nik'),
+                expiredDateIdentityId: getDate('passport-expired-date'),
+                postalCode: getVal('postal-code'),
+                passportNumber: getVal('passport-number')
+            };
 
-            let employment = {
-                employeeId: $('#employee-id').val(),
-                organizationId: $('#organization').val(),
-                organizationName: $('#organization option:selected').text(),
-                jobPositionId: $('#position').val(),
-                jobPositionName: $('#position option:selected').text(),
-                approvalLine: $('#approval').val(),
-                approvalLineName: $.trim($('#approval option:selected').text()),
-                jobLevelId: $('#level').val(),
-                jobLevelName: $('#level option:selected').text(),
-                branchId: $('#branch').val(),
-                branchName: $('#branch option:selected').text(),
+            const employment = {
+                employeeId: getVal('employee-id'),
+                organizationId: getVal('organization'),
+                organizationName: getText('organization'),
+                jobPositionId: getVal('position'),
+                jobPositionName: getText('position'),
+                approvalLine: getVal('approval'),
+                approvalLineName: getText('approval'),
+                jobLevelId: getVal('level'),
+                jobLevelName: getText('level'),
+                branchId: getVal('branch'),
+                branchName: getText('branch'),
                 employmentStatus: empStatus,
-                joinDate: joinDate,
-                endDate: empStatus == "permanent" ? null : endDate,
-                signDate: signDate
-            }
+                joinDate: getDate('join-date'),
+                endDate: empStatus === "permanent" ? null : getDate('end-date'),
+                signDate: getDate('sign-date')
+            };
 
-            let payrollInfo = {
-                bankId: $('#bank').val(),
-                bankName: $('#bank option:selected').text(),
-                accountHolder: $('#account-holder').val(),
-                accountNumber: $('#account-number').val(),
-                npwp: $('#npwp').val(),
-                ptkpStatus: $('#ptkp-status').val(),
-                bpjsKetenagakerjaan: $('#bpjs-ketenagakerjaan').val(),
-                bpjsKesehatan: $('#bpjs-kesehatan').val(),
-                employmentTaxStatus: $('#employment-tax-status').val()
-            }
+            const payrollInfo = {
+                bankId: getVal('bank'),
+                bankName: getText('bank'),
+                accountHolder: getVal('account-holder'),
+                accountNumber: getVal('account-number'),
+                npwp: getVal('npwp'),
+                ptkpStatus: getVal('ptkp-status'),
+                bpjsKetenagakerjaan: getVal('bpjs-ketenagakerjaan'),
+                bpjsKesehatan: getVal('bpjs-kesehatan'),
+                employmentTaxStatus: getVal('employment-tax-status')
+            };
 
-            let employee = {
-                personal: personal,
-                employment: employment,
-                payrollInfo: payrollInfo,
-                schedule: $('#schedule').val(),
-                approvalLine: $('#approval').val(),
+            const payload = {
+                personal,
+                employment,
+                payrollInfo,
+                schedule: getVal('schedule'),
+                approvalLine: getVal('approval'),
                 inviteAccount: $('#create-account').prop('checked')
-            }
+            };
 
-            console.log(employee)
-
-            ajax(employee, `{{ URL::to('/employee') }}`, "POST",
-                function(item) {
-                    sweetAlert("Success", "Employee has been saved successfully.", "success")
-                    setTimeout(() => {
-                        window.location.href = "/employee/create";
-                    }, 1000);
+            ajax(
+                payload,
+                `{{ URL::to('/employee') }}`,
+                "POST",
+                function(json) {
+                    sweetAlert("Success", "Employee has been saved successfully.", "success");
+                    setTimeout(() => window.location.href = "/employee/create", 1000);
                 },
                 function(json) {
-                    sweetAlert("Failed", json, "error")
+                    sweetAlert("Failed", json, "error");
                 }
-            )
+            );
         }
     </script>
 @endsection

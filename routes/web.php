@@ -21,8 +21,6 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\UserController;
-use App\Models\InternalDocument;
-use Faker\Provider\ar_EG\Person;
 use Illuminate\Support\Facades\Route;
 
 /*

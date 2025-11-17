@@ -9,7 +9,7 @@ class Employee extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
-    protected $hidden = ['user_id', 'personal_id', 'employment_id', 'pin_location_id'];
+    protected $hidden = ['user_id', 'personal_id', 'employment_id', 'pin_location_id','approval_line'];
 
     public function user()
     {
@@ -19,6 +19,11 @@ class Employee extends Model
     {
         return $this->belongsTo(Personal::class);
     }
+    public function approval()
+    {
+        return Personal::find($this->approval_line);
+    }
+
     public function employment()
     {
         return $this->belongsTo(Employment::class);

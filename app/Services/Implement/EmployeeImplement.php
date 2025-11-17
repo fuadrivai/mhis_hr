@@ -24,8 +24,6 @@ class EmployeeImplement implements EmployeeService
     function post($request)
     {
         return DB::transaction(function () use ($request) {
-
-            // --- PERSONAL ---
             $personal = new Personal();
             $personal->religion_id = $request['personal']['religionId'];
             $personal->first_name = $request['personal']['firstName'];
@@ -49,7 +47,6 @@ class EmployeeImplement implements EmployeeService
             $personal->passport_number = $request['personal']['passportNumber']; // FIX typo
             $personal->save();
 
-            // --- EMPLOYMENT ---
             $employment = new Employment();
             $employment->employee_id = $request['employment']['employeeId'];
             $employment->organization_id = $request['employment']['organizationId'];
@@ -67,7 +64,6 @@ class EmployeeImplement implements EmployeeService
             $employment->sign_date = $request['employment']['signDate'];
             $employment->save();
 
-            // --- PAYROLL ---
             $payroll = new PayrolInfo();
             $payroll->bank_id = $request['payrollInfo']['bankId'];
             $payroll->account_number = $request['payrollInfo']['accountNumber'];
@@ -79,10 +75,8 @@ class EmployeeImplement implements EmployeeService
             $payroll->employment_tax_status = $request['payrollInfo']['employmentTaxStatus'];
             $payroll->save();
 
-            // --- EMPLOYEE ---
             $employee = new Employee();
 
-            // if user can access MHIS HUB
             $invite = filter_var($request['inviteAccount'], FILTER_VALIDATE_BOOLEAN);
 
             if ($invite) {
@@ -111,7 +105,7 @@ class EmployeeImplement implements EmployeeService
     function getByJobLevel($request)
     {
         $jobLevelName = $request->input('name');
-        $employees =  Employee::with(['personal', 'employment.job_level','user'])
+        $employees =  Employee::with(['personal', 'employment.job_level','user','activeSchedule'])
             ->whereHas('employment.job_level', function ($query) use ($jobLevelName) {
                 $query->where('name', $jobLevelName);
             })

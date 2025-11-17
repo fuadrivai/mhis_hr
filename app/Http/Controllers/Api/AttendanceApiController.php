@@ -81,28 +81,29 @@ class AttendanceApiController extends Controller
         $data =  $this->attendanceLogService->clock_out($request);
         return response()->json($data, 200);
     }
-
-    public function forObAndSecurityClockIn(Request $request)
-    {
+    
+    public function liveAttendanceGa(){
         try {
-            $validated = $request->validate([
+            $validated = request()->validate([
                 'date'          => 'required|date_format:Y-m-d H:i:s',
-                'latitude'      => 'required|numeric|between:-90,90',
-                'longitude'     => 'required|numeric|between:-180,180',
+                'latitude'      => 'required',
+                'longitude'     => 'required',
                 'photo'         => 'nullable|string',
                 'user_id'       => 'required',
+                'type'          => 'required',
             ]);
             $validated['user'] = User::find($validated['user_id']);
-            $data =  $this->attendanceLogService->clock_in($validated);
+            if($validated['type']=='clock_in'){
+                $data =  $this->attendanceLogService->clock_in($validated);
+            }else if($validated['type']=='clock_out'){
+                $data =  $this->attendanceLogService->clock_out($validated);
+            }else{
+                return response()->json(['message' => 'Invalid type'], 422);
+            }
             return response()->json($data, 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validation Error', 'errors' => $e->errors()], 422);
         }
-    }
-    public function forObAndSecurityClockOut(Request $request)
-    {
-        $data =  $this->attendanceLogService->clock_out($request);
-        return response()->json($data, 200);
     }
 
 

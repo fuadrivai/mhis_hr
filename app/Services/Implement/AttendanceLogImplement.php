@@ -28,7 +28,7 @@ class AttendanceLogImplement implements AttendanceLogService
     public function clock_in($data)
     {
         return DB::transaction(function () use ($data) {
-            $user = $data['user'];;
+            $user = $data['user'];
             if (!$user) {
                 return response()->json(['message' => 'Unauthenticated'], 401);
             }
@@ -109,57 +109,85 @@ class AttendanceLogImplement implements AttendanceLogService
     }
 
     public function clock_out($data)
-    {
-        return DB::transaction(function () use ($data) {
-            $employee = Employee::findOrFail($data['employee_id']);
-            $today = Carbon::today()->toDateString();
+{
+    return DB::transaction(function () use ($data) {
 
-            $attendance = Attendance::where('employee_id', $employee->id)
-                ->where('date', $today)
-                ->first();
+        $user = $data['user'];
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
 
-            $now = Carbon::now();
+        $employee = Employee::with(['personal', 'activeSchedule.schedule.details.shift'])
+            ->where('user_id', $user['id'])->first();
 
-            if (!$attendance) {
-                $attendance = Attendance::create([
-                    'employee_id' => $employee->id,
-                    'user_id' => $data['user_id'] ?? null,
-                    'date' => $today,
-                    'fullname' => $employee->personal->fullname ?? $employee->name,
-                    'shift_name' => $employee->schedule->name ?? '-',
-                    'status' => 'present',
-                    'holiday' => $data['holiday'] ?? false,
-                    'schedule_in' => $data['schedule_in'] ?? null,
-                    'schedule_out' => $data['schedule_out'] ?? null,
-                ]);
-            }
+        if (!$employee) {
+            return response()->json(['message' => 'Employee not found'], 404);
+        }
 
-            AttendanceLog::create([
+        $today = Carbon::parse($data['date'])->toDateString();
+        $time = Carbon::parse($data['date'])->toTimeString();
+
+       $isPhoto = (isset($data['photo']) && !empty($data['photo']))|| $data['photo'] !="";
+        if ($isPhoto) {
+            $image = $data['photo'];
+            $image = str_replace('data:image/png;base64,', '', $image);
+            $image = str_replace(' ', '+', $image);
+            $imageName = 'attendance_' . $employee->id . '_' . time() . '.png';
+            $path = storage_path('app/public/attendance_photos/' . $imageName);
+            file_put_contents($path, base64_decode($image));
+            $photoPath = 'attendance_photos/' . $imageName;
+        }
+
+        $attendance = Attendance::firstOrCreate(
+            [
                 'employee_id' => $employee->id,
-                'attendance_id' => $attendance->id,
-                'type' => 'check_out',
-                'fullname' => $attendance->fullname,
-                'shift_name' => $attendance->shift_name,
-                'photo' => $data['photo'] ?? null,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
-                'radius' => $data['radius'] ?? null,
-                'clock_datetime' => $now,
+                'date' => $today,
+            ],
+            [
+                'user_id' => $user['id'],
+                'fullname' => $employee->personal->fullname,
+                'shift_name' => $employee->activeSchedule->schedule_name ?? '-',
+                'status' => 'present',
+            ]
+        );
+
+        $attendanceLog = AttendanceLog::create([
+            'employee_id' => $employee->id,
+            'attendance_id' => $attendance->id,
+            'type' => 'check_out',
+            'fullname' => $attendance->fullname,
+            'shift_name' => $attendance->shift_name,
+            'photo' => $photoPath ?? null,
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
+            'radius' => $data['radius'] ?? null,
+            'clock_datetime' => $data['date'],
+            'clock_date' => $today,
+            'time' => $time,
+        ]);
+
+        $latestLog = AttendanceLog::where('attendance_id', $attendance->id)
+            ->where('clock_date', $today)
+            ->where('type', 'check_out')
+            ->orderBy('clock_datetime', 'DESC')
+            ->first();
+
+        if ($latestLog) {
+            $attendance->update([
+                'check_out' => $latestLog->clock_datetime,
+                'check_out_photo' => $latestLog->photo,
+                'check_out_latitude' => $latestLog->latitude,
+                'check_out_longitude' => $latestLog->longitude,
+                'check_out_radius' => $latestLog->radius,
             ]);
+        }
 
-            if (!$attendance->check_out || $now->gt(Carbon::parse($attendance->check_out))) {
-                $attendance->update([
-                    'check_out' => $now,
-                    'check_out_photo' => $data['photo'] ?? null,
-                    'check_out_latitude' => $data['latitude'] ?? null,
-                    'check_out_longitude' => $data['longitude'] ?? null,
-                    'check_out_radius' => $data['radius'] ?? null,
-                ]);
-            }
+        $attendanceLog->photo = $isPhoto ? asset('storage/' . $photoPath) : null;
 
-            return $attendance;
-        });
-    }
+        return $attendanceLog->load(['attendance', 'employee', 'employee.employment', 'employee.personal']);
+    });
+}
+
     public function put($data)
     {
         // TODO: Implement put() method.
