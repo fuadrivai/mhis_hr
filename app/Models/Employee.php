@@ -48,8 +48,7 @@ class Employee extends Model
                 $q->whereNull('effective_end_date')
                     ->orWhere('effective_end_date', '>=', now());
             })
-            ->orderByDesc('effective_start_date')
-            ->withDefault();
+            ->orderByDesc('effective_start_date');
     }
     public function logs()
     {
