@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Shift;
 use App\Services\ShiftService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 
 class ShiftController extends Controller

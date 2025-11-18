@@ -200,6 +200,7 @@ return [
         App\Providers\AttendanceLogProvider::class,
         App\Providers\InternalDocumentProvider::class,
         App\Providers\EmploymentProvider::class,
+        App\Providers\TimeOffProvider::class,
     ],
 
     /*

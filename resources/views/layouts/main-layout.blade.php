@@ -201,6 +201,7 @@
     <script src="/plugins/bootstrap-datepicker/js/jquery.timepicker.min.js"></script>
     <script src="/plugins/select2/dist/js/select2.full.min.js"></script>
     <script src="/plugins/bootstrap-notify/bootstrap-notify.min.js"></script>
+    <script src="/plugins/jquery.blockUI/jquery.blockUI.js"></script>
     <script src="/js/script.js?v=1.1.5"></script>
     @yield('content-script')
 </body>

@@ -20,6 +20,7 @@ use App\Http\Controllers\ReligionController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SignatureController;
+use App\Http\Controllers\TimeOffController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -69,6 +70,10 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
             Route::resource('schedule', ScheduleController::class);
             Route::resource('shift', ShiftController::class);
+
+            Route::get('timeoff/datatable', [TimeOffController::class, 'dataTable']);
+            Route::resource('timeoff', TimeOffController::class);
+
             Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);
             Route::resource('location', LocationController::class);
 

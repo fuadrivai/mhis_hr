@@ -23,7 +23,7 @@ class BranchController extends Controller
 
     public function index()
     {
-        $data = $this->branchService->get()->getContent();
+        $data = $this->branchService->get();
         return view('settings.branch', [
             "data" => json_decode($data, true),
             "title" => "Setting Branch"

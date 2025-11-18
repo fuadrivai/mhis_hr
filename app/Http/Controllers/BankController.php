@@ -24,7 +24,7 @@ class BankController extends Controller
 
     public function index()
     {
-        $data = $this->bankService->get()->getContent();
+        $data = $this->bankService->get();
         return view('settings.bank.index', [
             "data" => json_decode($data, true),
             "title" => "Setting Bank"
