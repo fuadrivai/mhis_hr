@@ -10,10 +10,7 @@ class BankImplement implements BankService
     function get()
     {
         try {
-            $banks = Bank::all();
-            // dd($banks);
-            // Log::info('Form Data:', $banks);
-            return response()->json($banks);
+            return Bank::all();
         } catch (\Throwable $th) {
             // dd($th->getMessage());
             // Log::info('Form Data:', $th->getMessage());
