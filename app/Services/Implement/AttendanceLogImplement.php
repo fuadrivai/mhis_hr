@@ -101,8 +101,8 @@ class AttendanceLogImplement implements AttendanceLogService
                     'check_in_photo' => $photoPath ?? null,
                 ]);
             }
-
-            return $log->load(['attendance', 'employee.personal']);
+            $log->photo = !empty($data['photo'])? asset('storage/'. $photoPath):null;
+            return $log->load(['attendance', 'employee.personal','employee.employment']);
         });
     }
 
@@ -176,8 +176,9 @@ class AttendanceLogImplement implements AttendanceLogService
                     'check_out_photo' => $latest->photo,
                 ]);
             }
-
-            return $log->load(['attendance', 'employee.personal']);
+            
+            $log->photo = !empty($data['photo'])? asset('storage/'. $photoPath):null;
+            return $log->load(['attendance', 'employee.personal','employee.employment']);
         });
     }
 
