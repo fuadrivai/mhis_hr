@@ -64,6 +64,18 @@
                                                 href="/scheduler">Scheduler</a></li>
                                     </ul>
                                 </li>
+                                <li class={{ Request::is('time*') ? 'active' : '' }}><a><i class="fa fa-clock-o"></i>
+                                        Time <span class="fa fa-chevron-down"></span></a>
+                                    <ul class="nav child_menu"
+                                        style="display: {{ Request::is('time*') ? 'block' : 'none' }}">
+                                        <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                href="/time/attendance">Attendance</a></li>
+                                        <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                href="#">Overtime</a></li>
+                                        <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                href="#">Time Off</a></li>
+                                    </ul>
+                                </li>
                                 <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i class="fa fa-gears"></i>
                                         Settings <span class="fa fa-chevron-down"></span></a>
                                     <ul style="display: {{ Request::is('setting*') ? 'block' : 'none' }}"
@@ -95,6 +107,8 @@
                                     </ul>
                                 </li>
                                 <li><a href="/user"><i class="fa fa-user"></i> Management User </a></li>
+                                <li><a href="/internal-document/create" target="_blank"><i class="fa fa-folder"></i>
+                                        Form Document </a></li>
                                 <li><a href="/signature"><i class="fa fa-qrcode"></i> E Signature </a></li>
                             </ul>
                         </div>
@@ -187,7 +201,7 @@
     <script src="/plugins/bootstrap-datepicker/js/jquery.timepicker.min.js"></script>
     <script src="/plugins/select2/dist/js/select2.full.min.js"></script>
     <script src="/plugins/bootstrap-notify/bootstrap-notify.min.js"></script>
-    <script src="/js/script.js?v=1.1.4"></script>
+    <script src="/js/script.js?v=1.1.5"></script>
     @yield('content-script')
 </body>
 

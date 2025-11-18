@@ -22,7 +22,8 @@ class JobLevelApiController extends Controller
     }
     public function index()
     {
-        return $this->jobLevelService->get();
+        $levels = $this->jobLevelService->get();
+        return response()->json($levels);
     }
 
     /**
@@ -33,7 +34,8 @@ class JobLevelApiController extends Controller
      */
     public function store(Request $request)
     {
-        return $this->jobLevelService->post($request);
+        $level = $this->jobLevelService->post($request);
+        return response()->json($level);
     }
 
     /**

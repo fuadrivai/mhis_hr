@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AnnouncementCategoryApiController;
 use App\Http\Controllers\Api\AttendanceApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchApiController;
+use App\Http\Controllers\Api\EmployeeApiController;
 use App\Http\Controllers\Api\GsheetLinkApiController;
 use App\Http\Controllers\Api\JobLevelApiController;
 use App\Http\Controllers\Api\LiveAbsentApiController;
@@ -36,6 +37,10 @@ Route::post('/push/notif', [PushNotificationApiController::class, 'sendMessage']
 Route::get('attendance/summary', [AttendanceApiController::class, 'getSummaryReport']);
 Route::get('attendance/auth', [AttendanceApiController::class, 'mekariOauth2']);
 
+Route::get('employee/job-level', [EmployeeApiController::class, 'getByJobLevel']);
+
+Route::post('post/attendance/ga', [AttendanceApiController::class, 'liveAttendanceGa']);
+
 Route::group(['middleware' => 'auth_login'], function () {
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::post('register', [AuthController::class, 'register']);
@@ -54,6 +59,8 @@ Route::group(['middleware' => 'auth_login'], function () {
     Route::get('attendance/history', [AttendanceApiController::class, 'getHistory']);
     Route::get('attendance/list', [AttendanceApiController::class, 'liveAttendanceList']);
 
+    Route::post('attendance/clockin', [AttendanceApiController::class, 'clockIn']);
+    Route::post('attendance/clockout', [AttendanceApiController::class, 'clockOut']);
     Route::resource('attendance', AttendanceApiController::class);
 
     Route::get('absent/filter', [LiveAbsentApiController::class, 'filterByUser']);

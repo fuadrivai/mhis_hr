@@ -13,6 +13,12 @@ class HomeController extends Controller
      */
     public function index()
     {
+        $user = auth()->user();
+
+        // Jika user bukan admin → redirect ke halaman internal document
+        if (!$user->hasRole('admin')) {
+            return redirect('/internal-document/create');
+        }
         return view('home.home', [
             "title" => "Home Page"
         ]);

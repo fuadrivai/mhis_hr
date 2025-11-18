@@ -8,11 +8,18 @@
     <div class="x_panel">
         <div class="x_title">
             <h2>Employee <small>Form</small></h2>
-            <ul class="nav navbar-right panel_toolbox">
+            {{-- <ul class="nav navbar-right panel_toolbox">
                 <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></li>
-            </ul>
+            </ul> --}}
             <div class="clearfix"></div>
         </div>
+        @if (session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
         <div class="x_content">
             <div id="smartwizard" dir="rtl-">
                 <ul class="nav nav-progress">
@@ -83,21 +90,21 @@
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
                                                 <label for="">Mobile Phone*</label>
-                                                <input id="mobile-phone" name="mobile-phone" required class="form-control">
+                                                <input id="mobile-phone" name="mobile-phone" class="form-control">
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group">
-                                                <label for="">Place of birth*</label>
-                                                <input id="birth-place" name="birth-place" required type="text"
+                                                <label for="">Place of birth</label>
+                                                <input id="birth-place" name="birth-place" type="text"
                                                     class="form-control">
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-sm-12">
                                             <div class="form-group has-feedback">
-                                                <label for="">Date of birth*</label>
-                                                <input type="text" required
-                                                    class="form-control has-feedback-left date-picker" id="birth-date">
+                                                <label for="">Date of birth</label>
+                                                <input type="text" class="form-control has-feedback-left date-picker"
+                                                    id="birth-date">
                                                 <span style="top: 25px" class="fa fa-calendar form-control-feedback left"
                                                     aria-hidden="true"></span>
                                             </div>
@@ -260,7 +267,7 @@
                                                 <select name="branch" id="branch" required
                                                     class="form-control select2" style="width: 100%">
                                                     @foreach ($branches as $item)
-                                                        <option value="{{ $item['id'] }}">{{ $item['name'] }}</option>
+                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -597,88 +604,94 @@
         })
 
         function onSubmit() {
-            let firstName = $('#first-name').val();
-            let lastName = $('#last-name').val()
-            let fullName = lastName != "" ? `${firstName} ${lastName}` : firstName;
-            let birthDate = moment($('#birth-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
-            let expiredDateIdentityId = moment($('#passport-expired-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
-            let joinDate = moment($('#join-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
-            let endDate = moment($('#end-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
-            let signDate = moment($('#sign-date').val(), "DD MMMM YYYY").format("YYYY-MM-DD")
+            const getVal = id => $(`#${id}`).val() || "";
+            const getDate = id => {
+                const val = getVal(id);
+                return val ? moment(val, "DD MMMM YYYY").format("YYYY-MM-DD") : null;
+            };
+            const getText = id => $(`#${id} option:selected`).text().trim();
 
-            let personal = {
-                firstName: firstName,
-                lastName: lastName,
-                fullName: fullName,
-                barcode: $('#barcode').val(),
-                email: $('#email').val(),
-                address: $('#address').val(),
-                currentAddress: $('#current-address').val(),
-                birthPlace: $('#birth-place').val(),
-                birthDate: birthDate,
-                phone: $('#phone').val(),
+            const firstName = getVal('first-name');
+            const lastName = getVal('last-name');
+            const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+
+            let empStatus = getVal('employee-status');
+
+            const personal = {
+                firstName,
+                lastName,
+                fullName,
+                barcode: getVal('barcode'),
+                email: getVal('email'),
+                address: getVal('address'),
+                currentAddress: getVal('current-address'),
+                birthPlace: getVal('birth-place'),
+                birthDate: getDate('birth-date'),
+                phone: getVal('phone'),
                 avatar: "",
-                mobilePhone: $('#mobile-phone').val(),
+                mobilePhone: getVal('mobile-phone'),
                 gendre: $('input[name="gender"]').val(),
-                maritalStatus: $('#marital-status').val(),
-                bloodType: $('#blood-type').val(),
-                religionId: $('#religion').val(),
-                identityType: $('#identity-type').val(),
-                identityNumber: $('#nik').val(),
-                expiredDateIdentityId: expiredDateIdentityId,
-                postalCode: $('#postal-code').val(),
-                passortNumber: $('#passport-number').val()
-            }
+                maritalStatus: getVal('marital-status'),
+                bloodType: getVal('blood-type'),
+                religionId: getVal('religion'),
+                identityType: getVal('identity-type'),
+                identityNumber: getVal('nik'),
+                expiredDateIdentityId: getDate('passport-expired-date'),
+                postalCode: getVal('postal-code'),
+                passportNumber: getVal('passport-number')
+            };
 
-            let employment = {
-                employeeId: $('#employee-id').val(),
-                organizationId: $('#organization').val(),
-                organizationName: $('#organization option:selected').text(),
-                jobPositionId: $('#position').val(),
-                jobPositionName: $('#position option:selected').text(),
-                approvalLine: $('#approval').val(),
-                approvalLineName: $.trim($('#approval option:selected').text()),
-                jobLevelId: $('#level').val(),
-                jobLevelName: $('#level option:selected').text(),
-                branchId: $('#branch').val(),
-                branchName: $('#branch option:selected').text(),
-                employmentStatus: $('#employee-status').val(),
-                joinDate: joinDate,
-                endDate: endDate,
-                signDate: signDate
-            }
+            const employment = {
+                employeeId: getVal('employee-id'),
+                organizationId: getVal('organization'),
+                organizationName: getText('organization'),
+                jobPositionId: getVal('position'),
+                jobPositionName: getText('position'),
+                approvalLine: getVal('approval'),
+                approvalLineName: getText('approval'),
+                jobLevelId: getVal('level'),
+                jobLevelName: getText('level'),
+                branchId: getVal('branch'),
+                branchName: getText('branch'),
+                employmentStatus: empStatus,
+                joinDate: getDate('join-date'),
+                endDate: empStatus === "permanent" ? null : getDate('end-date'),
+                signDate: getDate('sign-date')
+            };
 
-            let payrollInfo = {
-                bankId: $('#bank').val(),
-                bankName: $('#bank option:selected').text(),
-                accountHolder: $('#account-holder').val(),
-                accountNumber: $('#account-number').val(),
-                npwp: $('#npwp').val(),
-                ptkpStatus: $('#ptkp-status').val(),
-                bpjsKetenagakerjaan: $('#bpjs-ketenagakerjaan').val(),
-                bpjsKesehatan: $('#bpjs-kesehatan').val(),
-                employmentTaxStatus: $('#employment-tax-status').val()
-            }
+            const payrollInfo = {
+                bankId: getVal('bank'),
+                bankName: getText('bank'),
+                accountHolder: getVal('account-holder'),
+                accountNumber: getVal('account-number'),
+                npwp: getVal('npwp'),
+                ptkpStatus: getVal('ptkp-status'),
+                bpjsKetenagakerjaan: getVal('bpjs-ketenagakerjaan'),
+                bpjsKesehatan: getVal('bpjs-kesehatan'),
+                employmentTaxStatus: getVal('employment-tax-status')
+            };
 
-            let employee = {
-                personal: personal,
-                employment: employment,
-                payrollInfo: payrollInfo,
-                schedule: $('#schedule').val(),
-                approvalLine: $('#approval').val(),
+            const payload = {
+                personal,
+                employment,
+                payrollInfo,
+                schedule: getVal('schedule'),
+                approvalLine: getVal('approval'),
                 inviteAccount: $('#create-account').prop('checked')
-            }
+            };
 
-            console.log(employee)
-
-            ajax(employee, `{{ URL::to('/employee') }}`, "POST",
-                function(item) {
-                    console.log(item)
+            ajax(
+                payload,
+                `{{ URL::to('/employee') }}`,
+                "POST",
+                function(json) {
+                    sweetAlert("Success", "Employee has been saved successfully.", "success");
+                    setTimeout(() => window.location.href = "/employee/create", 1000);
                 },
                 function(json) {
-                    console.log(json)
+                    sweetAlert("Failed", json, "error");
                 }
-            )
+            );
         }
     </script>
 @endsection

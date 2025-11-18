@@ -139,3 +139,34 @@ function diffTime($start, $end)
 
     return "$hours" . "h " . $minutes . "m";
 }
+
+function resolveAttendanceDate($shift, $clock)
+{
+    $clockTime = Carbon::parse($clock);
+    $scheduleOut = Carbon::parse($shift->schedule_out);
+
+    // NOT Overnight SHIFT
+    if (!$shift->is_overnight) {
+        return [
+            'attendance_date' => $clockTime->toDateString(),
+            'schedule_in' => $shift->schedule_in,
+            'schedule_out' => $shift->schedule_out,
+        ];
+    }
+
+    // OVERNIGHT SHIFT
+    if ($clockTime->format('H:i:s') < $scheduleOut->format('H:i:s')) {
+        return [
+            'attendance_date' => $clockTime->copy()->subDay()->toDateString(),
+            'schedule_in' => $shift->schedule_in,
+            'schedule_out' => $shift->schedule_out,
+        ];
+    }
+
+    // Jam 19:00–23:59 → shift hari ini
+    return [
+        'attendance_date' => $clockTime->toDateString(),
+        'schedule_in' => $shift->schedule_in,
+        'schedule_out' => $shift->schedule_out,
+    ];
+}

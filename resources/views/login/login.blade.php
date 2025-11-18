@@ -17,7 +17,6 @@
     <link href="/plugins/nprogress/nprogress.css" rel="stylesheet">
     <!-- Animate.css -->
     <link href="/plugins/animate.css/animate.min.css" rel="stylesheet">
-
     <!-- Custom Theme Style -->
     <link href="/build/css/custom.min.css" rel="stylesheet">
   </head>
@@ -32,7 +31,7 @@
           <section class="login_content">
             <form action="/login" method="post">
                 @csrf
-              <img src="/images/Logo-mh-text.png" alt="" width="200">
+              <img src="/images/logo-mh.png" alt="" width="100">
               <hr>
               <h1><b>Login Form</b></h1>
               <div>

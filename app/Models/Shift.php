@@ -14,11 +14,13 @@ class Shift extends Model
     // protected $appends = ['schedule_duration', 'break_duration'];
     public $casts = [
         'show_in_request' => 'boolean',
+        'holiday' => 'boolean',
+        'is_overnight' => 'boolean',
     ];
 
     public function schedule_duration()
     {
-       return diffTime($this->schedule_in, $this->schedule_out);
+        return diffTime($this->schedule_in, $this->schedule_out);
     }
     public function break_duration()
     {

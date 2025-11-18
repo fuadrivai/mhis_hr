@@ -10,8 +10,7 @@ class OrganizationImplement implements OrganizationService
     function get()
     {
         try {
-            $organizations = Organization::all();
-            return response()->json($organizations);
+            return Organization::all();
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }
@@ -23,7 +22,7 @@ class OrganizationImplement implements OrganizationService
             $organization = new Organization();
             $organization->name = $request['name'];
             $organization->save();
-            return response()->json($organization);
+            return $organization;
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }
@@ -35,7 +34,7 @@ class OrganizationImplement implements OrganizationService
                 "name" => $request["name"],
             ]);
             $organization = Organization::find($id);
-            return response()->json($organization);
+            return $organization;
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }

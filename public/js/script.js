@@ -1,5 +1,5 @@
 
-
+$(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
 $(document).ready(function(){
     $('.select2').select2({})
 	$('.select2').on('select2:open', function () {
@@ -84,7 +84,6 @@ function reloadJsonDataTable(dtable, json) {
     dtable.clear().draw();
     dtable.rows.add(json).draw();
 }
-
 function getQueryString() {
     location.queryString = {};
     location.search.substring(1).split("&").forEach(function (pair) {

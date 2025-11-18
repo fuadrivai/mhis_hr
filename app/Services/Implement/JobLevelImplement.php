@@ -12,7 +12,7 @@ class JobLevelImplement implements JobLevelService
     {
         try {
             $levels = JobLevel::all();
-            return response()->json($levels);
+            return $levels;
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }
@@ -24,7 +24,7 @@ class JobLevelImplement implements JobLevelService
             $level = new JobLevel();
             $level->name = $request['name'];
             $level->save();
-            return response()->json($level);
+            return $level;
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }
@@ -37,7 +37,7 @@ class JobLevelImplement implements JobLevelService
                 "name" => $request["name"],
             ]);
             $level = JobLevel::find($id);
-            return response()->json($level);
+            return $level;
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }

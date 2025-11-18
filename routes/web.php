@@ -1,12 +1,15 @@
 <?php
 
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AttendanceLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeScheduleController;
+use App\Http\Controllers\EmploymentController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InternalDocumentController;
 use App\Http\Controllers\JobLevelController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\OrganizationController;
@@ -18,7 +21,6 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\UserController;
-use Faker\Provider\ar_EG\Person;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -34,6 +36,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::get('/login', [AuthController::class, 'index'])->middleware('guest')->name('login');
+    Route::get('live-attendance', [AttendanceController::class, 'liveAttendance']);
     Route::resource('attendance', AttendanceController::class);
     Route::post('/login', [AuthController::class, 'authenticate']);
 
@@ -41,6 +44,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::group(['middleware' => 'auth'], function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/', [HomeController::class, 'index']);
+        Route::get('clockin', [AttendanceLogController::class, 'clockin']);
+
 
         Route::put('/user/reset', [UserController::class, 'resetPassword']);
         Route::resource('user', UserController::class);
@@ -51,7 +56,6 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('employee/filter', [EmployeeController::class, 'filterLocation']);
         Route::resource('employee', EmployeeController::class);
         Route::resource('scheduler', EmployeeScheduleController::class);
-
 
         Route::get('shift/get', [ShiftController::class, 'get']);
 
@@ -76,13 +80,37 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::put('personal', [PersonalController::class, 'update']);
 
             Route::get('employment/{id}', [EmployeeController::class, 'employment']);
+            Route::put('employment', [EmploymentController::class, 'update']);
+
             Route::get('education/{id}', [EmployeeController::class, 'education']);
             Route::get('portofolio/{id}', [EmployeeController::class, 'portofolio']);
             Route::get('payrol-info/{id}', [EmployeeController::class, 'payrol_info']);
             Route::get('attendance/{id}', [EmployeeController::class, 'attendance']);
             Route::get('timeoff/{id}', [EmployeeController::class, 'timeoff']);
         });
+        Route::group(['prefix' => 'time'], function () {
+            Route::get('attendance', [AttendanceController::class, 'attendance']);
+        });
 
         Route::resource('signature', SignatureController::class);
+
+        Route::resource('internal-document', InternalDocumentController::class);
     });
+    
+    Route::get('storage/{path}', function ($path) {
+    $file = storage_path('app/public/' . $path);
+
+    if (!file_exists($file)) {
+        abort(404);
+    }
+
+    $mime = mime_content_type($file);
+
+    return response()->file($file, [
+        'Content-Type' => $mime,
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
+    ]);
+})->where('path', '.*');
 });

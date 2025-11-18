@@ -85,6 +85,15 @@
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="1" id="is-overnight"
+                                name="is_overnight" {{ old('is_overnight', $data['is_overnight'] ?? '') ? 'checked' : '' }}>
+                            <label for="is-overnight"> Is the shift overnight ? </label>
+                        </div>
+                    </div>
+                </div>
                 <div class="row justify-content-center pt-3">
                     <div class="col-md-2 text-center">
                         <button type="submit" class="btn btn-block btn-info"><i class="fa fa-save-o"> Save</i></button>

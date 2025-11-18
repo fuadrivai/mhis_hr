@@ -11,7 +11,7 @@ class PositionImplement implements PositionService
     {
         try {
             $positions = Position::all();
-            return response()->json($positions);
+            return  $positions;
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }
@@ -23,7 +23,7 @@ class PositionImplement implements PositionService
             $postion = new Position();
             $postion->name = $request['name'];
             $postion->save();
-            return response()->json($postion);
+            return $postion;
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }
@@ -35,7 +35,7 @@ class PositionImplement implements PositionService
                 "name" => $request["name"],
             ]);
             $position = Position::find($id);
-            return response()->json($position);
+            return $position;
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }

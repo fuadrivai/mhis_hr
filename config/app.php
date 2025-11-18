@@ -197,6 +197,9 @@ return [
         App\Providers\SignatureProvider::class,
         App\Providers\EmployeeScheduleProvider::class,
         App\Providers\LocationProvider::class,
+        App\Providers\AttendanceLogProvider::class,
+        App\Providers\InternalDocumentProvider::class,
+        App\Providers\EmploymentProvider::class,
     ],
 
     /*

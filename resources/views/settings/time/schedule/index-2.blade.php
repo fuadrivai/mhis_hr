@@ -49,6 +49,7 @@
                                                     <th>Code</th>
                                                     <th class="text-center">Working hour</th>
                                                     <th class="text-center">Break hour</th>
+                                                    <th class="text-center">Overnight</th>
                                                     <th class="text-center">Action</th>
                                                 </tr>
                                             </thead>
@@ -67,6 +68,13 @@
                                                         <td class="text-center">{{ $item->break_start }} -
                                                             {{ $item->break_end }}
                                                             <br> {{ $item->break_duration() }}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            @if ($item->is_overnight)
+                                                                <span class="badge badge-info">Yes</span>
+                                                            @else
+                                                                <span></span>
+                                                            @endif
                                                         </td>
                                                         <td class="text-center">
                                                             <a href="/setting/shift/{{ $item->id }}/edit"

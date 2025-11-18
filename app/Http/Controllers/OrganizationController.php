@@ -23,9 +23,9 @@ class OrganizationController extends Controller
 
     public function index()
     {
-        $data = $this->organizationService->get()->getContent();
+        $data = $this->organizationService->get();
         return view('settings.organization', [
-            "data" => json_decode($data, true),
+            "data" => $data,
             "title" => "Setting Organization"
         ]);
     }

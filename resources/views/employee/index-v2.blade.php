@@ -87,10 +87,10 @@
                                 <select name="branch" id="branch" class="select2 form-control">
                                     <option value="all">All</option>
                                     @foreach ($branches as $org)
-                                        @if ($query['branch'] == $org['id'])
-                                            <option selected value="{{ $org['id'] }}">{{ $org['name'] }}</option>
+                                        @if ($query['branch'] == $org->id)
+                                            <option selected value="{{ $org->id }}">{{ $org->name }}</option>
                                         @else
-                                            <option value="{{ $org['id'] }}">{{ $org['name'] }}</option>
+                                            <option value="{{ $org->id }}">{{ $org->name }}</option>
                                         @endif
                                     @endforeach
                                 </select>
@@ -155,26 +155,28 @@
                         <div class="col col-xs-12">
                             @if (!isset($emp->personal->avatar) || $emp->personal->avatar == '')
                                 <img width="80" src="{{ asset('images/user.png') }}"
-                                    class="rounded float-left img-thumbnail" alt="{{ $emp->personal->fullname }}">
+                                    class="rounded float-left img-thumbnail"
+                                    alt="{{ $emp->personal->fullname ?? '--' }}">
                             @else
                                 <img width="80" src="{{ asset('storage/' . $pr->image) }}"
-                                    class="rounded float-left img-thumbnail" alt="{{ $emp->personal->fullname }}">
+                                    class="rounded float-left img-thumbnail"
+                                    alt="{{ $emp->personal->fullname ?? '--' }}">
                             @endif
                         </div>
                         <div class="col-3 col-xs-12 text-left">
                             <a href='/profile/personal/{{ $emp->id }}'>
                                 <label class="m-0 p-0 font-weight-bold"
-                                    for="">{{ Str::upper($emp->personal->fullname) }}</label>
+                                    for="">{{ Str::upper($emp->personal->fullname ?? '--') }}</label>
                             </a>
 
                             <p class="m-0 p-0 font-weight-bold" for=""><i class="fa fa-envelope text-info"></i>
-                                {{ $emp->personal->email }}</p>
+                                {{ $emp->personal->email ?? '--' }}</p>
                             <p class="m-0 p-0 font-weight-bold" for=""><i class="fa fa-phone text-info"></i>
-                                {{ $emp->personal->mobile_phone }}</p>
+                                {{ $emp->personal->mobile_phone ?? '--' }}</p>
                             <p class="m-0 p-0">NIK : <label class="m-0 p-0 font-weight-bold"
                                     for="">{{ $emp->employment->employee_id ?? '' }}</label></p>
                             <p class="m-0 p-0">DOB : <label class="m-0 p-0 font-weight-bold" for="">
-                                    {{ $emp->personal->birth_date == '' ? '--' : \Carbon\Carbon::parse($emp->personal->birth_date)->format('d F Y') }}
+                                    {{ empty($emp->personal->birth_date) ? '--' : \Carbon\Carbon::parse($emp->personal->birth_date)->format('d F Y') }}
                                 </label></p>
                         </div>
                         <div class="col-2 col-xs-12 text-center">
@@ -182,7 +184,7 @@
                                 <div class="col-12">
                                     <p class="m-0 p-0 font-weight-bold">Branch</p>
                                     <p class="m-0 p-0">
-                                        <label for="">{{ $emp->employment->branch_name }}</label>
+                                        <label for="">{{ $emp->employment->branch->name ?? '--' }}</label>
                                     </p>
                                 </div>
                             </div>
@@ -190,7 +192,7 @@
                                 <div class="col-12">
                                     <p class="m-0 p-0 font-weight-bold">Organization</p>
                                     <p class="m-0 p-0">
-                                        <label for="">{{ $emp->employment->organization_name }}</label>
+                                        <label for="">{{ $emp->employment->organization_name ?? '--' }}</label>
                                     </p>
                                 </div>
                             </div>
@@ -200,7 +202,7 @@
                                 <div class="col-12">
                                     <p class="m-0 p-0 font-weight-bold">Job Position</p>
                                     <p class="m-0 p-0">
-                                        <label for="">{{ $emp->employment->job_position_name }}</label>
+                                        <label for="">{{ $emp->employment->job_position_name ?? '--' }}</label>
                                     </p>
                                 </div>
                             </div>
@@ -208,7 +210,7 @@
                                 <div class="col-12">
                                     <p class="m-0 p-0 font-weight-bold">Job Level</p>
                                     <p class="m-0 p-0">
-                                        <label for="">{{ $emp->employment->job_level_name }}</label>
+                                        <label for="">{{ $emp->employment->job_level_name ?? '--' }}</label>
                                     </p>
                                 </div>
                             </div>

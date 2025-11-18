@@ -22,7 +22,8 @@ class OrganizationApiController extends Controller
     }
     public function index()
     {
-        return $this->organizationService->get();
+        $organizations = $this->organizationService->get();
+        return response()->json($organizations);
     }
 
     /**
@@ -33,7 +34,8 @@ class OrganizationApiController extends Controller
      */
     public function store(Request $request)
     {
-        return $this->organizationService->post($request);
+        $organization = $this->organizationService->post($request);
+        return response()->json($organization);
     }
 
     /**

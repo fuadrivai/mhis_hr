@@ -160,7 +160,7 @@
                     attr: {
                         id: 'btn-assign'
                     },
-                    className: 'btn btn-success ml-2 btn-sm font-weight-bold d-none',
+                    className: 'btn-bulk-assign btn btn-success ml-2 btn-sm font-weight-bold d-none',
                     action: function() {
                         $("#employee_id").val(Array.from(checkedList).join(','));
                         $('#modal-data').modal('show');
@@ -278,7 +278,7 @@
 
         function updateInfo() {
             let count = checkedList.size;
-            let btnAssign = $('.x_panel').find("#btn-assign");
+            let btnAssign = $('.x_panel').find(".btn-bulk-assign");
             btnAssign.toggleClass('d-none', count === 0);
             btnAssign.find('#selected-info').text(count > 0 ? `${count} Employee Selected` : '');
         }
