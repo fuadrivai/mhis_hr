@@ -12,8 +12,6 @@ class BankImplement implements BankService
         try {
             return Bank::all();
         } catch (\Throwable $th) {
-            // dd($th->getMessage());
-            // Log::info('Form Data:', $th->getMessage());
             return response()->json(["message" => $th->getMessage()], $th->getCode());
         }
     }
