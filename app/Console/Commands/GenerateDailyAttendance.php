@@ -56,7 +56,7 @@ class GenerateDailyAttendance extends Command
 
     private function resolveShift($employee, $targetDate)
     {
-        $shiftLength = $employee->activeSchedule->schedule->count_detail;
+        $shiftLength = $employee->activeSchedule->schedule->count_detail??0;
         $target = Carbon::parse($targetDate)->startOfDay();
         $effective = Carbon::parse($employee->activeSchedule->effective_start_date)->startOfDay();
         $diffDays = $effective->diffInDays($target, false);
