@@ -93,8 +93,13 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('attendance/{id}', [EmployeeController::class, 'attendance']);
             Route::get('timeoff/{id}', [EmployeeController::class, 'timeoff']);
         });
+
         Route::group(['prefix' => 'time'], function () {
             Route::get('attendance', [AttendanceController::class, 'attendance']);
+        });
+
+        Route::group(['prefix' => 'report'], function () {
+            Route::get('attendance', [AttendanceController::class, 'summary']);
         });
 
         Route::resource('signature', SignatureController::class);

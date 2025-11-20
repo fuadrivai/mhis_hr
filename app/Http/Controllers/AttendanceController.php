@@ -67,6 +67,9 @@ class AttendanceController extends Controller
             $_date = Carbon::parse($request->date)->format('Y-m-d');
             $attendances->where('date',$_date);
         }
+        if ($request->searchName && $request->searchName != '') {
+            $attendances->where('fullname','like','%'.$request->searchName.'%');
+        }
 
         if ($request->branch && $request->branch != '') {
             if($request->branch != 'all'){
@@ -101,7 +104,8 @@ class AttendanceController extends Controller
         }
 
         if ($request->ajax()) {
-            return datatables()->of($attendances)->make(true);
+            return datatables()->of($attendances)
+            ->make(true);
         }
 
         $branches = $this->branchService->get();
@@ -111,6 +115,22 @@ class AttendanceController extends Controller
         return view('attendance.index',
             [
                 "title" => "Attendance data",
+                "branches"=>$branches,
+                "organizations"=> $organizations,
+                "positions"=> $positions,
+                "levels"=> $levels,
+            ]
+        );
+    }
+
+    public function summary(){
+        $branches = $this->branchService->get();
+        $organizations = $this->organizationService->get();
+        $positions = $this->positionService->get();
+        $levels = $this->jobLevelService->get();
+        return view('report.attendance-report',
+            [
+                "title" => "Attendance Summary Report",
                 "branches"=>$branches,
                 "organizations"=> $organizations,
                 "positions"=> $positions,
