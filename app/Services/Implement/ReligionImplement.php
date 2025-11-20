@@ -10,8 +10,7 @@ class ReligionImplement implements ReligionService
     function get()
     {
         try {
-            $religions = Religion::all();
-            return response()->json($religions);
+            return Religion::all();
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }
@@ -20,8 +19,7 @@ class ReligionImplement implements ReligionService
     {
 
         try {
-            $religion = Religion::find($id);
-            return response()->json($religion);
+            return Religion::find($id);
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }
@@ -32,7 +30,7 @@ class ReligionImplement implements ReligionService
             $religion = new Religion();
             $religion->name = $request['name'];
             $religion->save();
-            return response()->json($religion);
+            return $religion;
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }
@@ -43,8 +41,7 @@ class ReligionImplement implements ReligionService
             Religion::where('id', $id)->update([
                 "name" => $request["name"],
             ]);
-            $religion = Religion::find($id);
-            return response()->json($religion);
+            return Religion::find($id);
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], 500);
         }

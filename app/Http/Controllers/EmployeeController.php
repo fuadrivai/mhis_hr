@@ -176,12 +176,12 @@ class EmployeeController extends Controller
      */
     public function create()
     {
-        $religions = $this->religionService->get()->getContent();
+        $religions = $this->religionService->get();
         $branches = $this->branchService->get();
         $organizations = $this->organizationService->get();
         $positions = $this->positionService->get();
         $levels = $this->levelService->get();
-        $banks = $this->bankService->get()->getContent();
+        $banks = $this->bankService->get();
         $schedules = $this->scheduleService->get();
         $employees = Employee::with(['user', 'personal', 'employment'])->orderBy(
             Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
@@ -190,13 +190,13 @@ class EmployeeController extends Controller
 
         return view('employee.form', [
             "title" => "Add Employee",
-            "religions" => json_decode($religions, true),
+            "religions" => $religions,
             "branches" => $branches,
             "organizations" => $organizations,
             "positions" => $positions,
             "levels" => $levels,
-            "banks" => json_decode($banks, true),
-            "schedules" => json_decode($schedules, true),
+            "banks" => $banks,
+            "schedules" => $schedules,
             "employees" => $employees,
         ]);
     }
@@ -230,6 +230,12 @@ class EmployeeController extends Controller
         //     "title" => "Add Employee",
         //     "data"=>$employee,
         // ]);
+    }
+    public function education(Employee $employee)
+    {
+    }
+    public function portofolio(Employee $employee)
+    {
     }
 
     /**
@@ -295,11 +301,11 @@ class EmployeeController extends Controller
     public function personal($id)
     {
         $employee = Employee::with(['personal'])->find($id);
-        $religions = $this->religionService->get()->getContent();
+        $religions = $this->religionService->get();
         return view('employee.personal', [
             "title" => "Personal",
             "data" => $employee,
-            "religions" => json_decode($religions, true),
+            "religions" => $religions,
         ]);
     }
 
