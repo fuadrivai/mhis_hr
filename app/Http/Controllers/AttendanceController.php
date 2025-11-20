@@ -68,6 +68,38 @@ class AttendanceController extends Controller
             $attendances->where('date',$_date);
         }
 
+        if ($request->branch && $request->branch != '') {
+            if($request->branch != 'all'){
+                $attendances->whereHas('employee.employment', function ($query) use ($request) {
+                    $query->where('branch_id', $request->branch);
+                });
+            }
+        }
+
+        if ($request->organization && $request->organization != '') {
+            if($request->organization != 'all'){
+                $attendances->whereHas('employee.employment', function ($query) use ($request) {
+                    $query->where('organization_id', $request->organization);
+                });
+            }
+        }
+
+        if ($request->position && $request->position != '') {
+            if($request->position != 'all'){
+                $attendances->whereHas('employee.employment', function ($query) use ($request) {
+                    $query->where('job_position_id', $request->position);
+                });
+            }
+        }
+
+        if ($request->level && $request->level != '') {
+            if($request->level != 'all'){
+                $attendances->whereHas('employee.employment', function ($query) use ($request) {
+                    $query->where('job_level_id', $request->level);
+                });
+            }
+        }
+
         if ($request->ajax()) {
             return datatables()->of($attendances)->make(true);
         }

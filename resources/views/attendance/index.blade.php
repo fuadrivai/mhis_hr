@@ -31,7 +31,7 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="">Branch</label>
-                            <select name="" id="" class="form-control select2" style="width: 100%">
+                            <select name="branch" id="branch" class="form-control select2" style="width: 100%">
                                 <option value="all">All branch</option>
                                 @foreach ($branches as $item)
                                     <option value="{{ $item->id }}">{{ $item->name }}</option>
@@ -42,7 +42,7 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="">Organization</label>
-                            <select name="" id="" class="form-control select2" style="width: 100%">
+                            <select name="organization" id="organization" class="form-control select2" style="width: 100%">
                                 <option value="all">All organization</option>
                                 @foreach ($organizations as $item)
                                     <option value="{{ $item->id }}">{{ $item->name }}</option>
@@ -53,7 +53,7 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="">Position</label>
-                            <select name="" id="" class="form-control select2" style="width: 100%">
+                            <select name="position" id="position" class="form-control select2" style="width: 100%">
                                 <option value="all">All position</option>
                                 @foreach ($positions as $item)
                                     <option value="{{ $item->id }}">{{ $item->name }}</option>
@@ -64,7 +64,7 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label for="">Level</label>
-                            <select name="" id="" class="form-control select2" style="width: 100%">
+                            <select name="level" id="level" class="form-control select2" style="width: 100%">
                                 <option value="all">All level</option>
                                 @foreach ($levels as $item)
                                     <option value="{{ $item->id }}">{{ $item->name }}</option>
@@ -114,13 +114,10 @@
                     type: "GET",
                     data: function(d) {
                         d.date = $('#filter-date').val();
-                        // d.grade_id = $('#filter-grade').val();
-                        // d.startDate = $('#filter-start-date').val();
-                        // d.endDate = $('#filter-end-date').val();
-                        // d.name = $('#filter-name').val();
-                        // d.code = $('#filter-code').val();
-                        // d.branch_id = $('#filter-branch').val();
-                        // d.status = $('#filter-status').val();
+                        d.branch = $('#branch').val();
+                        d.organization = $('#organization').val();
+                        d.position = $('#position').val();
+                        d.level = $('#level').val();
                     }
                 },
                 columns: [{
@@ -180,11 +177,9 @@
                 ]
             })
 
-            $('#filter-date')
-                .on('changeDate', function() {
-                    tblAttendance.ajax.reload();
-                });
-
+            $('#filter-date, #branch, #organization, #position, #level').on('change', function() {
+                tblAttendance.ajax.reload();
+            });
         })
     </script>
 @endsection
