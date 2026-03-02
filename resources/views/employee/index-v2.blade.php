@@ -294,7 +294,7 @@
             </div>
             <div class="col-md-6">
                 <div class="row pl-2 pr-2 d-flex justify-content-end">
-                    {{ $employees->links() }}
+                    {{ $employees->onEachSide(0)->links() }}
                 </div>
             </div>
         </div>
