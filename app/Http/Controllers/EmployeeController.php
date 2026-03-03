@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Imports\EmployeeImport;
+use App\Models\DocumentCategory;
 use App\Models\Personal;
 use App\Services\BankService;
 use App\Services\BranchService;
@@ -35,6 +36,7 @@ class EmployeeController extends Controller
     private BankService $bankService;
     private ScheduleService $scheduleService;
     private EmployeeService $employeeService;
+    private DocumentCategory $documentCategory;
 
     public function __construct(
         BranchService $branchService,
@@ -44,7 +46,8 @@ class EmployeeController extends Controller
         ReligionService $religionService,
         BankService $bankService,
         ScheduleService $scheduleService,
-        EmployeeService $employeeService
+        EmployeeService $employeeService,
+        DocumentCategory $documentCategory
     ) {
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
@@ -54,6 +57,7 @@ class EmployeeController extends Controller
         $this->bankService = $bankService;
         $this->scheduleService = $scheduleService;
         $this->employeeService = $employeeService;
+        $this->documentCategory = $documentCategory;
     }
     public function filterLocation(UtilitiesRequest $request)
     {
@@ -183,6 +187,7 @@ class EmployeeController extends Controller
         $levels = $this->levelService->get();
         $banks = $this->bankService->get();
         $schedules = $this->scheduleService->get();
+        $category = $this->documentCategory->get();
         $employees = Employee::with(['user', 'personal', 'employment'])->orderBy(
             Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
             'asc'
@@ -198,6 +203,7 @@ class EmployeeController extends Controller
             "banks" => $banks,
             "schedules" => $schedules,
             "employees" => $employees,
+            "categories" => $category,
         ]);
     }
 

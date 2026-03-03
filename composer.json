@@ -12,6 +12,7 @@
         "doctrine/dbal": "3.10.1",
         "fruitcake/laravel-cors": "2.0.0",
         "google/cloud-firestore": "1.41.1",
+        "google/apiclient": "^2.16",
         "grpc/grpc": "1.38.0",
         "guzzlehttp/guzzle": "^7.4.4",
         "kutia-software-company/larafirebase": "1.3",

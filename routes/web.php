@@ -22,6 +22,7 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\TimeOffController;
 use App\Http\Controllers\UserController;
+use App\Services\GoogleDriveService;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -100,6 +101,16 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::resource('signature', SignatureController::class);
 
         Route::resource('internal-document', InternalDocumentController::class);
+
+        Route::get('/test-drive', function (GoogleDriveService $drive) {
+
+            $folderId = $drive->createFolder(
+                'EMP-001',
+                config('google.folder_id')
+            );
+
+            return "Folder created with ID: " . $folderId;
+        });
     });
     
     Route::get('storage/{path}', function ($path) {

@@ -201,6 +201,7 @@ return [
         App\Providers\InternalDocumentProvider::class,
         App\Providers\EmploymentProvider::class,
         App\Providers\TimeOffProvider::class,
+        App\Providers\DocumentCategoryProvider::class,
     ],
 
     /*

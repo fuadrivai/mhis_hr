@@ -76,6 +76,9 @@
                 <li class="list-group-item li"
                     style="{{ Request::is('profile/portofolio*') ? 'background-color:aquamarine' : '' }}"><a
                         href="/profile/portofolio/{{ $data->id }}">Additional Info</a></li>
+                <li class="list-group-item li"
+                    style="{{ Request::is('profile/documents*') ? 'background-color:aquamarine' : '' }}"><a
+                        href="/profile/documents/{{ $data->id }}">Documents</a></li>
             </ul>
 
             <li class="list-group-item menu-toggle collapsed li" data-toggle="collapse" data-target="#menu2"
