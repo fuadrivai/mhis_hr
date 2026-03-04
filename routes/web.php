@@ -89,6 +89,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::put('employment', [EmploymentController::class, 'update']);
 
             Route::get('education/{id}', [EmployeeController::class, 'education']);
+            Route::get('document/{id}', [EmployeeController::class, 'document']);
             Route::get('portofolio/{id}', [EmployeeController::class, 'portofolio']);
             Route::get('payrol-info/{id}', [EmployeeController::class, 'payrol_info']);
             Route::get('attendance/{id}', [EmployeeController::class, 'attendance']);

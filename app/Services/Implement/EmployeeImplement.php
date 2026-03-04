@@ -24,7 +24,9 @@ class EmployeeImplement implements EmployeeService
         return $employees;
     }
     function paginate($request) {}
-    function show($id) {}
+    function show($id,$with=[]) {
+        return Employee::with($with)->find($id);
+    }
 
     function post($request, $driveService)
     {

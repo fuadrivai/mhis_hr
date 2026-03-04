@@ -244,6 +244,7 @@ class EmployeeController extends Controller
     public function education(Employee $employee)
     {
     }
+
     public function portofolio(Employee $employee)
     {
     }
@@ -310,7 +311,7 @@ class EmployeeController extends Controller
 
     public function personal($id)
     {
-        $employee = Employee::with(['personal'])->find($id);
+        $employee = $this->employeeService->show($id, ['personal']);
         $religions = $this->religionService->get();
         return view('employee.personal', [
             "title" => "Personal",
@@ -318,10 +319,18 @@ class EmployeeController extends Controller
             "religions" => $religions,
         ]);
     }
+    public function document($id)
+    {
+        $employee = $this->employeeService->show($id, ['documents.category', 'documents.versions', 'documents.approvals']);
+        return view('employee.document', [
+            "title" => "Document",
+            "data" => $employee,
+        ]);
+    }
 
     public function employment($id)
     {
-        $employee = Employee::with(['employment'])->find($id);
+        $employee = $this->employeeService->show($id, ['employment']);
         $organizations = $this->organizationService->get();
         $positions = $this->positionService->get();
         $levels = $this->levelService->get();

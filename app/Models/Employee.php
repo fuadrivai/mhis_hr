@@ -54,6 +54,10 @@ class Employee extends Model
     {
         return $this->hasMany(AttendanceLog::class);
     }
+    public function documents()
+    {
+        return $this->hasMany(EmployeeDocument::class);
+    }
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
