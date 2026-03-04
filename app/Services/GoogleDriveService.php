@@ -28,7 +28,8 @@ class GoogleDriveService
         ]);
 
         $folder = $this->service->files->create($fileMetadata, [
-            'fields' => 'id'
+            'fields' => 'id',
+            'supportsAllDrives' => true,
         ]);
 
         return $folder->id;
@@ -47,7 +48,8 @@ class GoogleDriveService
             'data' => $content,
             'mimeType' => $file->getMimeType(),
             'uploadType' => 'multipart',
-            'fields' => 'id, webViewLink'
+            'fields' => 'id, webViewLink',
+            'supportsAllDrives' => true,
         ]);
 
         return [

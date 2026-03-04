@@ -10,6 +10,7 @@ use App\Models\Personal;
 use App\Services\BankService;
 use App\Services\BranchService;
 use App\Services\EmployeeService;
+use App\Services\GoogleDriveService;
 use App\Services\JobLevelService;
 use App\Services\OrganizationService;
 use App\Services\PositionService;
@@ -37,6 +38,7 @@ class EmployeeController extends Controller
     private ScheduleService $scheduleService;
     private EmployeeService $employeeService;
     private DocumentCategory $documentCategory;
+    private GoogleDriveService $googleDriveService;
 
     public function __construct(
         BranchService $branchService,
@@ -47,7 +49,8 @@ class EmployeeController extends Controller
         BankService $bankService,
         ScheduleService $scheduleService,
         EmployeeService $employeeService,
-        DocumentCategory $documentCategory
+        DocumentCategory $documentCategory,
+        GoogleDriveService $googleDriveService
     ) {
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
@@ -58,6 +61,7 @@ class EmployeeController extends Controller
         $this->scheduleService = $scheduleService;
         $this->employeeService = $employeeService;
         $this->documentCategory = $documentCategory;
+        $this->googleDriveService = $googleDriveService;
     }
     public function filterLocation(UtilitiesRequest $request)
     {
@@ -217,7 +221,7 @@ class EmployeeController extends Controller
     {
 
         try {
-            $employee = $this->employeeService->post($request);
+            $employee = $this->employeeService->post($request, $this->googleDriveService);
             return response()->json($employee);
         } catch (\Throwable $th) {
             return response()->json($th->getMessage());

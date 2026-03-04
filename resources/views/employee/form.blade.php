@@ -17,6 +17,20 @@
             width: 100%;
             height: 200px;
         }
+
+        .pdf-preview {
+            width: 100%;
+            height: 200px;
+            /* tinggi konsisten */
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .pdf-preview embed {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 @endsection
 
@@ -516,9 +530,9 @@
                                 </div>
                             </div>
                             <hr>
-                            <div class="row">
+                            <div class="row" id="document-list">
                                 <div class="col-md-12">
-                                    <div id="document-list" class="list-group">
+                                    <div class="list-group">
                                         <p class="text-muted text-center">No documents uploaded yet</p>
                                     </div>
                                 </div>
@@ -544,8 +558,8 @@
                                             <div class="form-group">
                                                 <div class="checkbox">
                                                     <p>
-                                                        <input id="create-account" name="create-account" type="checkbox"
-                                                            value=""> Invite to access MHIS Hub
+                                                        <input id="create-account" checked name="create-account"
+                                                            type="checkbox" value=""> Invite to access MHIS Hub
                                                     </p>
                                                 </div>
                                             </div>
@@ -574,8 +588,8 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <form id="documentForm">
+                <form id="documentForm">
+                    <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -594,14 +608,14 @@
                                 <div class="form-group">
                                     <label for="documentNumber">Document Number</label>
                                     <input type="text" class="form-control" id="documentNumber"
-                                        placeholder="Enter document number" required>
+                                        placeholder="Enter document number">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="issuedDate">Issued Date</label>
                                     <input type="text" class="form-control date-picker" id="issuedDate"
-                                        placeholder="Select issued date" required>
+                                        placeholder="Select issued date">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -628,16 +642,17 @@
                             <label for="docNotes">Notes <small>(optional)</small></label>
                             <textarea class="form-control" id="docNotes" rows="3" placeholder="Add any additional notes..."></textarea>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-top">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fa fa-times mr-2"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" id="submitDocumentBtn">
-                        <i class="fa fa-upload mr-2"></i>Upload Document
-                    </button>
-                </div>
+
+                    </div>
+                    <div class="modal-footer border-top">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fa fa-times mr-2"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitDocumentBtn">
+                            <i class="fa fa-upload mr-2"></i>Upload Document
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -650,6 +665,7 @@
 
     <script>
         let uploadedDocuments = [];
+        let _file = null;
         $(document).ready(function() {
             $('#smartwizard').smartWizard({
                 selected: 0,
@@ -735,7 +751,86 @@
             setupDragAndDrop();
 
             $('#documentFile').on('change', handleFileSelect);
+
+            $('#submitDocumentBtn').on('click', function(e) {
+                e.preventDefault();
+                if (!_file) {
+                    sweetAlert("Warning", "Please select a file to upload.", "warning");
+                    return;
+                }
+                const documentData = {
+                    category: {
+                        id: $('#docCategorySelect').val(),
+                        name: $('#docCategorySelect option:selected').text().trim()
+                    },
+                    documentNumber: $('#documentNumber').val(),
+                    issuedDate: $('#issuedDate').val(),
+                    expiryDate: $('#expiryDate').val(),
+                    notes: $('#docNotes').val(),
+                    file: _file
+                };
+                uploadedDocuments.push(documentData);
+                $('#documentForm')[0].reset();
+                $('#fileInfo').hide();
+                _file = null;
+                $('#documentUploadModal').modal('hide');
+                renderDocumentList();
+            });
+
         })
+
+        function renderDocumentList() {
+            const list = $('#document-list');
+            list.empty();
+            if (uploadedDocuments.length === 0) {
+                list.html(`
+                    <div class="col-md-12">
+                        <div class="list-group">
+                            <p class="text-muted text-center">No documents uploaded yet</p>
+                        </div>
+                    </div>
+                `);
+                $('.tab-content').css('min-height', '170px');
+                return;
+            }
+            uploadedDocuments.forEach((doc, index) => {
+                const previewUrl = URL.createObjectURL(doc.file);
+                let previewContent = '';
+                if (doc.file.type.startsWith('image/')) {
+                    previewContent =
+                        `<img src="${previewUrl}" class="card-img-top img-thumbnail" style="object-fit: cover;" />`;
+                } else if (doc.file.type === 'application/pdf') {
+                    previewContent =
+                        `<div class="pdf-preview"><embed src="${previewUrl}" type="application/pdf" /> </div>`;
+                } else {
+                    previewContent = `<p>${doc.file.name}</p>`;
+                }
+
+                const item = $(`
+                    <div class="col-md-3">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 text-center">
+                                        ${previewContent}
+                                       <label>${doc.category.name}</label>
+                                       <button class="btn btn-block btn-danger btn-sm" onclick="removeDocument(${index})">
+                                           <i class="fa fa-trash"></i> Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`);
+                list.append(item);
+            });
+            const multiplier = Math.ceil(uploadedDocuments.length / 4);
+            $('.tab-content').css('min-height', `${multiplier * 500}px`);
+        }
+
+        function removeDocument(index) {
+            uploadedDocuments.splice(index, 1);
+            renderDocumentList();
+        }
 
         function onSubmit() {
             const getVal = id => $(`#${id}`).val() || "";
@@ -805,29 +900,43 @@
                 employmentTaxStatus: getVal('employment-tax-status')
             };
 
-            const payload = {
-                personal,
-                employment,
-                payrollInfo,
-                schedule: getVal('schedule'),
-                approvalLine: getVal('approval'),
-                inviteAccount: $('#create-account').prop('checked'),
-                documents: uploadedDocuments
-            };
+            const formData = new FormData();
+            formData.append("personal", JSON.stringify(personal));
+            formData.append("employment", JSON.stringify(employment));
+            formData.append("payrollInfo", JSON.stringify(payrollInfo));
+            formData.append("schedule", getVal('schedule'));
+            formData.append("approvalLine", getVal('approval'));
+            formData.append("inviteAccount", $('#create-account').prop('checked'));
 
-            ajax(
-                payload,
-                `{{ URL::to('/employee') }}`,
-                "POST",
-                function(json) {
-                    sweetAlert("Success", "Employee has been saved successfully with " + uploadedDocuments.length +
-                        " document(s).", "success");
-                    setTimeout(() => window.location.href = "/employee/create", 1000);
+            uploadedDocuments.forEach((doc, index) => {
+                formData.append(`documents[${index}][category_id]`, doc.category.id);
+                formData.append(`documents[${index}][category_name]`, doc.category.name);
+                formData.append(`documents[${index}][document_number]`, doc.documentNumber);
+                formData.append(`documents[${index}][issued_date]`, doc.issuedDate ? moment(doc.issuedDate,
+                    "DD MMMM YYYY").format("YYYY-MM-DD") : "");
+                formData.append(`documents[${index}][expiry_date]`, doc.expiryDate ? moment(doc.expiryDate,
+                    "DD MMMM YYYY").format("YYYY-MM-DD") : "");
+                formData.append(`documents[${index}][notes]`, doc.notes);
+                formData.append(`documents[${index}][file]`, doc.file);
+            });
+
+            $.ajax({
+                url: `/employee`,
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
                 },
-                function(json) {
-                    sweetAlert("Failed", json, "error");
-                }
-            );
+                success: function(res) {
+                    sweetAlert("Success", "Employee has been saved successfully.", "success");
+                    // setTimeout(() => window.location.href = "/employee/create", 1000);
+                },
+                error: function(err) {
+                    sweetAlert("Failed", err.responseJSON.message, "error");
+                },
+            });
         }
 
         function setupDragAndDrop() {
@@ -899,8 +1008,10 @@
 
                 fileName.text(`${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
                 fileInfo.show();
+                _file = file;
             } else {
                 fileInfo.hide();
+                _file = null;
             }
         }
     </script>

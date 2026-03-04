@@ -18,6 +18,7 @@ class CreateEmployeeDocumentVersionsTable extends Migration
             $table->foreignId('employee_document_id')->constrained()->cascadeOnDelete();
             $table->string('drive_file_id')->comment('ID file di Google Drive');
             $table->string('file_name');
+            $table->string('file_url');
             $table->string('mime_type')->nullable();
             $table->bigInteger('file_size')->nullable();
             $table->integer('version')->default(1);

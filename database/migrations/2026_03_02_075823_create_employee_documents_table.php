@@ -17,10 +17,11 @@ class CreateEmployeeDocumentsTable extends Migration
             $table->id();
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->foreignId('document_category_id')->constrained()->cascadeOnDelete();
+            $table->string('category_name')->nullable();
             $table->string('document_number')->nullable();
             $table->date('issued_date')->nullable();
             $table->date('expiry_date')->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending')->comment('pending: waiting for review, approved: document is valid, rejected: document is invalid or expired');
             $table->text('notes')->nullable();
             $table->index(['employee_id', 'document_category_id']);
             $table->index('expiry_date');
