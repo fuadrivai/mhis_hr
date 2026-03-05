@@ -12,4 +12,6 @@ interface EmployeeService
     function post($request, $driveService);
     function put($request);
     function delete($id);
+    function deleteDocument($document_id, $driveService);
+    function documentUpload($employeeId, $request, $driveService);
 }

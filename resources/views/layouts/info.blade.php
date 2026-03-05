@@ -56,7 +56,7 @@
         </div>
         <hr>
         <ul class="list-group">
-            <?php $bool = Request::is('profile/personal*') || Request::is('profile/employment*') || Request::is('profile/education*') || Request::is('profile/portofolio*'); ?>
+            <?php $bool = Request::is('profile/personal*') || Request::is('profile/employment*') || Request::is('profile/document*') || Request::is('profile/education*') || Request::is('profile/portofolio*'); ?>
             <li class="list-group-item menu-toggle collapsed li" data-toggle="collapse" data-target="#menu1"
                 aria-expanded="false">
                 <span>General</span>

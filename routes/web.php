@@ -22,7 +22,6 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\TimeOffController;
 use App\Http\Controllers\UserController;
-use App\Services\GoogleDriveService;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,18 +47,21 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('/', [HomeController::class, 'index']);
         Route::get('clockin', [AttendanceLogController::class, 'clockin']);
 
-
-        Route::put('/user/reset', [UserController::class, 'resetPassword']);
-        Route::resource('user', UserController::class);
-
         Route::resource('location', PinLocationController::class);
-
-        Route::post('employee/import', [EmployeeController::class, 'import_excel']);
-        Route::get('employee/filter', [EmployeeController::class, 'filterLocation']);
-        Route::resource('employee', EmployeeController::class);
         Route::resource('scheduler', EmployeeScheduleController::class);
-
         Route::get('shift/get', [ShiftController::class, 'get']);
+
+        Route::group(['prefix' => 'user'], function () {
+            Route::put('/reset', [UserController::class, 'resetPassword']);
+            Route::resource('/', UserController::class);
+        });
+
+        Route::group(['prefix' => 'employee'], function () {
+            Route::post('import', [EmployeeController::class, 'import_excel']);
+            Route::get('filter', [EmployeeController::class, 'filterLocation']);
+            Route::POST('{employeeId}/document/upload', [EmployeeController::class, 'documentUpload']);
+            Route::resource('/', EmployeeController::class);
+        });
 
         Route::group(['prefix' => 'setting'], function () {
             Route::resource('bank', BankController::class);
@@ -90,6 +92,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
             Route::get('education/{id}', [EmployeeController::class, 'education']);
             Route::get('document/{id}', [EmployeeController::class, 'document']);
+            Route::delete('document/{id}', [EmployeeController::class, 'deleteDocument']);
             Route::get('portofolio/{id}', [EmployeeController::class, 'portofolio']);
             Route::get('payrol-info/{id}', [EmployeeController::class, 'payrol_info']);
             Route::get('attendance/{id}', [EmployeeController::class, 'attendance']);
@@ -100,34 +103,23 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         });
 
         Route::resource('signature', SignatureController::class);
-
         Route::resource('internal-document', InternalDocumentController::class);
-
-        Route::get('/test-drive', function (GoogleDriveService $drive) {
-
-            $folderId = $drive->createFolder(
-                'EMP-001',
-                config('google.folder_id')
-            );
-
-            return "Folder created with ID: " . $folderId;
-        });
     });
     
     Route::get('storage/{path}', function ($path) {
-    $file = storage_path('app/public/' . $path);
+        $file = storage_path('app/public/' . $path);
 
-    if (!file_exists($file)) {
-        abort(404);
-    }
+        if (!file_exists($file)) {
+            abort(404);
+        }
 
-    $mime = mime_content_type($file);
+        $mime = mime_content_type($file);
 
-    return response()->file($file, [
-        'Content-Type' => $mime,
-        'Access-Control-Allow-Origin' => '*',
-        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
-        'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
-    ]);
-})->where('path', '.*');
+        return response()->file($file, [
+            'Content-Type' => $mime,
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
+        ]);
+    })->where('path', '.*');
 });

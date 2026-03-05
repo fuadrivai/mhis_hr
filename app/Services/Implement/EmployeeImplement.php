@@ -23,7 +23,9 @@ class EmployeeImplement implements EmployeeService
         $employees = Employee::with(['personal', 'employment', 'activeSchedule'])->get();
         return $employees;
     }
+
     function paginate($request) {}
+
     function show($id,$with=[]) {
         return Employee::with($with)->find($id);
     }
@@ -188,5 +190,94 @@ class EmployeeImplement implements EmployeeService
         $employee = Employee::with(['employment','personal'])
             ->where('user_id', auth()->id())->first();
         return $employee;
+    }
+
+    function deleteDocument($document_id, $driveService)
+    {
+        DB::transaction(function () use ($document_id, $driveService) {
+            $document = EmployeeDocument::find($document_id);
+            if (!$document) {
+                return response()->json(['message' => 'Document not found'], 404);
+            }
+    
+            $latestVersion = $document->latestVersion;
+            if ($latestVersion) {
+                $driveService->deleteFile($latestVersion->drive_file_id);
+            }
+    
+            $document->latestVersion()->delete();
+            $document->delete();
+    
+            return response()->json(['message' => 'Document deleted successfully']);
+        });
+    }
+
+    public function documentUpload($employeeId, $request, $driveService)
+    {
+
+        DB::beginTransaction();
+        try {
+            $categoryId = $request->input('category_id');
+            $categoryName = $request->input('category_name');
+            $employee = Employee::findOrFail($employeeId);
+
+            if (!$request->has('documentFile')) {
+                throw new \Exception("No file uploaded");
+            }
+
+            $document = EmployeeDocument::where('employee_id',$employeeId)->where('document_category_id',$categoryId)->first();
+
+            if ($document) {
+                throw new \Exception("document with category $categoryName already exist");
+            }
+
+            $folderName = $employee->employment->employee_id . '-' . $employee->personal->fullname;
+            $folderId = $driveService->findFolder($folderName, config('google.folder_id'));
+            if (!$folderId) {
+                $folderId = $driveService->createFolder(
+                    $folderName,
+                    config('google.folder_id')
+                );
+            }
+
+            $file = $request->file('documentFile');
+            
+            $upload = $driveService->uploadFile($file, $folderId);
+
+            $document = EmployeeDocument::create([
+                'employee_id' => $employeeId,
+                'document_category_id' => $categoryId,
+                'category_name' => $categoryName,
+                'document_number' => $request->input('document_number'),
+                'issued_date' => $request->input('issued_date'),
+                'expiry_date' => $request->input('expiry_date'),
+                'status' => 'approved',
+                'notes' => $request->input('notes'),
+            ]);
+
+            EmployeeDocumentVersion::create([
+                'employee_document_id' => $document->id,
+                'drive_file_id' => $upload['id'],
+                'file_name' => $file->getClientOriginalName(),
+                'file_url' => $upload['link'],
+                'mime_type' => $file->getMimeType(),
+                'file_size' => $file->getSize(),
+                'version' => 1,
+                'uploaded_by' => auth()->id(),
+                'is_latest' => true,
+            ]);
+
+            EmployeeDocumentApproval::create([
+                'employee_document_id' => $document->id,
+                'approver_id' => auth()->id(),
+                'status' => 'approved',
+                'notes' => 'Document uploaded and auto-approved.',
+            ]);
+            DB::commit();
+            return $folderId;
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            throw new \Exception($th->getMessage());
+        }
     }
 }

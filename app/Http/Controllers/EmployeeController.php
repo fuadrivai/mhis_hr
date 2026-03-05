@@ -322,10 +322,23 @@ class EmployeeController extends Controller
     public function document($id)
     {
         $employee = $this->employeeService->show($id, ['documents.category', 'documents.versions', 'documents.approvals']);
+        $categories = $this->documentCategory->get();
         return view('employee.document', [
             "title" => "Document",
             "data" => $employee,
+            "categories" => $categories,
         ]);
+    }
+
+    public function documentUpload($employeeId, Request $request)
+    {
+        $data = $this->employeeService->documentUpload($employeeId, $request, $this->googleDriveService);
+        return redirect()->back()->with('message', 'Document deleted successfully');
+    }
+    public function deleteDocument($id)
+    {
+        $this->employeeService->deleteDocument($id, $this->googleDriveService);
+        return redirect()->back()->with('message', 'Document deleted successfully');
     }
 
     public function employment($id)
