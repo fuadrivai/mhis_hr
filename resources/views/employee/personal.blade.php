@@ -356,7 +356,8 @@
                                                 </tr>
                                             </thead>
 
-                                            <body></body>
+                                            <tbody></tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>

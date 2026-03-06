@@ -62,25 +62,25 @@
                 <span>General</span>
                 <i class="fa fa-chevron-down toggle-icon"></i>
             </li>
-
-            <ul class="collapse list-group list-group-flush text-left {{ $bool ? 'show' : '' }}" id="menu1">
-                <li class="list-group-item li"
-                    style="{{ Request::is('profile/personal*') ? 'background-color:aquamarine' : '' }}"><a
-                        href="/profile/personal/{{ $data->id }}">Personal</a></li>
-                <li class="list-group-item li"
-                    style="{{ Request::is('profile/employment*') ? 'background-color:aquamarine' : '' }}"><a
-                        href="/profile/employment/{{ $data->id }}">Employment</a></li>
-                <li class="list-group-item li"
-                    style="{{ Request::is('profile/education*') ? 'background-color:aquamarine' : '' }}"><a
-                        href="/profile/education/{{ $data->id }}">Education & Experience</a></li>
-                <li class="list-group-item li"
-                    style="{{ Request::is('profile/portofolio*') ? 'background-color:aquamarine' : '' }}"><a
-                        href="/profile/portofolio/{{ $data->id }}">Additional Info</a></li>
-                <li class="list-group-item li"
-                    style="{{ Request::is('profile/document*') ? 'background-color:aquamarine' : '' }}"><a
-                        href="/profile/document/{{ $data->id }}">Documents</a></li>
-            </ul>
-
+            <li class="collapse list-group list-group-flush text-left {{ $bool ? 'show' : '' }}" id="menu1">
+                <ul class="list-group">
+                    <li class="list-group-item li"
+                        style="{{ Request::is('profile/personal*') ? 'background-color:aquamarine' : '' }}"><a
+                            href="/profile/personal/{{ $data->id }}">Personal</a></li>
+                    <li class="list-group-item li"
+                        style="{{ Request::is('profile/employment*') ? 'background-color:aquamarine' : '' }}"><a
+                            href="/profile/employment/{{ $data->id }}">Employment</a></li>
+                    <li class="list-group-item li"
+                        style="{{ Request::is('profile/education*') ? 'background-color:aquamarine' : '' }}"><a
+                            href="/profile/education/{{ $data->id }}">Education & Experience</a></li>
+                    <li class="list-group-item li"
+                        style="{{ Request::is('profile/portofolio*') ? 'background-color:aquamarine' : '' }}"><a
+                            href="/profile/portofolio/{{ $data->id }}">Additional Info</a></li>
+                    <li class="list-group-item li"
+                        style="{{ Request::is('profile/document*') ? 'background-color:aquamarine' : '' }}"><a
+                            href="/profile/document/{{ $data->id }}">Documents</a></li>
+                </ul>
+            </li>
             <li class="list-group-item menu-toggle collapsed li" data-toggle="collapse" data-target="#menu2"
                 aria-expanded="false">
                 <span>Payroll</span>
