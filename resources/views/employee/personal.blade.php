@@ -337,6 +337,12 @@
                         </div>
                         <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
                             <div class="row">
+                                <div class="col-12 text-right">
+                                    <button data-toggle="modal" data-target="#modal-family"
+                                        class="btn btn-success btn-sm"><i class="fa fa-plus"></i> Add Family</button>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-12">
                                     <div class="table-responsive card-box">
                                         <table id="tbl-member" class="table table-striped table-bordered table-sm"
@@ -348,24 +354,257 @@
                                                     <th>Relationship</th>
                                                     <th>Birth Date</th>
                                                     <th>Id Number</th>
-                                                    <th>Marital Status</th>
+                                                    <th>Phone</th>
                                                     <th>Gender</th>
-                                                    <th>Job</th>
                                                     <th>Religion</th>
                                                     <th>Action</th>
                                                 </tr>
                                             </thead>
-
-                                            <tbody></tbody>
+                                            <tbody>
+                                                @for ($i = 0; $i < count($data['personal']['families'] ?? []); $i++)
+                                                    <?php $family = ($data['personal']['families'] ?? [])[$i]; ?>
+                                                    <tr>
+                                                        <td>{{ $i + 1 }}</td>
+                                                        <td>{{ $family->fullname ?? '-' }}</td>
+                                                        <td>{{ $family->relationship->name }}</td>
+                                                        <td>{{ $family->birthDate() }}</td>
+                                                        <td>{{ $family->id_number }}</td>
+                                                        <td>{{ $family->mobile_phone }}</td>
+                                                        <td>{{ $family->strGendre() }}</td>
+                                                        <td>{{ $family->religion->name }}</td>
+                                                        <td><button data-id="{{ $family->id }}"
+                                                                class="btn btn-sm btn-danger" id="btn-delete"><i
+                                                                    class="fa fa-trash"></i></button></td>
+                                                    </tr>
+                                                @endfor
+                                            </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
+                            <div class="row">
+                                <div class="col-12 text-right">
+                                    <button data-toggle="modal" data-target="#modal-econ"
+                                        class="btn btn-success btn-sm"><i class="fa fa-plus"></i> Add Emergency
+                                        Contact</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="table-responsive card-box">
+                                        <table id="tbl-econ" class="table table-striped table-bordered table-sm"
+                                            style="width: 100%">
+                                            <thead>
+                                                <tr>
+                                                    <th>No</th>
+                                                    <th>Name</th>
+                                                    <th>Phone</th>
+                                                    <th>Relationship</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @for ($i = 0; $i < count($data['personal']['emergencies'] ?? []); $i++)
+                                                    <?php $econ = ($data['personal']['emergencies'] ?? [])[$i]; ?>
+                                                    <tr>
+                                                        <td>{{ $i + 1 }}</td>
+                                                        <td>{{ $econ->name ?? '-' }}</td>
+                                                        <td>{{ $econ->mobile_phone }}</td>
+                                                        <td>{{ $econ->relationship->name }}</td>
+                                                        <td><button data-id="{{ $econ->id }}"
+                                                                class="btn btn-sm btn-danger" id="btn-delete-econ"><i
+                                                                    class="fa fa-trash"></i></button></td>
+                                                    </tr>
+                                                @endfor
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-family" tabindex="-1" role="dialog" aria-labelledby="documentUploadLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title" id="documentUploadLabel">
+                        <i class="fa fa-users mr-2"></i>Family Form
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="family-form">
+                    <div class="modal-body">
+                        <div class="row">
+                            <input type="hidden" id="family-id">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="fullname">Full name*</label>
+                                    <input required type="text" class="form-control" id="fullname"
+                                        placeholder="Enter name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="relation">Relationship*</label>
+                                    <select required id="relation" class="form-control select2" style="width: 100%">
+                                        <option value="" disabled selected>--choose relation--</option>
+                                        @foreach ($relations as $relation)
+                                            <option value="{{ $relation->id }}">{{ $relation->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="mobile_number">Phone*</label>
+                                    <input required type="text" class="form-control"
+                                        id="mobile_number"placeholder="Phone number">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="id_number">ID number</label>
+                                    <input type="text" class="form-control" id="id_number"placeholder="Id number">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="relation">Gender*</label>
+                                    <select required id="gendre" class="form-control select2" style="width: 100%">
+                                        <option value="1">Male</option>
+                                        <option value="2">Female</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="relation">Religion</label>
+                                    <select id="relation" class="form-control select2" style="width: 100%">
+                                        <option value="" disabled selected>--choose religion--</option>
+                                        @foreach ($religions as $religion)
+                                            <option value="{{ $religion->id }}">{{ $religion->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="family-birthdate">Birthdate*</label>
+                                    <input type="text" required class="form-control date-picker"
+                                        id="family-birthdate"placeholder="Id number">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="marital">Marital status</label>
+                                    <select id="marital" class="form-control select2" style="width: 100%">
+                                        <option value="">--select status--</option>
+                                        <option value="1">Single</option>
+                                        <option value="2">Merried</option>
+                                        <option value="3">Widow</option>
+                                        <option value="4">Widower</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="family-jon">Job</label>
+                                    <input type="text" class="form-control" id="family-job" name="job"
+                                        placeholder="Job">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="family-address">Address</label>
+                                    <input type="text" class="form-control" id="family-address" name="family-address"
+                                        placeholder="Address">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="checkbox">
+                                    <p>
+                                        <input id="add-emergency" name="add-emergency" type="checkbox" value="">
+                                        Add to emergency contact
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fa fa-times mr-2"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitDocumentBtn">
+                            <i class="fa fa-save mr-2"></i>Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-econ" tabindex="-1" role="dialog" aria-labelledby="econ-model"
+        aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title" id="econ-model">
+                        <i class="fa fa-users mr-2"></i>Emergency Contact Form
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="econ-form">
+                    <div class="modal-body">
+                        <div class="row">
+                            <input type="hidden" id="econ-id">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="econ-fullname">Full name*</label>
+                                    <input required type="text" class="form-control" id="econ-fullname"
+                                        placeholder="Enter name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="econ-relation">econ-Relationship*</label>
+                                    <select required id="econ-relation" class="form-control select2" style="width: 100%">
+                                        <option value="" disabled selected>--choose relation--</option>
+                                        @foreach ($relations as $relation)
+                                            <option value="{{ $relation->id }}">{{ $relation->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="econ-mobile_number">Phone*</label>
+                                    <input required type="text" class="form-control"
+                                        id="econ-mobile_number"placeholder="Phone number">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fa fa-times mr-2"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save mr-2"></i>Submit
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -376,7 +615,88 @@
     <script src="/plugins/iCheck/icheck.min.js"></script>
     <script>
         $(document).ready(function() {
-            tblMember = $("#tbl-member").DataTable();
+            tblMember = $("#tbl-member, #tbl-econ").DataTable({
+                searching: false,
+                paging: false,
+                info: false,
+                lengthChange: false,
+                ordering: false
+            });
+
+            $('#family-form').on('submit', function(e) {
+                e.preventDefault();
+                const form = $(this);
+                const payload = {
+                    fullname: $('#fullname').val(),
+                    personal_id: $('#id').val(),
+                    relation_ship_id: $('#relation').val(),
+                    religion_id: $('#relation').val(),
+                    mobile_number: $('#mobile_number').val(),
+                    address: $('#family-address').val(),
+                    id_number: $('#id_number').val(),
+                    gendre: $('#gendre').val(),
+                    marital_status: $('#marital').val(),
+                    birth_date: moment($('#family-birthdate').val(), "DD MMMM YYYY").format(
+                        "YYYY-MM-DD"),
+                    job: $('#family-job').val(),
+                };
+                $('#modal-family').modal('hide')
+                blockUI();
+
+                ajax(payload, '/profile/family', "POST", function(json) {
+                    sweetAlert("Success", "Data successfully recorded", "success");
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                });
+            })
+
+            $('#btn-delete').on('click', function() {
+                if (!confirm("Are you sure you want to delete this data?")) {
+                    e.preventDefault();
+                }
+                let familyId = $(this).data('id');
+                blockUI();
+                ajax(null, `/profile/family/${familyId}`, "DELETE", function(json) {
+                    sweetAlert("Success", "Data removed successfully", "success");
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                });
+            })
+            $('#btn-delete-econ').on('click', function() {
+                if (!confirm("Are you sure you want to delete this data?")) {
+                    e.preventDefault();
+                }
+                let econId = $(this).data('id');
+                blockUI();
+                ajax(null, `/profile/emergency/${econId}`, "DELETE", function(json) {
+                    sweetAlert("Success", "Data removed successfully", "success");
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                });
+            })
+
+            $('#econ-form').on('submit', function(e) {
+                e.preventDefault();
+                const form = $(this);
+                const payload = {
+                    fullname: $('#econ-fullname').val(),
+                    personal_id: $('#id').val(),
+                    relation_ship_id: $('#econ-relation').val(),
+                    mobile_number: $('#econ-mobile_number').val(),
+                };
+                $('#modal-econ').modal('hide')
+                blockUI();
+
+                ajax(payload, '/profile/emergency', "POST", function(json) {
+                    sweetAlert("Success", "Data successfully recorded", "success");
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                });
+            })
         })
 
         function showForm() {

@@ -21,6 +21,10 @@ class Personal extends Model
     {
         return $this->hasMany(Family::class);
     }
+    public function emergencies()
+    {
+        return $this->hasMany(EmergencyContact::class);
+    }
     public function emergency_contacts()
     {
         return $this->hasMany(EmergencyContact::class);

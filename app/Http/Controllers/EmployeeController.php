@@ -9,14 +9,18 @@ use App\Models\DocumentCategory;
 use App\Models\Personal;
 use App\Services\BankService;
 use App\Services\BranchService;
+use App\Services\EmergencyContactService;
 use App\Services\EmployeeService;
+use App\Services\FamilyService;
 use App\Services\GoogleDriveService;
 use App\Services\JobLevelService;
 use App\Services\OrganizationService;
 use App\Services\PositionService;
+use App\Services\RelationshipService;
 use App\Services\ReligionService;
 use App\Services\ScheduleService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Redirect;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
@@ -39,6 +43,9 @@ class EmployeeController extends Controller
     private EmployeeService $employeeService;
     private DocumentCategory $documentCategory;
     private GoogleDriveService $googleDriveService;
+    private RelationshipService $relationshipService;
+    private FamilyService $familyService;
+    private EmergencyContactService $econService;
 
     public function __construct(
         BranchService $branchService,
@@ -50,7 +57,10 @@ class EmployeeController extends Controller
         ScheduleService $scheduleService,
         EmployeeService $employeeService,
         DocumentCategory $documentCategory,
-        GoogleDriveService $googleDriveService
+        GoogleDriveService $googleDriveService,
+        RelationshipService $relationshipService,
+        FamilyService $familyService,
+        EmergencyContactService $econService
     ) {
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
@@ -62,6 +72,9 @@ class EmployeeController extends Controller
         $this->employeeService = $employeeService;
         $this->documentCategory = $documentCategory;
         $this->googleDriveService = $googleDriveService;
+        $this->relationshipService = $relationshipService;
+        $this->familyService = $familyService;
+        $this->econService = $econService;
     }
     public function filterLocation(UtilitiesRequest $request)
     {
@@ -311,14 +324,69 @@ class EmployeeController extends Controller
 
     public function personal($id)
     {
-        $employee = $this->employeeService->show($id, ['personal']);
+        $employee = $this->employeeService->show($id, ['personal','personal.families']);
         $religions = $this->religionService->get();
+        $relations = $this->relationshipService->get();
         return view('employee.personal', [
             "title" => "Personal",
             "data" => $employee,
             "religions" => $religions,
+            "relations"=>$relations,
         ]);
     }
+
+    public function postFamily(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'fullname'         => 'required|string',
+            'personal_id'      => 'required|integer',
+            'relation_ship_id' => 'required|integer',
+            'religion_id'      => 'required|integer',
+            'mobile_number'    => 'nullable|string',
+            'address'          => 'nullable|string',
+            'id_number'        => 'nullable|string',
+            'gendre'           => 'required|in:male,female,1,2',
+            'marital_status'   => 'nullable|in:1,2,3,4',
+            'birth_date'       => 'required|date',
+            'job'              => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $family = $this->familyService->post($validator->validated());
+        return response()->json($family);
+    }
+
+    public function deleteFamily($id)
+    {
+        return $this->familyService->delete($id);
+    }
+
+    public function postEcon(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'fullname'         => 'required|string',
+            'personal_id'      => 'required|integer',
+            'relation_ship_id' => 'required|integer',
+            'mobile_number'    => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $econ = $this->econService->post($validator->validated());
+        return response()->json($econ);
+    }
+
+    public function deleteEcon($id)
+    {
+        return $this->econService->delete($id);
+    }
+
+
     public function document($id)
     {
         $employee = $this->employeeService->show($id, ['documents.category', 'documents.versions', 'documents.approvals']);

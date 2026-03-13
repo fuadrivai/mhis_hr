@@ -173,7 +173,7 @@ class EmployeeImplement implements EmployeeService
         }
     }
     function put($request) {}
-    function delete($id) {}
+    function delete($id) {}  
 
     function getByJobLevel($request)
     {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Family;
 use App\Http\Requests\StoreFamilyRequest;
 use App\Http\Requests\UpdateFamilyRequest;
+use Illuminate\Http\Request;
 
 class FamilyController extends Controller
 {
@@ -34,9 +35,9 @@ class FamilyController extends Controller
      * @param  \App\Http\Requests\StoreFamilyRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreFamilyRequest $request)
+    public function store(Request $request)
     {
-        //
+        
     }
 
     /**
@@ -45,7 +46,7 @@ class FamilyController extends Controller
      * @param  \App\Models\Family  $family
      * @return \Illuminate\Http\Response
      */
-    public function show(Family $family)
+    public function show($id)
     {
         //
     }
@@ -68,7 +69,7 @@ class FamilyController extends Controller
      * @param  \App\Models\Family  $family
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdateFamilyRequest $request, Family $family)
+    public function update($id, Request $request)
     {
         //
     }
@@ -79,7 +80,7 @@ class FamilyController extends Controller
      * @param  \App\Models\Family  $family
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Family $family)
+    public function destroy($id)
     {
         //
     }

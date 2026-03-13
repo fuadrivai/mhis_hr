@@ -97,6 +97,11 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('payrol-info/{id}', [EmployeeController::class, 'payrol_info']);
             Route::get('attendance/{id}', [EmployeeController::class, 'attendance']);
             Route::get('timeoff/{id}', [EmployeeController::class, 'timeoff']);
+            Route::post('family', [EmployeeController::class, 'postFamily']);
+            Route::delete('family/{id}', [EmployeeController::class, 'deleteFamily']);
+
+            Route::post('emergency', [EmployeeController::class, 'postEcon']);
+            Route::delete('emergency/{id}', [EmployeeController::class, 'deleteEcon']);
         });
         Route::group(['prefix' => 'time'], function () {
             Route::get('attendance', [AttendanceController::class, 'attendance']);

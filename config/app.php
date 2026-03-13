@@ -202,6 +202,9 @@ return [
         App\Providers\EmploymentProvider::class,
         App\Providers\TimeOffProvider::class,
         App\Providers\DocumentCategoryProvider::class,
+        App\Providers\RelationshipProvider::class,
+        App\Providers\FamilyProvider::class,
+        App\Providers\EmergencyContactProvider::class,
     ],
 
     /*
