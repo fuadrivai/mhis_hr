@@ -154,19 +154,17 @@
 
             <!-- page content -->
             <div class="right_col" role="main">
-                <div>
-                    <div class="page-title">
-                        <div class="title_left">
-                            <h3>{{ $title }}</h3>
-                        </div>
+                <div class="page-title">
+                    <div class="title_left">
+                        <h3>{{ $title }}</h3>
                     </div>
+                </div>
 
-                    <div class="clearfix"></div>
+                <div class="clearfix"></div>
 
-                    <div class="row">
-                        {{-- Main Contain  --}}
-                        @yield('content-child')
-                    </div>
+                <div class="row">
+                    {{-- Main Contain  --}}
+                    @yield('content-child')
                 </div>
             </div>
             <!-- /page content -->

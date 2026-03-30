@@ -47,37 +47,34 @@
         </div>
     </div>
 
-    <div class="col-12" id="location-area">
-        <div class="row">
-            <div class="col-12">
-                <div class="page-title">
-                    <div class="title_left">
-                        <h3>Location</h3>
-                    </div>
+    <div style="width: 100%" id="location-area">
+        <div class="col-12">
+            <div class="page-title">
+                <div class="title_left">
+                    <h3>Location</h3>
                 </div>
             </div>
+        </div>
 
-            <div class="col-12">
-                <div class="x_panel">
-                    <div class="x_content">
-                        <div class="row">
-                            <div class="col-12">
-                                <button data-toggle="modal" data-target="#right-modal-location" type="button"
-                                    class="btn btn-success btn-sm text-white btn-add-user"><i class="fa fa-map-marker"></i>
-                                    Add Location</button>
-                            </div>
-                            <table id="tbl-location" class="table table-striped table-bordered table-sm"
-                                style="width: 100%">
-                                <thead>
-                                    <tr>
-                                        <th>Location Name</th>
-                                        <th>Address</th>
-                                        <th>Radius</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                            </table>
+        <div class="col-12">
+            <div class="x_panel">
+                <div class="x_content">
+                    <div class="row">
+                        <div class="col-12">
+                            <button data-toggle="modal" data-target="#right-modal-location" type="button"
+                                class="btn btn-success btn-sm text-white btn-add-user"><i class="fa fa-map-marker"></i>
+                                Add Location</button>
                         </div>
+                        <table id="tbl-location" class="table table-striped table-bordered table-sm" style="width: 100%">
+                            <thead>
+                                <tr>
+                                    <th>Location Name</th>
+                                    <th>Address</th>
+                                    <th>Radius</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -276,6 +273,7 @@
         let map;
         let locationId = $('#id').val();
         $(document).ready(function() {
+            locationToggled($('input[name="need_location"]:checked').val() == 'true');
             tblLocation = $("#tbl-location").DataTable({
                 searching: false,
                 paging: false,
@@ -415,7 +413,7 @@
 
             $('input[name="need_location"]').on('change', function() {
                 let checked = $(this).val();
-                $('#location-area').toggleClass('d-none', checked != 'true');
+                locationToggled(checked);
             })
 
             $('#form-location').on('submit', function(e) {
@@ -566,6 +564,10 @@
                 $('#longitude').val(latLong.lng)
                 infoWindow.open(map);
             });
+        }
+
+        function locationToggled(checked) {
+            $('#location-area').toggleClass('d-none', checked != 'true');
         }
     </script>
 @endsection
