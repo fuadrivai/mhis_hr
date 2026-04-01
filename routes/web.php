@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApprovalRuleController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AttendanceLogController;
 use App\Http\Controllers\AuthController;
@@ -81,6 +82,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::resource('location', LocationController::class);
 
             Route::resource('bank', BankController::class);
+
+            Route::resource('approval', ApprovalRuleController::class);
         });
 
         Route::group(['prefix' => 'profile'], function () {

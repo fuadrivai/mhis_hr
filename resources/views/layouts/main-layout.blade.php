@@ -82,7 +82,7 @@
                                         class="nav child_menu">
                                         <li><a>Company<span class="fa fa-chevron-down"></span></a>
                                             <ul class="nav child_menu">
-                                                <li><a href="/setting/company">Company Info</a></li>
+                                                {{-- <li><a href="/setting/company">Company Info</a></li> --}}
                                                 <li><a href="/setting/branch">Branch</a></li>
                                                 <li><a href="/setting/organization">Organization</a></li>
                                                 <li><a href="/setting/position">Job Position</a></li>
@@ -103,13 +103,14 @@
                                                 <li><a href="/setting/location">Live Attendance</a></li>
                                             </ul>
                                         </li>
+                                        <li><a href="/setting/approval">Approval</a></li>
                                         <li><a href="/setting/bank">Bank</a></li>
                                     </ul>
                                 </li>
                                 <li><a href="/user"><i class="fa fa-user"></i> Management User </a></li>
                                 <li><a href="/internal-document/create" target="_blank"><i class="fa fa-folder"></i>
                                         Form Document </a></li>
-                                <li><a href="/signature"><i class="fa fa-qrcode"></i> E Signature </a></li>
+                                {{-- <li><a href="/signature"><i class="fa fa-qrcode"></i> E Signature </a></li> --}}
                             </ul>
                         </div>
 

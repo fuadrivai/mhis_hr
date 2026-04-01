@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 
 class EmployeeImplement implements EmployeeService
 {
-    function get($request)
+    function get()
     {
         $employees = Employee::with(['personal', 'employment', 'activeSchedule'])->get();
         return $employees;

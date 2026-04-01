@@ -28,7 +28,7 @@ class EmployeeScheduleController extends Controller
 
     public function index()
     {
-        $employee = $this->employeeService->get(request());
+        $employee = $this->employeeService->get();
         $schedules = $this->scheduleService->get();
         return view('employee.scheduler.index', [
             "data" => $employee,
