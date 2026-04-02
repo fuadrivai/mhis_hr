@@ -194,6 +194,7 @@ return [
         App\Providers\ShiftProvider::class,
         App\Providers\ScheduleProvider::class,
         App\Providers\BankProvider::class,
+        App\Providers\ApprovalRuleProvider::class,
         App\Providers\SignatureProvider::class,
         App\Providers\EmployeeScheduleProvider::class,
         App\Providers\LocationProvider::class,

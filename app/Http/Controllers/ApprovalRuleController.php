@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ApprovalRule;
+use App\Services\ApprovalRuleService;
 use App\Services\BranchService;
 use App\Services\EmployeeService;
 use App\Services\JobLevelService;
@@ -23,18 +24,21 @@ class ApprovalRuleController extends Controller
     private BranchService $branchService;
     private OrganizationService $organizationService;
     private JobLevelService $jobLevelService;
+    private ApprovalRuleService $approvalRuleService;
     
-    public function __construct(PositionService $positionService, EmployeeService $employeeService, BranchService $branchService, OrganizationService $organizationService, JobLevelService $jobLevelService)
+    public function __construct(PositionService $positionService, EmployeeService $employeeService, BranchService $branchService, OrganizationService $organizationService, JobLevelService $jobLevelService, ApprovalRuleService $approvalRuleService)
     {
         $this->positionService = $positionService;
         $this->employeeService = $employeeService;
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
         $this->jobLevelService = $jobLevelService;
+        $this->approvalRuleService = $approvalRuleService;
     }
     public function index()
     {
-        return view('approval.rule.index',['title' => 'Approval Line']);
+        $approvals = $this->approvalRuleService->get(['steps']);
+        return view('approval.rule.index',['title' => 'Approval Line', 'approvals' => $approvals]);
     }
 
     /**
@@ -68,7 +72,7 @@ class ApprovalRuleController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        return $this->approvalRuleService->post($request);
     }
 
     /**
@@ -88,9 +92,25 @@ class ApprovalRuleController extends Controller
      * @param  \App\Models\ApprovalRule  $approvalRule
      * @return \Illuminate\Http\Response
      */
-    public function edit(ApprovalRule $approvalRule)
+    public function edit($id)
     {
-        //
+        $positions = $this->positionService->get();
+        $employees = $this->employeeService->get();
+        $branches = $this->branchService->get();
+        $organizations = $this->organizationService->get();
+        $jobLevels = $this->jobLevelService->get();
+        $rule = $this->approvalRuleService->show($id);
+
+        return view('approval.rule.form',
+                ['title' => 'Create Approval Rule',
+                'positions' => $positions,
+                'employees' => $employees,
+                'branches' => $branches,
+                'organizations' => $organizations,
+                'jobLevels' => $jobLevels,
+                'rule' => $rule->load('branch', 'organization', 'position', 'level', 'steps')
+                ]
+            );
     }
 
     /**

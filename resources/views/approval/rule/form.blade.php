@@ -14,7 +14,8 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="name">Approval Rule Name *</label>
-                                    <input required type="text" id="name" class="form-control" name="name" />
+                                    <input required type="text" id="name" class="form-control" name="name"
+                                        value="{{ $rule->name ?? '' }}" />
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -23,7 +24,9 @@
                                     <select name="branch" id="branch" class="form-control">
                                         <option value="">-- Select Branch --</option>
                                         @foreach ($branches as $branch)
-                                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                                            <option value="{{ $branch->id }}"
+                                                {{ isset($rule) && old('branch', $rule->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
+                                                {{ $branch->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -34,7 +37,9 @@
                                     <select name="organization" id="organization" class="form-control">
                                         <option value="">-- Select Organization --</option>
                                         @foreach ($organizations as $organization)
-                                            <option value="{{ $organization->id }}">{{ $organization->name }}</option>
+                                            <option value="{{ $organization->id }}"
+                                                {{ isset($rule) && old('organization', $rule->organization_id ?? '') == $organization->id ? 'selected' : '' }}>
+                                                {{ $organization->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -45,7 +50,9 @@
                                     <select name="level" id="level" class="form-control">
                                         <option value="">-- Select Level --</option>
                                         @foreach ($jobLevels as $jobLevel)
-                                            <option value="{{ $jobLevel->id }}">{{ $jobLevel->name }}</option>
+                                            <option value="{{ $jobLevel->id }}"
+                                                {{ isset($rule) && old('level', $rule->job_level_id ?? '') == $jobLevel->id ? 'selected' : '' }}>
+                                                {{ $jobLevel->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -56,7 +63,9 @@
                                     <select name="position" id="position" class="form-control">
                                         <option value="">-- Select Position --</option>
                                         @foreach ($positions as $position)
-                                            <option value="{{ $position->id }}">{{ $position->name }}</option>
+                                            <option value="{{ $position->id }}"
+                                                {{ isset($rule) && old('position', $rule->position_id ?? '') == $position->id ? 'selected' : '' }}>
+                                                {{ $position->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -148,6 +157,28 @@
             renderSteps();
             $("#rules-container").sortable({
                 placeholder: "ui-state-highlight",
+
+                start: function(event, ui) {
+                    ui.item.data('oldIndex', ui.item.index());
+                },
+
+                update: function(event, ui) {
+
+                    const oldIndex = ui.item.data('oldIndex');
+                    const newIndex = ui.item.index();
+
+                    if (oldIndex === newIndex) return;
+
+                    const moved = workflow.steps.splice(oldIndex, 1)[0];
+                    workflow.steps.splice(newIndex, 0, moved);
+
+                    workflow.steps.forEach((step, i) => {
+                        step.index = i + 1;
+                        step.name = "Step " + (i + 1);
+                    });
+
+                    renderSteps();
+                }
             });
 
             $('#btn-add-rule').on('click', function() {
@@ -165,11 +196,16 @@
             $("#rules-container").on('change', '.step-logic', function() {
                 let index = $(this).data('index');
                 workflow.steps[index - 1].approval_mode = $(this).val();
-                console.log(workflow.steps[index - 1])
             })
             $("#rules-container").on('click', '.remove-step', function() {
                 let index = $(this).data('index');
                 workflow.steps.splice(index - 1, 1);
+                workflow.steps.forEach((step, i) => {
+                    step.index = i + 1;
+                    step.name = "Step " + (i + 1);
+                });
+
+                selectedEmployess = selectedEmployess.filter(emp => emp.index != index);
                 renderSteps();
             })
             $("#rules-container").on('click', '.add-approvers', function() {
@@ -179,10 +215,21 @@
                 renderSteps();
             })
 
+            $("#rules-container").on('click', '.remove-approver', function() {
+                let empId = $(this).data('id');
+                let stepIndex = $(this).data('step');
+                workflow.steps[stepIndex - 1].approvers = workflow.steps[stepIndex - 1].approvers.filter(
+                    approver => approver.employeeId !== empId);
+                selectedEmployess = selectedEmployess.filter(emp => emp.employee.id !== empId);
+                renderSteps();
+            })
+
             $('#tbl-employee').on('change', 'td input[type="checkbox"]', function() {
                 let employee = tblUser.row($(this).parents('tr')).data();
                 let val = $(this).prop('checked');
                 if (val == true) {
+                    const isExist = selectedEmployess.some(emp => emp.employee.id == employee.id);
+                    if (isExist) return;
                     let setpEmployee = {
                         index: selectedStep.index,
                         employee: employee
@@ -248,7 +295,6 @@
                                 selectedStep.index).some(step => step.approvers.some(
                                 approver => approver.employeeId ==
                                 empId))
-                            console.log(outOfSelected)
                             if (isExist) {
                                 $(node[i]).find('input').prop('checked', true)
                             }
@@ -268,40 +314,55 @@
 
             $('#btn-submit-employee').on('click', function() {
                 workflow.steps[selectedStep.index - 1].approvers = [];
-                $("#tbl-employee .input-check:checked").each(function() {
-                    let empId = $(this).data('id');
+                selectedEmployess.filter(emp => emp.index == selectedStep.index).forEach(emp => {
                     workflow.steps[selectedStep.index - 1].approvers.push({
-                        employeeId: selectedEmployess.find(emp => emp.employee.id == empId)
-                            .employee.id,
-                        employeeName: selectedEmployess.find(emp => emp.employee.id ==
-                            empId).employee.personal.fullname,
+                        employeeId: emp.employee.employment.id,
+                        employeeName: emp.employee.personal.fullname
                     });
-                });
+                })
+
                 $("#right-modal-user").modal('hide')
                 renderSteps();
             })
         })
 
-        function submitWorkflow() {
-            workflow.name = $("#name").val();
-            workflow.branch = $("#branch").val();
-            workflow.organization = $("#organization").val();
-            workflow.level = $("#level").val();
-            workflow.position = $("#position").val();
-            //validation
-            if (!workflow.name || !workflow.branch || !workflow.organization || !workflow.level || !workflow.position) {
-                sweetAlert("Error", "Please fill all required fields", "error");
-                return;
-            }
-            if (workflow.steps.length == 0) {
-                sweetAlert("Error", "Please add at least one approval step", "error");
-                return;
-            }
-            for (let step of workflow.steps) {
-                if (step.approvers.length == 0) {
-                    sweetAlert("Error", `Please add at least one approver for ${step.name}`, "error");
+        async function submitWorkflow() {
+            try {
+                workflow.name = $("#name").val();
+                workflow.branch = $("#branch").val();
+                workflow.organization = $("#organization").val();
+                workflow.level = $("#level").val();
+                workflow.position = $("#position").val();
+                //validation
+                if (!workflow.name || !workflow.branch || !workflow.organization || !workflow.level || !workflow
+                    .position) {
+                    sweetAlert("Error", "Please fill all required fields", "error");
                     return;
                 }
+                if (workflow.steps.length == 0) {
+                    sweetAlert("Error", "Please add at least one approval step", "error");
+                    return;
+                }
+                for (let step of workflow.steps) {
+                    if (step.approvers.length == 0) {
+                        sweetAlert("Error", `Please add at least one approver for ${step.name}`, "error");
+                        return;
+                    }
+                }
+
+                blockUI();
+                let res = await ajaxPromise({
+                    url: "/setting/approval",
+                    method: "POST",
+                    data: workflow
+                })
+                setTimeout(() => {
+                    window.location.href = "/setting/approval";
+                }, 1000);
+                sweetAlert("Success", "Approval rule has been created", "success");
+            } catch (error) {
+                sweetAlert("Error", "Something went wrong. Please try again later.", "error");
+                return;
             }
         }
 
@@ -313,14 +374,18 @@
                     <div class="x_panel">
                         <div class="x_title">
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-md-12 text-center">
                                     <h5><i class="fa fa-list"></i> No Approval Steps Added</h5>
                                 </div>
                             </div>
-                            <div class="clearfix"></div>
                         </div>
                         <div class="x_content">
-                            <p class="text-muted">Click "Add Steps" to create your first approval step.</p>
+                            <div class="row">
+                                <div class="col-md-12 text-center">
+                                    <p class="text-muted">Click "Add Steps" to create your first approval step.</p>
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
                 `;
@@ -347,7 +412,7 @@
                 `;
                 step.approvers.forEach(approver => {
                     stepHtml += `<div class="badge badge-secondary mr-2" id="approver-${approver.employeeId}">
-                                <div class="m-1"><label style="font-size: 14px;">${approver.employeeName} <i class="fa fa-times ml-1 remove-appover" data-id="${approver.employeeId}" style="cursor: pointer;"></i></div></label>
+                                <div class="m-1"><label style="font-size: 14px;">${approver.employeeName} <i class="fa fa-times ml-1 remove-approver" data-step="${idx}" data-id="${approver.employeeId}" style="cursor: pointer;"></i></div></label>
                                 <div class="clearfix"></div>
                             </div>`;
                 });

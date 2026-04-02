@@ -57,6 +57,22 @@ $(document).ready(function () {
     });
 });
 
+function ajaxPromise({ url, method = "GET", data = {} }) {
+    return new Promise((resolve, reject) => {
+        ajax(
+            data,
+            url,
+            method,
+            function (json) {
+                resolve(json);
+            },
+            function (err) {
+                reject(err);
+            },
+        );
+    });
+}
+
 function ajax(data, url, method, callback, callbackError) {
     $.ajax({
         url: url,
@@ -74,7 +90,7 @@ function ajax(data, url, method, callback, callbackError) {
                 ? sweetAlert(
                       "Error",
                       err?.responseJSON?.message ?? "Please try again later",
-                      "error"
+                      "error",
                   )
                 : callbackError(err);
         },

@@ -22,6 +22,19 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @foreach ($approvals as $item)
+                                    <tr>
+                                        <td>{{ $item->name }}</td>
+                                        <td>{{ $item->branch->name ?? 'N/A' }}</td>
+                                        <td>{{ $item->organization->name ?? 'N/A' }}</td>
+                                        <td>{{ $item->level->name ?? 'N/A' }}</td>
+                                        <td>{{ $item->position->name ?? 'N/A' }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary"
+                                                onclick="window.location.href='/setting/approval/{{ $item->id }}/edit'">Edit</button>
+                                        </td>
+                                    </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>

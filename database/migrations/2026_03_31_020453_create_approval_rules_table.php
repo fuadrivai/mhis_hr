@@ -18,9 +18,9 @@ class CreateApprovalRulesTable extends Migration
             $table->string('name')->unique()->comment('e.g. Teacher Approval, HOS Approval, etc.');
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->foreignId('organization_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('level_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('job_level_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('position_id')->nullable()->constrained()->nullOnDelete();
-            $table->unique(['branch_id', 'organization_id', 'level_id', 'position_id'], 'approval_rule_unique');
+            $table->unique(['branch_id', 'organization_id', 'job_level_id', 'position_id'], 'approval_rule_unique');
             $table->timestamps();
         });
     }
