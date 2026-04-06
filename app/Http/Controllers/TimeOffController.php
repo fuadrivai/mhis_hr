@@ -24,7 +24,7 @@ class TimeOffController extends Controller
     }
     public function index()
     {
-        return view('settings.timeoff', [
+        return view('settings.timeoff.index', [
             "title" => "Time Off",
         ]);
     }
@@ -44,7 +44,9 @@ class TimeOffController extends Controller
      */
     public function create()
     {
-        //
+        return view('settings.timeoff.form', [
+            "title" => "Time Off Form",
+        ]);
     }
 
     /**
