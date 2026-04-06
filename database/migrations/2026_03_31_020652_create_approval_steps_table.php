@@ -18,9 +18,7 @@ class CreateApprovalStepsTable extends Migration
             $table->foreignId('approval_rule_id')->constrained()->cascadeOnDelete();
             $table->string('name')->comment('e.g. Manager Approval, Director Approval, etc.');
             $table->integer('step_order');
-            $table->enum('approver_type', ['position', 'employment']);
-            $table->foreignId('approver_position_id')->nullable()->constrained('positions')->nullOnDelete();
-            $table->foreignId('approver_employment_id')->nullable()->constrained('employments')->nullOnDelete();
+            $table->foreignId('approver_employee_id')->nullable()->constrained('employees')->nullOnDelete();
             $table->enum('approval_mode', ['any', 'all'])->default('any')->comment('any: any approver can approve, all: all approvers must approve');
             $table->timestamps();
             $table->index(['approval_rule_id', 'step_order']);

@@ -14,8 +14,8 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="name">Approval Rule Name *</label>
-                                    <input required type="text" id="name" class="form-control" name="name"
-                                        value="{{ $rule->name ?? '' }}" />
+                                    <input type="hidden" id="id" value="{{ isset($id) ? $id : '' }}">
+                                    <input required type="text" id="name" class="form-control" name="name" />
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -24,9 +24,7 @@
                                     <select name="branch" id="branch" class="form-control">
                                         <option value="">-- Select Branch --</option>
                                         @foreach ($branches as $branch)
-                                            <option value="{{ $branch->id }}"
-                                                {{ isset($rule) && old('branch', $rule->branch_id ?? '') == $branch->id ? 'selected' : '' }}>
-                                                {{ $branch->name }}</option>
+                                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -37,9 +35,7 @@
                                     <select name="organization" id="organization" class="form-control">
                                         <option value="">-- Select Organization --</option>
                                         @foreach ($organizations as $organization)
-                                            <option value="{{ $organization->id }}"
-                                                {{ isset($rule) && old('organization', $rule->organization_id ?? '') == $organization->id ? 'selected' : '' }}>
-                                                {{ $organization->name }}</option>
+                                            <option value="{{ $organization->id }}">{{ $organization->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -50,9 +46,7 @@
                                     <select name="level" id="level" class="form-control">
                                         <option value="">-- Select Level --</option>
                                         @foreach ($jobLevels as $jobLevel)
-                                            <option value="{{ $jobLevel->id }}"
-                                                {{ isset($rule) && old('level', $rule->job_level_id ?? '') == $jobLevel->id ? 'selected' : '' }}>
-                                                {{ $jobLevel->name }}</option>
+                                            <option value="{{ $jobLevel->id }}">{{ $jobLevel->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -63,9 +57,7 @@
                                     <select name="position" id="position" class="form-control">
                                         <option value="">-- Select Position --</option>
                                         @foreach ($positions as $position)
-                                            <option value="{{ $position->id }}"
-                                                {{ isset($rule) && old('position', $rule->position_id ?? '') == $position->id ? 'selected' : '' }}>
-                                                {{ $position->name }}</option>
+                                            <option value="{{ $position->id }}">{{ $position->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -173,7 +165,7 @@
                     workflow.steps.splice(newIndex, 0, moved);
 
                     workflow.steps.forEach((step, i) => {
-                        step.index = i + 1;
+                        step.step_order = i + 1;
                         step.name = "Step " + (i + 1);
                     });
 
@@ -184,7 +176,7 @@
             $('#btn-add-rule').on('click', function() {
                 let stepNumber = workflow.steps.length + 1;
                 let step = {
-                    index: stepNumber,
+                    step_order: stepNumber,
                     name: `Step ${stepNumber}`,
                     approvers: [],
                     approval_mode: 'any'
@@ -201,11 +193,11 @@
                 let index = $(this).data('index');
                 workflow.steps.splice(index - 1, 1);
                 workflow.steps.forEach((step, i) => {
-                    step.index = i + 1;
+                    step.step_order = i + 1;
                     step.name = "Step " + (i + 1);
                 });
 
-                selectedEmployess = selectedEmployess.filter(emp => emp.index != index);
+                selectedEmployess = selectedEmployess.filter(emp => emp.step_order != index);
                 renderSteps();
             })
             $("#rules-container").on('click', '.add-approvers', function() {
@@ -231,7 +223,7 @@
                     const isExist = selectedEmployess.some(emp => emp.employee.id == employee.id);
                     if (isExist) return;
                     let setpEmployee = {
-                        index: selectedStep.index,
+                        step_order: selectedStep.step_order,
                         employee: employee
                     }
                     selectedEmployess.push(setpEmployee)
@@ -289,10 +281,11 @@
                         var node = api.rows().nodes()
                         for (var i = 0; i < node.length; i++) {
                             let empId = $(node[i]).find('input').attr('data-id')
-                            let isExist = workflow.steps[selectedStep.index - 1].approvers.some(
-                                item => item.employeeId == empId)
-                            let outOfSelected = workflow.steps.filter(step => step.index !=
-                                selectedStep.index).some(step => step.approvers.some(
+                            let isExist = workflow.steps[selectedStep.step_order - 1].approvers
+                                .some(
+                                    item => item.employeeId == empId)
+                            let outOfSelected = workflow.steps.filter(step => step.step_order !=
+                                selectedStep.step_order).some(step => step.approvers.some(
                                 approver => approver.employeeId ==
                                 empId))
                             if (isExist) {
@@ -309,14 +302,15 @@
             })
             $('#right-modal-user').on('hidden.bs.modal', function(e) {
                 selectedStep = null;
+                selectedEmployess = [];
                 $("#tbl-employee").DataTable().destroy();
             })
 
             $('#btn-submit-employee').on('click', function() {
-                workflow.steps[selectedStep.index - 1].approvers = [];
-                selectedEmployess.filter(emp => emp.index == selectedStep.index).forEach(emp => {
-                    workflow.steps[selectedStep.index - 1].approvers.push({
-                        employeeId: emp.employee.employment.id,
+                workflow.steps[selectedStep.step_order - 1].approvers = [];
+                selectedEmployess.filter(emp => emp.step_order == selectedStep.step_order).forEach(emp => {
+                    workflow.steps[selectedStep.step_order - 1].approvers.push({
+                        employeeId: emp.employee.id,
                         employeeName: emp.employee.personal.fullname
                     });
                 })
@@ -324,7 +318,28 @@
                 $("#right-modal-user").modal('hide')
                 renderSteps();
             })
+            getApprovalRule();
         })
+
+        async function getApprovalRule() {
+            let id = $("#id").val();
+            if (id) {
+                blockUI();
+                let rule = await ajaxPromise({
+                    url: `/setting/approval/${id}`,
+                    method: "GET"
+                });
+
+                workflow = rule;
+                workflow.steps = workflow.formatted_steps;
+                $("#name").val(workflow.name);
+                $("#branch").val(workflow.branch.id).trigger('change');
+                $("#organization").val(workflow.organization.id).trigger('change');
+                $("#level").val(workflow.level.id).trigger('change');
+                $("#position").val(workflow.position.id).trigger('change');
+                renderSteps();
+            }
+        }
 
         async function submitWorkflow() {
             try {
@@ -351,15 +366,17 @@
                 }
 
                 blockUI();
+                let url = workflow.id ? `/setting/approval/${workflow.id}` : "/setting/approval";
+                let method = workflow.id ? "PUT" : "POST";
                 let res = await ajaxPromise({
-                    url: "/setting/approval",
-                    method: "POST",
+                    url: url,
+                    method: method,
                     data: workflow
-                })
+                });
                 setTimeout(() => {
                     window.location.href = "/setting/approval";
                 }, 1000);
-                sweetAlert("Success", "Approval rule has been created", "success");
+                sweetAlert("Success", "Approval rule has been submitted", "success");
             } catch (error) {
                 sweetAlert("Error", "Something went wrong. Please try again later.", "error");
                 return;

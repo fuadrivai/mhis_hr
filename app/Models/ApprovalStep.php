@@ -9,18 +9,14 @@ class ApprovalStep extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
-    protected $hidden = ['approval_rule_id','approver_position_id','approver_employment_id'];
+    protected $hidden = ['approval_rule_id','approver_employee_id','created_at','updated_at'];
 
     public function rule()
     {
         return $this->belongsTo(ApprovalRule::class, 'approval_rule_id');
     }
-    public function approverPosition()
+    public function approverEmployee()
     {
-        return $this->belongsTo(Position::class, 'approver_position_id');
-    }
-    public function approverEmployment()
-    {
-        return $this->belongsTo(Employment::class,'approver_employment_id');
+        return $this->belongsTo(Employee::class, 'approver_employee_id');
     }
 }

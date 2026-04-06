@@ -31,7 +31,8 @@
                                         <td>{{ $item->position->name ?? 'N/A' }}</td>
                                         <td>
                                             <button class="btn btn-sm btn-primary"
-                                                onclick="window.location.href='/setting/approval/{{ $item->id }}/edit'">Edit</button>
+                                                onclick="window.location.href='/setting/approval/{{ $item->id }}/edit'"><i
+                                                    class="fa fa-eye"></i> Edit</button>
                                         </td>
                                     </tr>
                                 @endforeach

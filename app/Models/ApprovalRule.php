@@ -36,4 +36,30 @@ class ApprovalRule extends Model
     {
         return $this->hasMany(ApprovalStep::class, 'approval_rule_id');
     }
+
+    public function getFormattedStepsAttribute()
+    {
+        return collect($this->steps)
+            ->groupBy('step_order')
+            ->map(function ($steps, $stepOrder) {
+                $first = $steps->first();
+                return [
+                    'step_order' => (int) $stepOrder,
+                    'name' => $first->name,
+                    'approval_mode' => $first->approval_mode,
+                    'approvers' => $steps->map(function ($step) {
+                        $employee = $step->approverEmployee;
+                        if (!$employee) {
+                            return null;
+                        }
+                        return [
+                            'employeeId' => $employee->id,
+                            'employeeName' => optional($employee->personal)->fullname,
+                        ];
+                    })->filter()->values(),
+                ];
+            })
+            ->sortBy('step_order')
+            ->values();
+    }
 }

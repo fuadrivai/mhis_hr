@@ -1,10 +1,8 @@
 <?php
 namespace App\Services;
 
-use App\Models\Request;
 use App\Models\ApprovalRule;
 use App\Models\Branch;
-use App\Models\RequestApproval;
 use App\Models\Employment;
 use Illuminate\Support\Collection;
 

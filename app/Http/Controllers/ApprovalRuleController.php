@@ -81,9 +81,16 @@ class ApprovalRuleController extends Controller
      * @param  \App\Models\ApprovalRule  $approvalRule
      * @return \Illuminate\Http\Response
      */
-    public function show(ApprovalRule $approvalRule)
+    public function show($id)
     {
-        //
+        $rule = $this->approvalRuleService->show($id);
+        $rule->load('branch',
+                'organization',
+                'position',
+                'level',
+            );
+        $rule->formatted_steps = $rule->formatted_steps;
+        return response()->json($rule);
     }
 
     /**
@@ -99,7 +106,6 @@ class ApprovalRuleController extends Controller
         $branches = $this->branchService->get();
         $organizations = $this->organizationService->get();
         $jobLevels = $this->jobLevelService->get();
-        $rule = $this->approvalRuleService->show($id);
 
         return view('approval.rule.form',
                 ['title' => 'Create Approval Rule',
@@ -108,7 +114,7 @@ class ApprovalRuleController extends Controller
                 'branches' => $branches,
                 'organizations' => $organizations,
                 'jobLevels' => $jobLevels,
-                'rule' => $rule->load('branch', 'organization', 'position', 'level', 'steps')
+                'id' => $id
                 ]
             );
     }
@@ -120,9 +126,9 @@ class ApprovalRuleController extends Controller
      * @param  \App\Models\ApprovalRule  $approvalRule
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, ApprovalRule $approvalRule)
+    public function update($id, Request $request)
     {
-        //
+        return $this->approvalRuleService->put($request);
     }
 
     /**

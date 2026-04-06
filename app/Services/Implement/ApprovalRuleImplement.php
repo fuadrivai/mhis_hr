@@ -21,7 +21,6 @@ class ApprovalRuleImplement implements ApprovalRuleService
     {
         try {
             $rule = ApprovalRule::find($id);
-
             return $rule;
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], 500);
@@ -46,16 +45,8 @@ class ApprovalRuleImplement implements ApprovalRuleService
                     return [
                         'approval_rule_id' => $rule->id,
                         'name' => $step['name'],
-                        'step_order' => $step['index'],
-                        'approver_type' => $step['approver_type'] ?? 'employment',
-                        'approver_position_id' =>
-                            ($step['approver_type'] ?? 'employment') == 'position'
-                                ? $approver['employeeId']
-                                : null,
-                        'approver_employment_id' =>
-                            ($step['approver_type'] ?? 'employment') == 'employment'
-                                ? $approver['employeeId']
-                                : null,
+                        'step_order' => $step['step_order'],
+                        'approver_employee_id' =>$approver['employeeId'],
                         'approval_mode' => $step['approval_mode'] ?? 'any',
                     ];
                 });
@@ -75,22 +66,43 @@ class ApprovalRuleImplement implements ApprovalRuleService
     public function put($request)
     {
         try {
+            DB::beginTransaction();
+
             $rule = ApprovalRule::find($request['id']);
 
             if (!$rule) {
-                return response()->json(['message' => 'Approval rule not found'], 404);
+                throw new \Exception('Approval rule not found');
             }
 
             $rule->name = $request['name'] ?? $rule->name;
-            $rule->branch_id = $request['branch_id'] ?? $rule->branch_id;
-            $rule->organization_id = $request['organization_id'] ?? $rule->organization_id;
-            $rule->level_id = $request['level_id'] ?? $rule->level_id;
-            $rule->position_id = $request['position_id'] ?? $rule->position_id;
+            $rule->branch_id = $request['branch'] ?? $rule->branch_id;
+            $rule->organization_id = $request['organization'] ?? $rule->organization_id;
+            $rule->job_level_id = $request['level'] ?? $rule->job_level_id;
+            $rule->position_id = $request['position'] ?? $rule->position_id;
             $rule->save();
 
-            return response()->json($rule);
+            $rule->steps()->delete();
+
+            $steps = collect($request['steps'])->flatMap(function ($step) use ($rule) {
+                return collect($step['approvers'])->map(function ($approver) use ($step, $rule) {
+                    return [
+                        'approval_rule_id' => $rule->id,
+                        'name' => $step['name'],
+                        'step_order' => $step['step_order'],
+                        'approver_employee_id' =>$approver['employeeId'],
+                        'approval_mode' => $step['approval_mode'] ?? 'any',
+                    ];
+                });
+            })->toArray();
+
+            $rule->steps()->insert($steps);
+
+            DB::commit();
+            return $rule->load('steps');
+
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th->getMessage()], 500);
+            DB::rollBack();
+            throw new \Exception($th->getMessage());
         }
     }
 
