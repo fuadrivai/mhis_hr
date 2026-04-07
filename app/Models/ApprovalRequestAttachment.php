@@ -5,14 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TimeOff extends Model
+class ApprovalRequestAttachment extends Model
 {
     use HasFactory;
-    protected $table = 'timeoffs';
     protected $guarded = ['id'];
-
-    protected $casts = [
-        'is_active' => 'boolean',
-        'schema' => 'array'
-    ];
 }

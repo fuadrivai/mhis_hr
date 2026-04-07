@@ -50,6 +50,23 @@ class TimeOffController extends Controller
     }
 
     /**
+     * Show the preview of the form fields.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function preview(Request $request)
+    {
+        $schema = $request->get('schema', '[]');
+        $fields = json_decode($schema, true);
+
+        return view('settings.timeoff.preview', [
+            "title" => "Form Preview",
+            "fields" => $fields
+        ]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \App\Http\Requests\StoreTimeOffRequest  $request
@@ -57,17 +74,13 @@ class TimeOffController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'code' => 'required|string|max:255',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'deduct_from_leave' => 'nullable|boolean',
-            'is_paid' => 'nullable|boolean',
-            'need_attachment' => 'nullable|boolean',
-        ]);
 
-        $timeOff = $this->timeOffService->post($validated);
-        return response()->json($timeOff);
+        $request->validate([
+            'code' => 'required|string|max:255|unique:timeoffs,code',
+            'name' => 'required|string|max:255'
+        ]);
+        $this->timeOffService->post($request);
+        return redirect()->route('timeoff.index')->with('success', 'TimeOff created successfully');
     }
 
     /**
@@ -76,9 +89,10 @@ class TimeOffController extends Controller
      * @param  \App\Models\TimeOff  $timeOff
      * @return \Illuminate\Http\Response
      */
-    public function show(TimeOff $timeOff)
+    public function show($id)
     {
-        //
+        $timeOff = $this->timeOffService->show($id);
+        return response()->json($timeOff);
     }
 
     /**
@@ -87,9 +101,13 @@ class TimeOffController extends Controller
      * @param  \App\Models\TimeOff  $timeOff
      * @return \Illuminate\Http\Response
      */
-    public function edit(TimeOff $timeOff)
+    public function edit($id)
     {
-        //
+        $timeOff = $this->timeOffService->show($id);
+        return view('settings.timeoff.form', [
+            "title" => "Edit Time Off",
+            "timeOff" => $timeOff
+        ]);
     }
 
     /**
@@ -101,20 +119,14 @@ class TimeOffController extends Controller
      */
     public function update($id , Request $request)
     {
-        $validated = $request->validate([
-            'id' => 'required|integer|exists:time_offs,id',
-            'code' => 'sometimes|required|string|max:255',
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'deduct_from_leave' => 'nullable|boolean',
-            'is_paid' => 'nullable|boolean',
-            'need_attachment' => 'nullable|boolean',
-        ]);
+        $request->merge(['id' => $id]);
+        $timeOff = $this->timeOffService->put($request);
+        if (isset($timeOff->id)) {
+            return redirect()->route('timeoff.index')->with('success', 'TimeOff updated successfully');
+        } else {
+            return redirect()->route('timeoff.index')->with('error', 'Failed to update TimeOff');
+        }
 
-        $validated['id'] = $id;
-
-        $timeOff = $this->timeOffService->put($validated);
-        return response()->json($timeOff);
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Services\Implement;
 
 use App\Models\TimeOff;
 use App\Services\TimeOffService;
+use Illuminate\Support\Facades\DB;
 
 class TimeOffImplement implements TimeOffService
 {
@@ -18,39 +19,34 @@ class TimeOffImplement implements TimeOffService
     function show($id)
     {
         try {
-            return  TimeOff::find($id);
+            return TimeOff::find($id);
         } catch (\Throwable $th) {
             return response()->json(["message" => $th->getMessage()], $th->getCode());
         }
     }
     function post($request)
     {
+        DB::beginTransaction();
         try {
-            if (TimeOff::where('code', $request['code'])->exists()) {
-                return response()->json([
-                    "message" => "Code already exists"
-                ], 409);
-            }
-
+            // Create new TimeOff record
             $timeOff = TimeOff::create([
-                'code'              => $request['code'],
-                'name'              => $request['name'],
-                'description'       => $request['description'],
-                'deduct_from_leave' => $request['deduct_from_leave'] ?? 0,
-                'is_paid'           => $request['is_paid'] ?? 0,
-                'need_attachement'   => $request['need_attachement'] ?? 0,
+                'code' => $request['code'],
+                'name' => $request['name'],
+                'schema' => $request['schema'] ? json_decode($request['schema'], true) : null,
+                'is_active' => true
             ]);
+
+            DB::commit();
             return $timeOff;
         } catch (\Throwable $th) {
-            return response()->json(
-                ["message" => $th->getMessage()],
-                500
-            );
+            DB::rollBack();
+            return response()->json(["message" => $th->getMessage()], $th->getCode() ?: 500);
         }
     }
 
     function put($request)
     {
+        DB::beginTransaction();
         try {
             $timeOff = TimeOff::find($request['id']);
             if (!$timeOff) {
@@ -58,22 +54,20 @@ class TimeOffImplement implements TimeOffService
             }
 
             $timeOff->update([
-                'code'              => $request['code'] ?? $timeOff->code,
-                'name'              => $request['name'] ?? $timeOff->name,
-                'deduct_from_leave' => $request['deduct_from_leave'] ?? $timeOff->deduct_from_leave,
-                'is_paid'           => $request['is_paid'] ?? $timeOff->is_paid,
-                'need_attachment'   => $request['need_attachment'] ?? $timeOff->need_attachment,
+                'code' => $request['code'],
+                'name' => $request['name'],
+                'schema' => isset($request['schema']) ? json_decode($request['schema'], true) : $timeOff->schema,
+                'is_active' => $request['is_active'] ?? $timeOff->is_active
             ]);
 
+            DB::commit();
             return $timeOff;
-
         } catch (\Throwable $th) {
-            return response()->json(
-                ["message" => $th->getMessage()],
-                $th->getCode() ?: 500
-            );
+            DB::rollBack();
+            return response()->json(["message" => $th->getMessage()], $th->getCode() ?: 500);
         }
     }
+    
 
     function delete($id)
     {
@@ -85,7 +79,6 @@ class TimeOffImplement implements TimeOffService
                     "message" => "Data not found"
                 ], 404);
             }
-
             $timeOff->delete();
             return true;
         } catch (\Throwable $th) {
@@ -94,5 +87,4 @@ class TimeOffImplement implements TimeOffService
             ], 500);
         }
     }
-
 }

@@ -14,9 +14,7 @@
                             <tr>
                                 <th>Code</th>
                                 <th>Name</th>
-                                <th>Is Paid</th>
-                                <th>Deduct</th>
-                                <th>Need Attachement</th>
+                                <th>Active</th>
                                 <th>#</th>
                             </tr>
                         </thead>
@@ -24,74 +22,6 @@
                         <body></body>
                     </table>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal fade" id="modal-timeoff" tabindex="-1" role="dialog" aria-modal="true"
-        aria-labelledby="modal-dataLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form autocomplete="off" action="/setting/timeoff" method="POST" id="form-timeoff">
-                    @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modal-dataLabel">Time Off Form</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <input type="hidden" name="id" id="id" class="form-control ">
-                                    <label for="code">Code</label>
-                                    <input type="text" name="code" id="code" class="form-control" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="name">Name</label>
-                                    <input type="text" name="name" id="name" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="description">Description</label>
-                                    <textarea name="description" class="form-control" id="description" cols="5" rows="3"></textarea>
-                                </div>
-                                <div class="form-group mt-3">
-                                    <div class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" id="deduct_from_leave"
-                                            name="deduct_from_leave" value="1">
-                                        <label class="custom-control-label" for="deduct_from_leave">
-                                            Deduct From Leave
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="form-group mt-2">
-                                    <div class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" id="is_paid" name="is_paid"
-                                            value="1">
-                                        <label class="custom-control-label" for="is_paid">
-                                            Is Paid
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="form-group mt-2">
-                                    <div class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" id="need_attachment"
-                                            name="need_attachment" value="1">
-                                        <label class="custom-control-label" for="need_attachment">
-                                            Need Attachment
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="submit" class="btn btn-primary mt-3">
-                                        <i class="fa fa-save"></i> Save
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -140,31 +70,24 @@
                         defaultContent: "--",
                     },
                     {
-                        data: "is_paid",
+                        data: "is_active",
                         defaultContent: "--",
+                        className: "text-center",
                         mRender: function(data, type, full) {
-                            return `<span class="badge badge-${data ? 'info' : 'secondary'}"> ${data ? 'Yes' : 'No'}</span>`
-                        }
-                    },
-                    {
-                        data: "deduct_from_leave",
-                        defaultContent: "--",
-                        mRender: function(data, type, full) {
-                            return `<span class="badge badge-${data ? 'info' : 'secondary'}"> ${data ? 'Yes' : 'No'}</span>`
-                        }
-                    },
-                    {
-                        data: "need_attachment",
-                        defaultContent: "--",
-                        mRender: function(data, type, full) {
-                            return `<span class="badge badge-${data ? 'info' : 'secondary'}"> ${data ? 'Yes' : 'No'}</span>`
+                            return `<span class="badge badge-${data ? 'success' : 'secondary'}"> ${data ? 'Active' : 'Inactive'}</span>`
                         }
                     },
                     {
                         data: "id",
+                        className: "text-center",
                         mRender: function(data, type, full) {
                             return `
-                                <button data-toggle="modal" data-target="#modal-timeoff" type="button" class="btn btn-primary btn-edit"><i class="fa fa-edit"></i></button>
+                                <a href="/setting/timeoff/${data}/edit" class="btn btn-sm btn-primary btn-edit" title="Edit Time Off">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-warning btn-copy" data-id="${data}" title="Copy Time Off">
+                                    <i class="fa fa-copy text-white"></i>
+                                </button>
                             `
                         }
                     },
@@ -180,6 +103,18 @@
                 $('#deduct_from_leave').prop('checked', data.deduct_from_leave == 1 ? true : false);
                 $('#is_paid').prop('checked', data.is_paid == 1 ? true : false);
                 $('#need_attachment').prop('checked', data.need_attachment == 1 ? true : false);
+            });
+
+            $('#tbl-datatable tbody').on('click', '.btn-copy', function() {
+                var data = tbldata.row($(this).parents('tr')).data();
+                // Store the data in sessionStorage to be used in the create form
+                sessionStorage.setItem('copy_timeoff_data', JSON.stringify({
+                    code: data.code + '_copy',
+                    name: data.name + ' (Copy)',
+                    schema: data.schema
+                }));
+                // Redirect to create form
+                window.location.href = '/setting/timeoff/create';
             });
 
             $('#form-timeoff').on('submit', function(e) {

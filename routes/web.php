@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApprovalRequestController;
 use App\Http\Controllers\ApprovalRuleController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AttendanceLogController;
@@ -76,13 +77,13 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::resource('shift', ShiftController::class);
 
             Route::get('timeoff/datatable', [TimeOffController::class, 'dataTable']);
+            Route::get('timeoff/preview', [TimeOffController::class, 'preview']);
             Route::resource('timeoff', TimeOffController::class);
 
             Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);
             Route::resource('location', LocationController::class);
 
             Route::resource('bank', BankController::class);
-
             Route::resource('approval', ApprovalRuleController::class);
         });
 
@@ -108,6 +109,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         });
         Route::group(['prefix' => 'time'], function () {
             Route::get('attendance', [AttendanceController::class, 'attendance']);
+            Route::get('request/datatable', [ApprovalRequestController::class, 'dataTable']);
+            Route::resource('request', ApprovalRequestController::class);
         });
 
         Route::resource('signature', SignatureController::class);

@@ -73,7 +73,7 @@
                                         <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
                                                 href="#">Overtime</a></li>
                                         <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
-                                                href="#">Time Off</a></li>
+                                                href="/time/request">Time Off</a></li>
                                     </ul>
                                 </li>
                                 <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i class="fa fa-gears"></i>
@@ -93,7 +93,7 @@
                                         <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
                                                     class="fa fa-chevron-down"></span></a>
                                             <?php
-                                            $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*');
+                                            $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*') || Request::is('setting/timeoff*') || Request::is('setting/holiday*') || Request::is('setting/location*');
                                             ?>
                                             <ul style="display: {{ $isBlock ? 'block' : 'none' }}"
                                                 class="nav child_menu">
