@@ -15,6 +15,7 @@ class ApprovalRequest extends Model
     {
         return $this->belongsTo(ApprovalRule::class);
     }
+
     public function data()
     {
         return $this->hasOne(ApprovalRequestData::class);
@@ -24,6 +25,7 @@ class ApprovalRequest extends Model
     {
         return $this->belongsTo(Employee::class, 'requester_employee_id');
     }
+
     public function attachments()
     {
         return $this->hasMany(ApprovalRequestAttachment::class);
@@ -37,5 +39,10 @@ class ApprovalRequest extends Model
     public function type()
     {
         return $this->belongsTo(TimeOff::class, 'timeoff_id');
+    }
+
+    public function histories()
+    {
+        return $this->hasMany(ApprovalHistory::class);
     }
 }

@@ -53,9 +53,11 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::resource('scheduler', EmployeeScheduleController::class);
         Route::get('shift/get', [ShiftController::class, 'get']);
 
-        Route::group(['prefix' => 'user'], function () {
+        Route::prefix('user')->name('user.')->group(function () {
             Route::put('/reset', [UserController::class, 'resetPassword']);
-            Route::resource('/', UserController::class);
+            Route::resource('/', UserController::class)->parameters([
+                '' => 'user'
+            ]);
         });
 
         Route::group(['prefix' => 'employee'], function () {
@@ -110,6 +112,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::group(['prefix' => 'time'], function () {
             Route::get('attendance', [AttendanceController::class, 'attendance']);
             Route::get('request/datatable', [ApprovalRequestController::class, 'dataTable']);
+            Route::get('request/{id}/history', [ApprovalRequestController::class, 'history']);
+            Route::get('request/{id}/approver', [ApprovalRequestController::class, 'approver']);
             Route::resource('request', ApprovalRequestController::class);
         });
 

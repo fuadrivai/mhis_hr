@@ -10,6 +10,7 @@ use App\Models\ApprovalRequestData;
 use App\Models\Employee;
 use App\Models\TimeOff;
 use App\Services\ApprovalEngine;
+use App\Services\ApprovalRequestService;
 use App\Services\EmployeeService;
 use App\Services\TimeOffService;
 use Illuminate\Http\Request;
@@ -18,15 +19,15 @@ use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
 
 class ApprovalRequestController extends Controller
 {
-    private ApprovalEngine $approvalEngine;
     private EmployeeService $employeeService;
     private TimeOffService $timeOffService;
+    private ApprovalRequestService $approvalRequestService;
 
-    public function __construct(ApprovalEngine $approvalEngine, EmployeeService $employeeService, TimeOffService $timeOffService)
+    public function __construct(EmployeeService $employeeService, TimeOffService $timeOffService, ApprovalRequestService $approvalRequestService)
     {
-        $this->approvalEngine = $approvalEngine;
         $this->employeeService = $employeeService;
         $this->timeOffService = $timeOffService;
+        $this->approvalRequestService = $approvalRequestService;
     }
 
     public function index()
@@ -38,7 +39,15 @@ class ApprovalRequestController extends Controller
 
     public function dataTable(UtilitiesRequest $request)
     {
-        $approvalRequests = ApprovalRequest::with(['type', 'requester.personal','requester.employment', 'approval_rule'])->select('approval_requests.*');
+        $approvalRequests = ApprovalRequest::with([
+            'type',
+            'data',
+            'approvals.approver',
+            'approvals.approver.personal',
+            'requester.personal',
+            'requester.employment',
+            'approval_rule'
+        ])->select('approval_requests.*');
 
         if ($request->ajax()) {
             return datatables()->of($approvalRequests)->make(true);
@@ -65,69 +74,38 @@ class ApprovalRequestController extends Controller
             'note' => 'nullable|string',
             'dynamic_fields' => 'nullable|array',
             'dynamic_fields.*' => 'nullable',
-            'attachments.*' => 'nullable|file|max:10240',
+            'attachments.*' => 'nullable|file|max:10240'
         ]);
+        $validated['attachments'] = $request->file('attachments', []);
 
-        DB::beginTransaction();
-        try {
-            $employee = Employee::findOrFail($validated['requester_employee_id']);
-            $timeoff = TimeOff::findOrFail($validated['timeoff_id']);
-            $approvalRule = $this->approvalEngine->resolveApprovalRule($employee);
-
-            if (!$approvalRule) {
-                return back()->withErrors(['requester_employee_id' => 'No matching approval rule found for this employee.']);
-            }
-
-            $approvalRequest = ApprovalRequest::create([
-                'approval_rule_id' => $approvalRule->id,
-                'requester_employee_id' => $employee->id,
-                'timeoff_id' => $timeoff->id,
-                'note' => $validated['note'] ?? null,
-                'current_step' => 1,
-                'status' => 'pending',
-            ]);
-
-            ApprovalRequestData::create([
-                'approval_request_id' => $approvalRequest->id,
-                'data' => $validated['dynamic_fields'] ?? [],
-            ]);
-
-            foreach ($request->file('attachments', []) as $file) {
-                $path = $file->store('approval-request-attachments');
-                ApprovalRequestAttachment::create([
-                    'approval_request_id' => $approvalRequest->id,
-                    'field_name' => 'attachments',
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'mime_type' => $file->getClientMimeType(),
-                    'file_size' => $file->getSize(),
-                ]);
-            }
-
-            foreach ($approvalRule->steps as $step) {
-                Approval::create([
-                    'approval_request_id' => $approvalRequest->id,
-                    'step_order' => $step->step_order,
-                    'approver_employee_id' => $step->approver_employee_id,
-                    'approval_mode' => $step->approval_mode,
-                    'status' => 'pending',
-                ]);
-            }
-
-            ApprovalHistory::create([
-                'approval_request_id' => $approvalRequest->id,
-                'action' => 'submitted',
-                'step_order' => 1,
-            ]);
-
-            DB::commit();
-            return redirect('/time/request')->with('success', 'Approval request submitted successfully.');
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            return back()->withErrors(['error' => $th->getMessage()]);
-        }
+        return $this->approvalRequestService->post($validated);
     }
 
+    public function show($id)
+    {
+        $appRequest =  $this->approvalRequestService->show($id);
+        $appRequest->load([
+            'type',
+            'data',
+            'approvals.approver',
+            'approvals.approver.personal',
+            'requester.personal',
+            'requester.employment',
+            'approval_rule'
+        ]);
+        return response()->json($appRequest);
+    }
+
+    public function history($id)
+    {
+        $history =  $this->approvalRequestService->show($id)->histories()->with('approver.personal')->get();
+        return response()->json($history);
+    }
+    public function approver($id)
+    {
+        $approvals =  $this->approvalRequestService->show($id)->approvals()->with('approver.personal')->get();
+        return response()->json($approvals);
+    }
     public function edit(ApprovalRequest $request)
     {
         $employees = $this->employeeService->get();

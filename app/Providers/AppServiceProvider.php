@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\ApprovalRequestService;
+use App\Services\Implement\ApprovalRequestImplement;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 
@@ -12,6 +14,11 @@ class AppServiceProvider extends ServiceProvider
      *
      * @return void
      */
+
+    public array $singletons = [
+        ApprovalRequestService::class => ApprovalRequestImplement::class,
+    ];
+
     public function register()
     {
         //

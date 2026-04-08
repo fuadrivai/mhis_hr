@@ -9,6 +9,7 @@ class Approval extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+    protected $hidden = ['approval_request_id','approver_employee_id','approval_request_id'];
 
     public function approvalRequestData()
     {
@@ -22,5 +23,9 @@ class Approval extends Model
     public function approvalHistories()
     {
         return $this->hasMany(ApprovalHistory::class);
+    }
+    public function approver()
+    {
+        return $this->belongsTo(Employee::class, 'approver_employee_id');
     }
 }

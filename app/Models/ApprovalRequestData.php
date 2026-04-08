@@ -9,7 +9,6 @@ class ApprovalRequestData extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
-    protected $casts = [
-        'data' => 'array'
-    ];
+    protected $hidden = ['approval_request_id'];
+    protected $casts = ['data' => 'array'];
 }

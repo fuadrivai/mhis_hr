@@ -26,7 +26,7 @@
                             <label for="requester_employee_id" class="col-sm-3 col-form-label">Employee <span
                                     class="text-danger">*</span></label>
                             <div class="col-sm-9">
-                                <select class="form-control" id="requester_employee_id" name="requester_employee_id"
+                                <select class="form-control select2" id="requester_employee_id" name="requester_employee_id"
                                     required>
                                     <option value="">Select employee</option>
                                     @foreach ($employees as $employee)
@@ -48,7 +48,7 @@
                             <label for="timeoff_id" class="col-sm-3 col-form-label">Time Off Type <span
                                     class="text-danger">*</span></label>
                             <div class="col-sm-9">
-                                <select class="form-control" id="timeoff_id" name="timeoff_id" required>
+                                <select class="form-control select2" id="timeoff_id" name="timeoff_id" required>
                                     <option value="">Select timeoff type</option>
                                     @foreach ($timeoffs as $timeoff)
                                         @if (isset($approvalRequest) && $approvalRequest->timeoff_id == $timeoff->id)

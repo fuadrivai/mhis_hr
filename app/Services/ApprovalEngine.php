@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Approval;
+use App\Models\ApprovalHistory;
+use App\Models\ApprovalRequest;
 use App\Models\ApprovalRule;
 use App\Models\Employee;
 use Illuminate\Support\Collection;
@@ -84,5 +87,83 @@ class ApprovalEngine
                 })->values(),
             ];
         })->values();
+    }
+
+public function approve(ApprovalRequest $approvalRequest, Approval $approval, string $action, ?string $note = null, ?int $performedByEmployeeId = null): ApprovalRequest
+    {
+        $allowedActions = ['approved', 'rejected', 'skipped', 'cancelled'];
+        if (!in_array($action, $allowedActions)) {
+            throw new \InvalidArgumentException('Invalid approval action provided.');
+        }
+
+        $approval->status = $action;
+        $approval->note = $note;
+        $approval->actioned_date = now();
+        $approval->save();
+
+        $approverEmployeeId = $performedByEmployeeId ?? $approval->approver_employee_id;
+
+        ApprovalHistory::create([
+            'approval_request_id' => $approvalRequest->id,
+            'approval_id' => $approval->id,
+            'step_order' => $approval->step_order,
+            'approver_employee_id' => $approverEmployeeId,
+            'action' => $action,
+            'note' => $note,
+        ]);
+
+        if (in_array($action, ['rejected', 'cancelled'], true)) {
+            $approvalRequest->update([
+                'status' => $action,
+                'current_step' => $approval->step_order,
+            ]);
+            return $approvalRequest;
+        }
+
+        $stepApprovals = $approvalRequest->approvals()->where('step_order', $approval->step_order)->get();
+
+        if ($approval->approval_mode === 'any' && $action === 'approved') {
+            $stepApprovals->where('status', 'pending')->each(function (Approval $pending) {
+                $pending->update([
+                    'status' => 'skipped',
+                    'actioned_date' => now(),
+                ]);
+            });
+        }
+
+        if ($approval->approval_mode === 'all') {
+            $pendingCount = $stepApprovals->where('status', 'pending')->count();
+            if ($pendingCount > 0) {
+                return $approvalRequest;
+            }
+
+            if ($stepApprovals->where('status', 'rejected')->isNotEmpty()) {
+                $approvalRequest->update([
+                    'status' => 'rejected',
+                    'current_step' => $approval->step_order,
+                ]);
+                return $approvalRequest;
+            }
+        }
+
+        $nextApproval = $approvalRequest->approvals()
+            ->where('step_order', '>', $approval->step_order)
+            ->orderBy('step_order')
+            ->first();
+
+        if (!$nextApproval) {
+            $approvalRequest->update([
+                'status' => 'approved',
+                'current_step' => $approval->step_order,
+            ]);
+            return $approvalRequest;
+        }
+
+        $approvalRequest->update([
+            'current_step' => $nextApproval->step_order,
+            'status' => 'pending',
+        ]);
+
+        return $approvalRequest;
     }
 }
