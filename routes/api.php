@@ -59,9 +59,13 @@ Route::group(['middleware' => 'auth_login'], function () {
     Route::get('attendance/history', [AttendanceApiController::class, 'getHistory']);
     Route::get('attendance/list', [AttendanceApiController::class, 'liveAttendanceList']);
 
-    Route::post('attendance/clockin', [AttendanceApiController::class, 'clockIn']);
-    Route::post('attendance/clockout', [AttendanceApiController::class, 'clockOut']);
-    Route::resource('attendance', AttendanceApiController::class);
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::post('clockin', [AttendanceApiController::class, 'clockIn'])->name('clockin');
+        Route::post('clockout', [AttendanceApiController::class, 'clockOut'])->name('clockout');
+        Route::post('live', [AttendanceApiController::class, 'liveAttendanceGa'])->name('live');
+        Route::get('history', [AttendanceApiController::class, 'getAttendaceHistory'])->name('getAttendaceHistory');
+        Route::resource('/', AttendanceApiController::class)->parameters(['' => 'attendance']);
+    });
 
     Route::get('absent/filter', [LiveAbsentApiController::class, 'filterByUser']);
     Route::get('absent/city/{city}', [LiveAbsentApiController::class, 'getCity']);

@@ -31,6 +31,12 @@ class User extends Authenticatable implements JWTSubject
         return $this->roles()->where('name', $role)->exists();
     }
 
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    
     /**
      * The attributes that are mass assignable.
      *

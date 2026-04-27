@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AttendanceLogService;
 use App\Services\AttendanceService;
+use GPBMetadata\Google\Api\Auth;
 use Illuminate\Http\Request;
 
 class AttendanceApiController extends Controller
@@ -104,6 +105,11 @@ class AttendanceApiController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validation Error', 'errors' => $e->errors()], 422);
         }
+    }
+
+    function getAttendaceHistory(Request $request)
+    {
+        return $this->attendanceService->getAttendanceHistory($request);
     }
 
 

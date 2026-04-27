@@ -7,6 +7,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Exception\ClientException;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+
 use function App\Helpers\talentaHeader;
 
 class AttendanceImplement implements AttendanceService
@@ -264,5 +266,13 @@ class AttendanceImplement implements AttendanceService
             echo Psr7\Message::toString($e->getResponse());
             return response()->json(PHP_EOL);
         }
+    }
+
+    function getAttendanceHistory($request)
+    {
+        $year = $request['year'];
+        $month = $request['month'];
+        $attendances = $request['user']->load('attendances')->attendances()->whereYear('date', $year)->whereMonth('date', $month)->get();
+        return $attendances;
     }
 }

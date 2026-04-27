@@ -14,6 +14,7 @@ interface AttendanceService
     function postAttendance($request);
     function put($request);
     function delete($id);
+    function getAttendanceHistory($request);
 
     function mekariOauth2();
 }
