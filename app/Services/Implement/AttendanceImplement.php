@@ -273,6 +273,6 @@ class AttendanceImplement implements AttendanceService
         $year = $request['year'];
         $month = $request['month'];
         $attendances = $request['user']->load('attendances')->attendances()->whereYear('date', $year)->whereMonth('date', $month)->get();
-        return $attendances;
+        return $attendances->load('logs');
     }
 }
