@@ -5,7 +5,7 @@
 @endsection
 
 @section('content-child')
-    <div class="hr-dashboard">
+    {{-- <div class="hr-dashboard">
         <div class="dash-shell">
             <div class="dash-top">
                 <div class="dash-title">
@@ -209,5 +209,5 @@
                 </aside>
             </div>
         </div>
-    </div>
+    </div> --}}
 @endsection
