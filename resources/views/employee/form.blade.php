@@ -575,14 +575,12 @@
     </div>
 
 
-    <!-- Modal for Document Upload -->
     <x-modal-upload-document :categories="$categories" id="documentUploadModal" />
 @endsection
 
 @section('content-script')
     <script src="/plugins/jquery-smartwizard-master/dist/js/jquery.smartWizard.js"></script>
     <script src="/plugins/iCheck/icheck.min.js"></script>
-    {{-- <script src="/plugins/switchery/dist/switchery.min.js"></script> --}}
 
     <script>
         let uploadedDocuments = [];
@@ -754,6 +752,7 @@
         }
 
         function onSubmit() {
+            blockUI();
             const getVal = id => $(`#${id}`).val() || "";
             const getDate = id => {
                 const val = getVal(id);
@@ -855,6 +854,7 @@
                     setTimeout(() => window.location.href = "/employee", 1000);
                 },
                 error: function(err) {
+                    unblockUI();
                     sweetAlert("Failed", err.responseJSON.message, "error");
                 },
             });
