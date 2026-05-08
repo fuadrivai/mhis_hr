@@ -22,6 +22,7 @@ use App\Services\ScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Request as FacadesRequest;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
 
@@ -87,7 +88,98 @@ class EmployeeController extends Controller
             "title" => "Master Employee"
         ]);
     }
-    public function index()
+
+    public function index(Request $request)
+    {
+        $query =  Employee::with(['user', 'personal', 'employment'])->whereHas('employment', function ($query) {
+            $query->where('status', 1);
+        })->orderBy(
+            Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
+            'asc'
+        );
+
+        if ($request->search) {
+            $query->whereHas('personal', function ($q) use ($request) {
+                $q->where('fullname', 'like', '%' . $request->search . '%')
+                    ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->organization) {
+            if ($request->organization != "all") {
+                $query->whereHas('employment', function ($q) use ($request) {
+                    $q->where('organization_id', $request->organization);
+                });
+            } else {
+                $query->with(['user', 'personal', 'employment']);
+            }
+        }
+
+        if ($request->position) {
+            if ($request->position != "all") {
+                $query->whereHas('employment', function ($q) use ($request) {
+                    $q->where('job_position_id', $request->position);
+                });
+            } else {
+                $query->with(['user', 'personal', 'employment']);
+            }
+        }
+
+        if ($request->level) {
+            if ($request->level != "all") {
+                $query->whereHas('employment', function ($q) use ($request) {
+                    $q->where('job_level_id', $request->level);
+                });
+            } else {
+                $query->with(['user', 'personal', 'employment']);
+            }
+        }
+
+        if ($request->branch) {
+            if ($request->branch != "all") {
+                $query->whereHas('employment', function ($q) use ($request) {
+                    $q->where('branch_id', $request->branch);
+                });
+            } else {
+                $query->with(['user', 'personal', 'employment']);
+            }
+        }
+
+        if ($request->status) {
+            if ($request->status != "all") {
+                $query->whereHas('employment', function ($q) use ($request) {
+                    $q->where('employment_status', $request->status);
+                });
+            } else {
+                $query->with(['user', 'personal', 'employment']);
+            }
+        }
+
+        $employees = $query->paginate($request->perpage ?? 5)->withQueryString();
+        $json = json_decode($employees->toJson());
+        $page = [
+            "total" => $json->total,
+            "from" => $json->from,
+            "to" => $json->to,
+        ];
+
+        if ($request->ajax()) {
+            return view('employee._list', compact('employees', 'page'))->render();
+        }
+
+        return view('employee.index-v2', [
+            "title" => "Master Employee",
+            "branches" => $this->branchService->get(),
+            "organizations" => $this->organizationService->get(),
+            "positions" => $this->positionService->get(),
+            "levels" => $this->levelService->get(),
+            "employees" => $employees,
+            "page" => $page,
+        ]);
+
+    }
+
+    public function index_old()
     {
         $branches = $this->branchService->get();
         $organizations = $this->organizationService->get();
