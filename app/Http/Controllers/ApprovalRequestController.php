@@ -2,19 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Approval;
-use App\Models\ApprovalHistory;
 use App\Models\ApprovalRequest;
-use App\Models\ApprovalRequestAttachment;
-use App\Models\ApprovalRequestData;
 use App\Models\Employee;
 use App\Models\TimeOff;
-use App\Services\ApprovalEngine;
 use App\Services\ApprovalRequestService;
 use App\Services\EmployeeService;
 use App\Services\TimeOffService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
 
 class ApprovalRequestController extends Controller

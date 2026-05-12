@@ -1,100 +1,219 @@
 @extends('layouts.main-layout')
 
+@section('content-class')
+    <style>
+        .approval-form-panel {
+            border: 1px solid #d9e5f1;
+            border-radius: 14px;
+            box-shadow: 0 10px 26px rgba(22, 50, 84, 0.08);
+            overflow: hidden;
+        }
+
+        .approval-form-body {
+            padding: 20px;
+            background: #f7fbff;
+        }
+
+        .approval-form-surface {
+            background: #ffffff;
+            border: 1px solid #d9e5f1;
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .approval-form-surface .col-form-label {
+            color: #315273;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding-top: 10px;
+        }
+
+        .approval-form-surface .form-control {
+            border: 1px solid #ccdced;
+            border-radius: 9px;
+            box-shadow: none;
+            height: 40px;
+        }
+
+        .approval-form-surface textarea.form-control {
+            height: auto;
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .approval-form-surface .form-control:focus {
+            border-color: #5c95cd;
+            box-shadow: 0 0 0 3px rgba(66, 129, 195, 0.18);
+        }
+
+        #dynamic-fields {
+            display: none;
+            background: #f2f8ff;
+            border: 1px solid #d4e4f3;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        #dynamic-fields h5 {
+            margin: 0 0 10px;
+            color: #264a6f;
+            font-weight: 700;
+        }
+
+        .dynamic-field-group {
+            margin-bottom: 12px;
+        }
+
+        .dynamic-input-wrap {
+            background: #ffffff;
+            border: 1px solid #d9e5f1;
+            border-radius: 9px;
+            padding: 10px;
+        }
+
+        .dynamic-input-wrap .form-check {
+            margin-bottom: 6px;
+        }
+
+        .approval-form-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .approval-form-actions .btn {
+            border-radius: 9px;
+            font-weight: 700;
+        }
+
+        .approval-form-actions .btn-primary {
+            border: none;
+            background: linear-gradient(135deg, #1a4c7a, #2c76b5);
+            box-shadow: 0 8px 18px rgba(39, 102, 161, 0.32);
+        }
+
+        .approval-form-actions .btn-secondary {
+            border: 1px solid #c8d9eb;
+            color: #315273;
+            background: #f8fbff;
+        }
+
+        @media (max-width: 991px) {
+
+            .approval-form-body,
+            .approval-form-surface {
+                padding: 14px;
+            }
+
+            .approval-form-surface .col-form-label {
+                padding-top: 0;
+                margin-bottom: 6px;
+            }
+
+            .approval-form-actions {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+@endsection
+
 @section('content-child')
-    <div class="x_panel">
-        <div class="x_content">
-            <div class="row">
-                <div class="col-md-12">
-                    @if ($errors->any())
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
+    <div class="x_panel approval-form-panel">
+        <div class="approval-form-body">
+            <div class="approval-form-surface">
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
+                <form id="approval-request-form" action="/time/request" method="POST" enctype="multipart/form-data">
+                    @csrf
+
+                    <div class="form-group row">
+                        <label for="requester_employee_id" class="col-sm-3 col-form-label">Employee <span
+                                class="text-danger">*</span></label>
+                        <div class="col-sm-9">
+                            <select class="form-control select2" id="requester_employee_id" name="requester_employee_id"
+                                required>
+                                <option value="">Select employee</option>
+                                @foreach ($employees as $employee)
+                                    @if (isset($approvalRequest) && $approvalRequest->requester_employee_id == $employee->id)
+                                        <option value="{{ $employee->id }}" selected>
+                                            {{ optional($employee->personal)->fullname ?? 'Employee ' . $employee->id }}
+                                        </option>
+                                    @else
+                                        <option value="{{ $employee->id }}">
+                                            {{ optional($employee->personal)->fullname ?? 'Employee ' . $employee->id }}
+                                        </option>
+                                    @endif
                                 @endforeach
-                            </ul>
+                            </select>
                         </div>
-                    @endif
+                    </div>
 
-                    @if (session('success'))
-                        <div class="alert alert-success">{{ session('success') }}</div>
-                    @endif
-
-                    <form id="approval-request-form" action="/time/request" method="POST" enctype="multipart/form-data">
-                        @csrf
-
-                        <div class="form-group row">
-                            <label for="requester_employee_id" class="col-sm-3 col-form-label">Employee <span
-                                    class="text-danger">*</span></label>
-                            <div class="col-sm-9">
-                                <select class="form-control select2" id="requester_employee_id" name="requester_employee_id"
-                                    required>
-                                    <option value="">Select employee</option>
-                                    @foreach ($employees as $employee)
-                                        @if (isset($approvalRequest) && $approvalRequest->requester_employee_id == $employee->id)
-                                            <option value="{{ $employee->id }}" selected>
-                                                {{ optional($employee->personal)->fullname ?? 'Employee ' . $employee->id }}
-                                            </option>
-                                        @else
-                                            <option value="{{ $employee->id }}">
-                                                {{ optional($employee->personal)->fullname ?? 'Employee ' . $employee->id }}
-                                            </option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </div>
+                    <div class="form-group row">
+                        <label for="timeoff_id" class="col-sm-3 col-form-label">Time Off Type <span
+                                class="text-danger">*</span></label>
+                        <div class="col-sm-9">
+                            <select class="form-control select2" id="timeoff_id" name="timeoff_id" required>
+                                <option value="">Select timeoff type</option>
+                                @foreach ($timeoffs as $timeoff)
+                                    @if (isset($approvalRequest) && $approvalRequest->timeoff_id == $timeoff->id)
+                                        <option value="{{ $timeoff->id }}" selected>{{ $timeoff->name }}</option>
+                                    @else
+                                        <option value="{{ $timeoff->id }}">{{ $timeoff->name }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                            <small class="form-text text-muted">The selected timeoff determines the dynamic form
+                                fields.</small>
                         </div>
+                    </div>
 
-                        <div class="form-group row">
-                            <label for="timeoff_id" class="col-sm-3 col-form-label">Time Off Type <span
-                                    class="text-danger">*</span></label>
-                            <div class="col-sm-9">
-                                <select class="form-control select2" id="timeoff_id" name="timeoff_id" required>
-                                    <option value="">Select timeoff type</option>
-                                    @foreach ($timeoffs as $timeoff)
-                                        @if (isset($approvalRequest) && $approvalRequest->timeoff_id == $timeoff->id)
-                                            <option value="{{ $timeoff->id }}" selected>{{ $timeoff->name }}</option>
-                                        @else
-                                            <option value="{{ $timeoff->id }}">{{ $timeoff->name }}</option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                                <small class="form-text text-muted">The selected timeoff determines the dynamic form
-                                    fields.</small>
-                            </div>
-                        </div>
+                    <div id="dynamic-fields" class="mb-3">
+                        <h5>Request Details</h5>
+                        <div id="dynamic-field-container"></div>
+                    </div>
 
-                        <div id="dynamic-fields" class="border rounded p-3 mb-3" style="display: none;">
-                            <h5>Request Details</h5>
-                            <div id="dynamic-field-container"></div>
+                    <div class="form-group row">
+                        <label for="attachments" class="col-sm-3 col-form-label">Attachment</label>
+                        <div class="col-sm-9">
+                            <input type="file" class="form-control" id="attachments" name="attachments[]" multiple>
+                            <small class="form-text text-muted">Upload related files for this approval request.</small>
                         </div>
+                    </div>
 
-                        <div class="form-group row">
-                            <label for="attachments" class="col-sm-3 col-form-label">Attachment</label>
-                            <div class="col-sm-9">
-                                <input type="file" class="form-control" id="attachments" name="attachments[]" multiple>
-                                <small class="form-text text-muted">Upload related files for this approval request.</small>
-                            </div>
+                    <div class="form-group row">
+                        <label for="note" class="col-sm-3 col-form-label">Note</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" id="note" name="note" rows="3"></textarea>
                         </div>
+                    </div>
 
-                        <div class="form-group row">
-                            <label for="note" class="col-sm-3 col-form-label">Note</label>
-                            <div class="col-sm-9">
-                                <textarea class="form-control" id="note" name="note" rows="3"></textarea>
-                            </div>
+                    <div class="form-group row">
+                        <div class="col-sm-9 offset-sm-3 approval-form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-paper-plane"></i> Submit Approval Request
+                            </button>
+                            <a href="/setting/approval/request" class="btn btn-secondary">
+                                <i class="fa fa-arrow-left"></i> Back to list
+                            </a>
                         </div>
-
-                        <div class="form-group row">
-                            <div class="col-sm-9 offset-sm-3">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fa fa-paper-plane"></i> Submit Approval Request
-                                </button>
-                                <a href="/setting/approval/request" class="btn btn-secondary">
-                                    <i class="fa fa-arrow-left"></i> Back to list
-                                </a>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -137,17 +256,19 @@
             schema.forEach(field => {
                 const fieldId = 'field_' + field.name;
                 const isRequired = field.required ? 'required' : '';
+                const conditionalClass = field.show_if ? ' d-none' : '';
                 let fieldHtml =
-                    `<div class="form-group dynamic-field-group" data-field-name="${field.name}"`;
+                    `<div class="form-group row dynamic-field-group${conditionalClass}" data-field-name="${field.name}"`;
 
                 if (field.show_if) {
-                    fieldHtml +=
-                        ` data-show-if='${JSON.stringify(field.show_if)}' style="display: none;"`;
+                    fieldHtml += ` data-show-if='${JSON.stringify(field.show_if)}'`;
                 }
 
                 fieldHtml +=
                     `>
-                        <label for="${fieldId}">${field.label}${field.required ? ' <span class="text-danger">*</span>' : ''}</label>`;
+                        <label for="${fieldId}" class="col-sm-3 col-form-label">${field.label}${field.required ? ' <span class="text-danger">*</span>' : ''}</label>
+                        <div class="col-sm-9">
+                            <div class="dynamic-input-wrap">`;
 
                 switch (field.type) {
                     case 'textarea':
@@ -187,7 +308,7 @@
                         break;
                 }
 
-                fieldHtml += `</div>`;
+                fieldHtml += `</div></div></div>`;
                 container.append(fieldHtml);
             });
 
@@ -234,9 +355,9 @@
 
                 const shouldShow = String(targetValue) === String(showIf.value);
                 if (shouldShow) {
-                    $group.show();
+                    $group.removeClass('d-none');
                 } else {
-                    $group.hide();
+                    $group.addClass('d-none');
                     $group.find('input, textarea, select').val('');
                     $group.find('input[type="checkbox"], input[type="radio"]').prop('checked', false);
                 }
