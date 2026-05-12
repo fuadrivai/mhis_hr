@@ -3,8 +3,12 @@
             <div class="x_panel employee-card">
                 <div class="x_content">
                     <div class="row">
-                        <div class="col-md-4 col-sm-12 col-xs-12">
+                        <div class="col-md-5 col-sm-12 col-xs-12">
                             <div class="employee-profile">
+                                <div class="employee-profile-checkbox">
+                                    <input type="checkbox" class="employee-select-item" value="{{ $emp->id }}"
+                                        aria-label="Select {{ $emp->personal->fullname ?? 'employee' }}">
+                                </div>
                                 @if (!isset($emp->personal->avatar) || $emp->personal->avatar == '')
                                     <img src="{{ asset('images/user.png') }}" class="employee-avatar"
                                         alt="{{ $emp->personal->fullname ?? '--' }}">
@@ -33,15 +37,15 @@
                                 <p class="employee-meta-title">Branch</p>
                                 <p class="employee-meta-value">{{ $emp->employment->branch->name ?? '--' }}</p>
                                 <p class="employee-meta-title">Organization</p>
-                                <p class="employee-meta-value">{{ $emp->employment->organization_name ?? '--' }}</p>
+                                <p class="employee-meta-value">{{ $emp->employment->organization->name ?? '--' }}</p>
                             </div>
                         </div>
                         <div class="col-md-2 col-sm-6 col-xs-12">
                             <div class="employee-meta-box">
                                 <p class="employee-meta-title">Job Position</p>
-                                <p class="employee-meta-value">{{ $emp->employment->job_position_name ?? '--' }}</p>
+                                <p class="employee-meta-value">{{ $emp->employment->job_position->name ?? '--' }}</p>
                                 <p class="employee-meta-title">Job Level</p>
-                                <p class="employee-meta-value">{{ $emp->employment->job_level_name ?? '--' }}</p>
+                                <p class="employee-meta-value">{{ $emp->employment->job_level->name ?? '--' }}</p>
                             </div>
                         </div>
                         <div class="col-md-2 col-sm-6 col-xs-12">
@@ -56,7 +60,11 @@
                                 </p>
                             </div>
                         </div>
+                        {{-- <div class="col-md-1 col-sm-6 col-xs-12">
+                            
+                        </div> --}}
                         <div class="col-md-1 col-sm-6 col-xs-12">
+                            <p class="employee-meta-title">Status</p>
                             <div class="employee-status">
                                 @switch($emp->employment->employment_status)
                                     @case('permanent')
@@ -76,8 +84,6 @@
                                             class="badge badge-secondary">{{ $emp->employment->employment_status ?? '--' }}</span>
                                 @endswitch
                             </div>
-                        </div>
-                        <div class="col-md-1 col-sm-6 col-xs-12">
                             <div class="employee-actions">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-default btn-sm dropdown-toggle"
@@ -88,6 +94,8 @@
                                         <a class="dropdown-item" href='/profile/personal/{{ $emp->id }}'>Info</a>
                                         <a class="dropdown-item" href="#">Transfer</a>
                                         <a class="dropdown-item" href="#">Resign</a>
+                                        <a class="dropdown-item single-deactivate" data-id="{{ $emp->id }}"
+                                            href="#">Deactivate</a>
                                     </div>
                                 </div>
                             </div>

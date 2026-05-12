@@ -64,6 +64,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('import', [EmployeeController::class, 'import_excel']);
             Route::get('filter', [EmployeeController::class, 'filterLocation']);
             Route::POST('{employeeId}/document/upload', [EmployeeController::class, 'documentUpload']);
+            Route::post('deactivate', [EmployeeController::class, 'deactivate']);
             Route::resource('/', EmployeeController::class);
         });
 

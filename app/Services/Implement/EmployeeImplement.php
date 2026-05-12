@@ -167,13 +167,39 @@ class EmployeeImplement implements EmployeeService
             return $employee;
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json([
-                'message' => $th->getMessage()
-            ], 500);
+            throw $th;
         }
     }
     function put($request) {}
     function delete($id) {}  
+
+    function deactivate($employeeIds)
+    {
+        if (is_string($employeeIds)) {
+            $decoded = json_decode($employeeIds, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $employeeIds = $decoded;
+            }
+        }
+
+        if (is_array($employeeIds)) {
+            $employeeIds = collect($employeeIds);
+        }
+
+        if ($employeeIds->isEmpty()) {
+            throw new \InvalidArgumentException('No employee selected.');
+        }
+
+        Employee::whereIn('id', $employeeIds)->update([
+            'is_active' => 0,
+            'employee_status' => 'inactive',
+        ]);
+
+        return [
+            'message' => 'Selected employees have been deactivated.',
+            'employee_ids' => $employeeIds,
+        ];
+    }
 
     function getByJobLevel($request)
     {
@@ -185,6 +211,7 @@ class EmployeeImplement implements EmployeeService
             ->get();
         return $employees;
     }
+    
     function getByuserId($userId)
     {
         $employee = Employee::with(['employment','personal'])

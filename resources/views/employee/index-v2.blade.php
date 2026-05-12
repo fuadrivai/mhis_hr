@@ -1,6 +1,6 @@
 @extends('layouts.main-layout')
 @section('content-class')
-    <link rel="stylesheet" href="{{ asset('css/employee.css') }}">
+    <link rel="stylesheet" href="/css/employee.css">
 @endsection
 
 @section('content-child')
@@ -95,11 +95,14 @@
             <div class="row employee-toolbar-row">
                 <div class="col-md-6">
                     <div class="employee-toolbar-left">
+                        <label class="employee-select-all-toggle" style="margin: 0 15px 0 0; font-weight: 600;">
+                            <input type="checkbox" id="employee-select-all">
+                        </label>
                         <span class="employee-length-label">Length :</span>
                         <select id="dummy" name="dummy" class="form-control perpage employee-length-select"
                             style="height: 37px;width:80px">
                             <option value="5">5</option>
-                            <option value="10">10</option>
+                            <option value="10" selected>10</option>
                             <option value="20">20</option>
                             <option value="50">50</option>
                             <option value="100">100</option>
@@ -112,6 +115,18 @@
                 </div>
                 <div class="col-md-6">
                     <div class="text-right employee-toolbar-actions-wrap">
+                        <span class="employee-selected-count" id="employee-selected-count">0 selected</span>
+                        <div class="btn-group employee-bulk-actions" id="employee-bulk-actions">
+                            <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                                Actions
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="#">Transfer</a>
+                                <a class="dropdown-item" href="#">Resign</a>
+                                <a class="dropdown-item employee-bulk-action-deactivate" href="#">Deactivate</a>
+                            </div>
+                        </div>
                         <div class="btn-group employee-toolbar-actions" role="group">
                             <a data-toggle="modal" data-target="#importExcel" href="/employee/create"
                                 class="btn btn-info text-white btn-add-employee"><i class="fa fa-upload"></i>
@@ -130,7 +145,6 @@
             @include('employee._list')
         </div>
     </div>
-
 
     <div class="modal fade" id="importExcel" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
         aria-hidden="true">
@@ -162,6 +176,7 @@
 @section('content-script')
     <script>
         let typingTimer;
+        let empIds = [];
         $(document).ready(function() {
             $('#filterFormCollapse').collapse('hide');
             $('#filterFormCollapse').on('shown.bs.collapse', function() {
@@ -187,12 +202,100 @@
                 loadEmployee();
             });
 
-            $(document).on('click', '#employee-list .pagination a', function(e) {
+            $('#employee-select-all').on('change', function() {
+                let isChecked = $(this).is(':checked');
+                $('#employee-list .employee-select-item').each(function() {
+                    $(this).prop('checked', isChecked);
+                    const empId = $(this).val();
+                    if (isChecked) {
+                        if (!empIds.some(id => id === empId)) {
+                            empIds.push(empId);
+                        }
+                    } else {
+                        empIds = empIds.filter(id => id !== empId);
+                    }
+                });
+                checkEmployeeSelectAll();
+            });
+
+            $("#employee-list").on('change', '.employee-select-item', function() {
+                let isChecked = $(this).is(':checked');
+                if (isChecked) {
+                    empIds.push($(this).val());
+                } else {
+                    empIds = empIds.filter(id => id !== $(this).val());
+                }
+                checkEmployeeSelectAll()
+            });
+
+            $("#employee-list").on('click', '.pagination a', function(e) {
                 e.preventDefault();
                 const url = $(this).attr('href');
                 loadEmployee(url);
             });
+
+            $('.employee-bulk-action-deactivate').on('click', function(e) {
+                e.preventDefault();
+                deactivateEmployee();
+            });
+
+            $("#employee-list").on('click', '.single-deactivate', function(e) {
+                e.preventDefault();
+                empIds = [];
+                const empId = $(this).data('id');
+                empIds = [empId];
+                deactivateEmployee();
+            });
         });
+
+
+        function deactivateEmployee() {
+            if (empIds.length === 0) {
+                sweetAlert('Warning', 'Please select at least one employee.', 'warning');
+                return;
+            }
+
+            blockUI();
+
+            ajaxPromise({
+                url: "/employee/deactivate",
+                method: "POST",
+                data: {
+                    employee_ids: empIds
+                },
+                contentType: "application/json",
+                processData: false,
+            }).then(response => {
+                sweetAlert('Success', response.message ||
+                    'Selected employees have been deactivated.', 'success');
+                loadEmployee();
+                empIds = [];
+            }).catch(xhr => {
+                const message = xhr.responseJSON?.message ||
+                    'Failed to deactivate selected employees.';
+                sweetAlert('Error', message, 'error');
+            });
+        }
+
+        function checkEmployeeSelectAll() {
+            $('#employee-list .employee-select-item').each(function() {
+                const empId = $(this).val();
+                $(this).prop('checked', empIds.some(id => id === empId));
+            });
+            $('#employee-selected-count')
+                .text(`${empIds.length} selected`)
+                .toggle(empIds.length > 0);
+
+            $('#employee-bulk-actions').toggle(empIds.length > 0);
+
+            if (empIds.length == $('#employee-list .employee-select-item').length) {
+                $('#employee-select-all').prop('checked', true).prop('indeterminate', false);
+            } else if (empIds.length > 0) {
+                $('#employee-select-all').prop('checked', false).prop('indeterminate', true);
+            } else {
+                $('#employee-select-all').prop('checked', false).prop('indeterminate', false);
+            }
+        }
 
         function loadEmployee(url = "/employee") {
             blockUI();
@@ -219,6 +322,8 @@
                     if (summaryHtml) {
                         $('#employee-page-summary').html(summaryHtml);
                     }
+
+                    checkEmployeeSelectAll();
                 }
             });
         }

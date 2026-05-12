@@ -22,7 +22,6 @@ use App\Services\ScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Request as FacadesRequest;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
 
@@ -91,12 +90,12 @@ class EmployeeController extends Controller
 
     public function index(Request $request)
     {
-        $query =  Employee::with(['user', 'personal', 'employment'])->whereHas('employment', function ($query) {
-            $query->where('status', 1);
-        })->orderBy(
+        $query =  Employee::with(['user', 'personal', 'employment'])->orderBy(
             Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
             'asc'
         );
+
+        $query->where('is_active', 1 );
 
         if ($request->search) {
             $query->whereHas('personal', function ($q) use ($request) {
@@ -155,7 +154,7 @@ class EmployeeController extends Controller
             }
         }
 
-        $employees = $query->paginate($request->perpage ?? 5)->withQueryString();
+        $employees = $query->paginate($request->perpage ?? 10)->withQueryString();
         $json = json_decode($employees->toJson());
         $page = [
             "total" => $json->total,
@@ -177,109 +176,6 @@ class EmployeeController extends Controller
             "page" => $page,
         ]);
 
-    }
-
-    public function index_old()
-    {
-        $branches = $this->branchService->get();
-        $organizations = $this->organizationService->get();
-        $positions = $this->positionService->get();
-        $levels = $this->levelService->get();
-
-        // get employees
-        $employees = Employee::with(['user', 'personal', 'employment'])->whereHas('employment', function ($query) {
-            $query->where('status', 1);
-        })->orderBy(
-            Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
-            'asc'
-        );
-
-        if (request('search')) {
-            $employees->whereHas('personal', function ($query) {
-                $query->where('fullname', 'like', '%' . request("search") . '%')
-                    ->orWhere('email', 'like', '%' . request("search") . '%');
-            });
-        }
-
-        if (request('organization')) {
-            if (request('organization') != "all") {
-                $employees->whereHas('employment', function ($query) {
-                    $query->where('organization_id', request("organization"));
-                });
-            } else {
-                $employees->with(['user', 'personal', 'employment']);
-            }
-        }
-
-        if (request('position')) {
-            if (request('position') != "all") {
-                $employees->whereHas('employment', function ($query) {
-                    $query->where('job_position_id', request("position"));
-                });
-            } else {
-                $employees->with(['user', 'personal', 'employment']);
-            }
-        }
-
-        if (request('level')) {
-            if (request('level') != "all") {
-                $employees->whereHas('employment', function ($query) {
-                    $query->where('job_level_id', request("level"));
-                });
-            } else {
-                $employees->with(['user', 'personal', 'employment']);
-            }
-        }
-
-        if (request('branch')) {
-            if (request('branch') != "all") {
-                $employees->whereHas('employment', function ($query) {
-                    $query->where('branch_id', request("branch"));
-                });
-            } else {
-                $employees->with(['user', 'personal', 'employment']);
-            }
-        }
-
-        if (request('status')) {
-            if (request('status') != "all") {
-                $employees->whereHas('employment', function ($query) {
-                    $query->where('employment_status', request("status"));
-                });
-            } else {
-                $employees->with(['user', 'personal', 'employment']);
-            }
-        }
-
-        $records = $employees->paginate(request('perpage') ?? 5)->withQueryString();
-        $json = json_decode($records->toJson());
-
-        return view('employee.index-v2', [
-            "title" => "Master Employee",
-            "branches" => $branches,
-            "organizations" => $organizations,
-            "positions" => $positions,
-            "levels" => $levels,
-            "employees" => $records,
-            "search" => request('search'),
-            "query" => [
-                "search" => request('search'),
-                "perpage" => request('perpage'),
-                "organization" => request('organization'),
-                "position" => request('position'),
-                "level" => request('level'),
-                "status" => request('status'),
-                "branch" => request('branch'),
-            ],
-            "page" => [
-                "total" => $json->total,
-                "from" => $json->from,
-                "to" => $json->to,
-                // "per_page" => $json->per_page,
-                // "current_page" => $json->current_page,
-                // "last_page" => $json->last_page,
-            ]
-        ]);
     }
 
     /**
@@ -324,13 +220,12 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
+        $employee = $this->employeeService->post(
+            $request,
+            $this->googleDriveService
+        );
 
-        try {
-            $employee = $this->employeeService->post($request, $this->googleDriveService);
-            return response()->json($employee);
-        } catch (\Throwable $th) {
-            return response()->json($th->getMessage());
-        }
+        return response()->json($employee);
     }
 
     /**
@@ -389,6 +284,20 @@ class EmployeeController extends Controller
     public function destroy(Employee $employee)
     {
         //
+    }
+
+    public function deactivate(Request $request)
+    {
+        try {
+            $employeeIds = $request->employee_ids;
+            $response = $this->employeeService->deactivate($employeeIds);
+
+            return response()->json($response);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 422);
+        }
     }
 
     public function import_excel(Request $request)

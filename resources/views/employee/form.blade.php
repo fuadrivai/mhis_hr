@@ -38,9 +38,6 @@
     <div class="x_panel">
         <div class="x_title">
             <h2>Employee <small>Form</small></h2>
-            {{-- <ul class="nav navbar-right panel_toolbox">
-                <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></li>
-            </ul> --}}
             <div class="clearfix"></div>
         </div>
         @if (session('success'))
@@ -781,7 +778,7 @@
                 mobilePhone: getVal('mobile-phone'),
                 gendre: $('input[name="gender"]').val(),
                 maritalStatus: getVal('marital-status'),
-                bloodType: getVal('blood-type'),
+                bloodType: getVal('blood-type') || null,
                 religionId: getVal('religion'),
                 identityType: getVal('identity-type'),
                 identityNumber: getVal('nik'),
@@ -854,7 +851,7 @@
                     setTimeout(() => window.location.href = "/employee", 1000);
                 },
                 error: function(err) {
-                    unblockUI();
+                    unBlockUI();
                     sweetAlert("Failed", err.responseJSON.message, "error");
                 },
             });

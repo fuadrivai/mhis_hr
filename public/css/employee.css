@@ -85,9 +85,76 @@
     flex-wrap: wrap;
 }
 
+.employee-toolbar-actions-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 .employee-length-label {
     font-weight: 700;
     color: #5f7694;
+}
+
+.employee-selected-count {
+    display: none;
+    color: #2f3f59;
+    font-weight: 600;
+    background: #eef5fc;
+    border: 1px solid #d6e4f2;
+    border-radius: 999px;
+    padding: 6px 10px;
+    line-height: 1;
+}
+
+.employee-bulk-actions {
+    display: none;
+}
+
+.employee-bulk-actions .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    border: 1px solid #c9d6e6;
+    background: #ffffff;
+    color: #2f3f59;
+    box-shadow: 0 2px 6px rgba(25, 42, 70, 0.08);
+}
+
+.employee-bulk-actions .btn:hover,
+.employee-bulk-actions .btn:focus,
+.employee-bulk-actions .btn:active {
+    border-color: #9fb8d8;
+    background: #f5faff;
+    color: #1f4f83;
+}
+
+.employee-bulk-actions .dropdown-menu {
+    border: 1px solid #d9e4f2;
+    border-radius: 10px;
+    box-shadow: 0 14px 30px rgba(20, 38, 63, 0.16);
+    min-width: 150px;
+    margin-top: 8px;
+    padding: 6px;
+}
+
+.employee-bulk-actions .dropdown-item {
+    display: block;
+    border-radius: 8px;
+    color: #3a4d68;
+    font-weight: 600;
+    padding: 8px 10px;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.employee-bulk-actions .dropdown-item:hover,
+.employee-bulk-actions .dropdown-item:focus {
+    background: #edf4fc;
+    color: #1f4f83;
+    text-decoration: none;
 }
 
 .employee-length-select {
@@ -139,6 +206,22 @@
     display: flex;
     align-items: flex-start;
     gap: 14px;
+}
+
+.employee-profile-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 72px;
+    flex: 0 0 20px;
+}
+
+.employee-select-item,
+#employee-select-all {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
 }
 
 .employee-avatar {
@@ -203,7 +286,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 120px;
+    min-height: 35px;
 }
 
 .employee-status .badge {
