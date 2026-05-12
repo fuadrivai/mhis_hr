@@ -520,6 +520,11 @@
                 url = `{{ URL::to('setting/location') }}/${locationId}`;
                 objLocation.id = locationId;
             }
+            objLocation.employees = objLocation.employees.map((emp) => {
+                return {
+                    id: emp.id
+                }
+            });
             ajax(objLocation, url, method,
                 function(json) {
                     $.LoadingOverlay("hide", true);
