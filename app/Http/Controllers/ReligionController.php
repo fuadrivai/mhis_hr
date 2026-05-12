@@ -25,7 +25,7 @@ class ReligionController extends Controller
     public function index()
     {
 
-        $data = $this->religionSevice->get()->getContent();
+        $data = $this->religionSevice->get();
         return view('settings.religion', [
             "data" => json_decode($data, true),
             "title" => "Setting Religion"
