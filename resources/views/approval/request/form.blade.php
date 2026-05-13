@@ -1,124 +1,7 @@
 @extends('layouts.main-layout')
 
 @section('content-class')
-    <style>
-        .approval-form-panel {
-            border: 1px solid #d9e5f1;
-            border-radius: 14px;
-            box-shadow: 0 10px 26px rgba(22, 50, 84, 0.08);
-            overflow: hidden;
-        }
-
-        .approval-form-body {
-            padding: 20px;
-            background: #f7fbff;
-        }
-
-        .approval-form-surface {
-            background: #ffffff;
-            border: 1px solid #d9e5f1;
-            border-radius: 12px;
-            padding: 18px;
-        }
-
-        .approval-form-surface .col-form-label {
-            color: #315273;
-            font-weight: 700;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            padding-top: 10px;
-        }
-
-        .approval-form-surface .form-control {
-            border: 1px solid #ccdced;
-            border-radius: 9px;
-            box-shadow: none;
-            height: 40px;
-        }
-
-        .approval-form-surface textarea.form-control {
-            height: auto;
-            min-height: 110px;
-            resize: vertical;
-        }
-
-        .approval-form-surface .form-control:focus {
-            border-color: #5c95cd;
-            box-shadow: 0 0 0 3px rgba(66, 129, 195, 0.18);
-        }
-
-        #dynamic-fields {
-            display: none;
-            background: #f2f8ff;
-            border: 1px solid #d4e4f3;
-            border-radius: 10px;
-            padding: 14px;
-            margin-bottom: 16px;
-        }
-
-        #dynamic-fields h5 {
-            margin: 0 0 10px;
-            color: #264a6f;
-            font-weight: 700;
-        }
-
-        .dynamic-field-group {
-            margin-bottom: 12px;
-        }
-
-        .dynamic-input-wrap {
-            background: #ffffff;
-            border: 1px solid #d9e5f1;
-            border-radius: 9px;
-            padding: 10px;
-        }
-
-        .dynamic-input-wrap .form-check {
-            margin-bottom: 6px;
-        }
-
-        .approval-form-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .approval-form-actions .btn {
-            border-radius: 9px;
-            font-weight: 700;
-        }
-
-        .approval-form-actions .btn-primary {
-            border: none;
-            background: linear-gradient(135deg, #1a4c7a, #2c76b5);
-            box-shadow: 0 8px 18px rgba(39, 102, 161, 0.32);
-        }
-
-        .approval-form-actions .btn-secondary {
-            border: 1px solid #c8d9eb;
-            color: #315273;
-            background: #f8fbff;
-        }
-
-        @media (max-width: 991px) {
-
-            .approval-form-body,
-            .approval-form-surface {
-                padding: 14px;
-            }
-
-            .approval-form-surface .col-form-label {
-                padding-top: 0;
-                margin-bottom: 6px;
-            }
-
-            .approval-form-actions {
-                justify-content: flex-start;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/timeoff.css">
 @endsection
 
 @section('content-child')
@@ -233,9 +116,8 @@
                 renderDynamicFields(schema);
             });
 
-            $(document).on('change input',
-                '#dynamic-field-container input, #dynamic-field-container select, #dynamic-field-container textarea',
-                function() {
+            $('#dynamic-field-container input, #dynamic-field-container select, #dynamic-field-container textarea')
+                .on('change input', function() {
                     updateConditionalFields();
                 });
 

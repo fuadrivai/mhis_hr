@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\ApprovalRequest;
-use App\Models\Employee;
-use App\Models\TimeOff;
 use App\Services\ApprovalRequestService;
 use App\Services\EmployeeService;
 use App\Services\TimeOffService;
@@ -50,8 +48,8 @@ class ApprovalRequestController extends Controller
 
     public function create()
     {
-        $employees = Employee::with('personal')->get();
-        $timeoffs = TimeOff::all();
+        $employees = $this->employeeService->getActive()->load('personal');
+        $timeoffs = $this->timeOffService->get();
 
         return view('approval.request.form', [
             'title' => 'Create Approval Request',
@@ -102,7 +100,7 @@ class ApprovalRequestController extends Controller
     }
     public function edit(ApprovalRequest $request)
     {
-        $employees = $this->employeeService->get();
+        $employees = $this->employeeService->getActive()->load('personal');
         $timeoffs = $this->timeOffService->get();
         return view('approval.request.form', [
             'title' => 'Edit Approval Request',

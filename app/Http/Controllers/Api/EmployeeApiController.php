@@ -47,9 +47,9 @@ class EmployeeApiController extends Controller
      * @param  \App\Models\Employee  $employee
      * @return \Illuminate\Http\Response    
      */
-    public function show(Employee $employee)
+    public function show($id)
     {
-        //
+        return $this->employeeService->show($id);
     }
 
     /**

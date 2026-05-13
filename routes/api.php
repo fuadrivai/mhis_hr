@@ -16,7 +16,7 @@ use App\Http\Controllers\Api\PinLocationApiController;
 use App\Http\Controllers\Api\PositionApiController;
 use App\Http\Controllers\Api\PushNotificationApiController;
 use App\Http\Controllers\Api\ReligionApiController;
-use App\Models\Religion;
+use App\Http\Controllers\Api\TimeOffApiController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -88,4 +88,10 @@ Route::group(['middleware' => 'auth_login'], function () {
     Route::resource('location', PinLocationApiController::class);
 
     Route::resource('religion', ReligionApiController::class);
+
+    Route::resource('timeoff', TimeOffApiController::class);
+
+    Route::prefix('employee')->name('employee.')->group(function () {
+        Route::resource('/', EmployeeApiController::class)->parameters(['' => 'employee']);
+    });
 });

@@ -3,27 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\PinLocationService;
+use App\Services\TimeOffService;
 use Illuminate\Http\Request;
 
-class PinLocationApiController extends Controller
+class TimeOffApiController extends Controller
 {
+
+    private TimeOffService $timeOffService;
+    public function __construct(TimeOffService $timeOffService)
+    {
+        $this->timeOffService = $timeOffService;
+    }
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-
-    private PinLocationService $pinLocationService;
-
-    public function __construct(PinLocationService $pinLocationService)
-    {
-        $this->pinLocationService = $pinLocationService;
-    }
     public function index()
     {
-        $request = request();
-        return $this->pinLocationService->get($request);
+        return $this->timeOffService->get();
     }
 
     /**
@@ -34,40 +32,40 @@ class PinLocationApiController extends Controller
      */
     public function store(Request $request)
     {
-        return $this->pinLocationService->post($request);
+        return $this->timeOffService->post($request);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\PinLocation  $pinLocation
+     * @param  \App\Models\TimeOff  $timeOff
      * @return \Illuminate\Http\Response
      */
     public function show($id)
     {
-        return $this->pinLocationService->show($id);
+        return $this->timeOffService->show($id);
     }
 
     /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\PinLocation  $pinLocation
+     * @param  \App\Models\TimeOff  $timeOff
      * @return \Illuminate\Http\Response
      */
     public function update($id, Request $request)
     {
-        return $this->pinLocationService->put($id, $request);
+        return $this->timeOffService->put($id, $request);
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\PinLocation  $pinLocation
+     * @param  \App\Models\TimeOff  $timeOff
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
-        return $this->pinLocationService->delete($id);
+        return $this->timeOffService->delete($id);
     }
 }

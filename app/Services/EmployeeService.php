@@ -5,6 +5,7 @@ namespace App\Services;
 interface EmployeeService
 {
     function get();
+    function getActive();
     function getByJobLevel($request);
     function getByuserId($user_id);
     function paginate($request);

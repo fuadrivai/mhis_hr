@@ -307,4 +307,10 @@ class EmployeeImplement implements EmployeeService
             throw new \Exception($th->getMessage());
         }
     }
+
+    public function getActive()
+    {
+        $employees = Employee::where('is_active', 1)->get();
+        return $employees;
+    }
 }
