@@ -53,7 +53,7 @@
                         <div class="menu_section">
                             <ul class="nav side-menu">
                                 <li><a href="/"><i class="fa fa-dashboard"></i> Home </a></li>
-                                <li><a href="/location"><i class="fa fa-map"></i> Pin Location </a></li>
+                                {{-- <li><a href="/location"><i class="fa fa-map"></i> Pin Location </a></li> --}}
                                 <li class={{ Request::is('employee*') ? 'active' : '' }}><a><i class="fa fa-users"></i>
                                         Employee Directory <span class="fa fa-chevron-down"></span></a>
                                     <ul class="nav child_menu"
