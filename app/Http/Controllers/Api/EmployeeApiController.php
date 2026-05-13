@@ -29,6 +29,11 @@ class EmployeeApiController extends Controller
         $employee =  $this->employeeService->getByJobLevel($request);
         return response()->json($employee);
     }
+    public function getByuserId(Request $request)
+    {
+        $employee =  $this->employeeService->getByuserId($request);
+        return response()->json($employee);
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -49,7 +54,7 @@ class EmployeeApiController extends Controller
      */
     public function show($id)
     {
-        return $this->employeeService->show($id);
+        return $this->employeeService->show($id)->load('personal','employment');
     }
 
     /**

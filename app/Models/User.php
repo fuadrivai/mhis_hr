@@ -46,6 +46,7 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'user_id_talenta',
+        'employee_id',
         'password',
     ];
 
@@ -79,6 +80,7 @@ class User extends Authenticatable implements JWTSubject
             'id'              => $this->id,
             'name'            => $this->name,
             'user_id_talenta' => $this->user_id_talenta,
+            'employee_id'     => $this->employee_id ?? optional($this->employee)->id,
             'email'           => $this->email,
             'registered_at'   => $this->created_at->toIso8601String(),
             'last_updated_at' => $this->updated_at->toIso8601String(),

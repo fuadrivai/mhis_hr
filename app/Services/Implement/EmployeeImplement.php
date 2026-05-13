@@ -212,10 +212,10 @@ class EmployeeImplement implements EmployeeService
         return $employees;
     }
     
-    function getByuserId($userId)
+    function getByuserId($user_id)
     {
         $employee = Employee::with(['employment','personal'])
-            ->where('user_id', auth()->id())->first();
+            ->where('user_id', $user_id)->first();
         return $employee;
     }
 

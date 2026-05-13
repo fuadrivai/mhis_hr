@@ -92,6 +92,7 @@ Route::group(['middleware' => 'auth_login'], function () {
     Route::resource('timeoff', TimeOffApiController::class);
 
     Route::prefix('employee')->name('employee.')->group(function () {
+        Route::get('user/{id}', [EmployeeApiController::class, 'getByuserId'])->name('getByuserId');
         Route::resource('/', EmployeeApiController::class)->parameters(['' => 'employee']);
     });
 });
