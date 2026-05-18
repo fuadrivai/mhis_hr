@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AnnouncementApiController;
 use App\Http\Controllers\Api\AnnouncementCategoryApiController;
+use App\Http\Controllers\Api\ApprovalRequestApiController;
 use App\Http\Controllers\Api\AttendanceApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchApiController;
@@ -95,4 +96,11 @@ Route::group(['middleware' => 'auth_login'], function () {
         Route::get('user/{id}', [EmployeeApiController::class, 'getByuserId'])->name('getByuserId');
         Route::resource('/', EmployeeApiController::class)->parameters(['' => 'employee']);
     });
+
+    Route::group(['prefix' => 'time'], function () {
+            Route::get('request/datatable', [ApprovalRequestApiController::class, 'dataTable']);
+            Route::get('request/{id}/history', [ApprovalRequestApiController::class, 'history']);
+            Route::get('request/{id}/approver', [ApprovalRequestApiController::class, 'approver']);
+            Route::resource('request', ApprovalRequestApiController::class);
+        });
 });

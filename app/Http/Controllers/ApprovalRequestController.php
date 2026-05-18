@@ -65,7 +65,6 @@ class ApprovalRequestController extends Controller
             'timeoff_id' => 'required|exists:timeoffs,id',
             'note' => 'nullable|string',
             'dynamic_fields' => 'nullable|array',
-            'dynamic_fields.*' => 'nullable',
             'attachments.*' => 'nullable|file|max:10240'
         ]);
         $validated['attachments'] = $request->file('attachments', []);

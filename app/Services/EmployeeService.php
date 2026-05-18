@@ -7,7 +7,7 @@ interface EmployeeService
     function get();
     function getActive();
     function getByJobLevel($request);
-    function getByuserId($user_id);
+    function getByuserId($userId);
     function paginate($request);
     function show($id,$with=[]);
     function post($request, $driveService);

@@ -94,7 +94,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
             ]);
 
             DB::commit();
-            return redirect('/time/request')->with('success', 'Approval request submitted successfully.');
+            return $approvalRequest;
         } catch (\Throwable $th) {
             DB::rollBack();
             return back()->withErrors(['error' => $th->getMessage()]);

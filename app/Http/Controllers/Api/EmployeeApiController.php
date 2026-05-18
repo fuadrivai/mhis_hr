@@ -29,9 +29,9 @@ class EmployeeApiController extends Controller
         $employee =  $this->employeeService->getByJobLevel($request);
         return response()->json($employee);
     }
-    public function getByuserId(Request $request)
+    public function getByuserId($id)
     {
-        $employee =  $this->employeeService->getByuserId($request);
+        $employee =  $this->employeeService->getByuserId($id);
         return response()->json($employee);
     }
 
