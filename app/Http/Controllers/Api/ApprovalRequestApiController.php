@@ -39,4 +39,11 @@ class ApprovalRequestApiController extends Controller
         $approvals =  $this->approvalRequestService->show($id)->approvals()->with('approver.personal')->get();
         return response()->json($approvals);
     }
+
+    public function getRequestByUser(Request $request)
+    {
+        $request['user']= $request['user'];
+        $requests = $this->approvalRequestService->getByUser($request)->load('type','data');
+        return response()->json($requests);
+    }
 }

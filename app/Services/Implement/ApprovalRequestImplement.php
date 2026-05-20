@@ -101,6 +101,90 @@ class ApprovalRequestImplement implements ApprovalRequestService{
         }
     }
 
+    public function getByUser($request)
+    {
+        try {
+            $payload = is_array($request) ? $request : $request->all();
+            $userId = data_get($payload, 'user.id') ?? auth()->id();
+
+            if (!$userId) {
+                throw new \Exception('User ID is required');
+            }
+
+            $employee = Employee::where('user_id', $userId)->first();
+
+            if (!$employee) {
+                throw new \Exception('Employee not found for the given user ID');
+            }
+
+            $month = data_get($payload, 'month');
+            $year = data_get($payload, 'year');
+
+            $month = is_numeric($month) ? (int) $month : null;
+            $year = is_numeric($year) ? (int) $year : null;
+
+            $dynamicFilters = collect($payload)
+                ->except(['user', 'month', 'year'])
+                ->filter(fn ($value) => is_scalar($value) && $value !== '')
+                ->toArray();
+
+            $query = ApprovalRequest::where('requester_employee_id', $employee->id);
+
+            if (!empty($dynamicFilters) || $month !== null || $year !== null) {
+                $query->whereHas('data', function ($approvalRequestDataQuery) use ($dynamicFilters, $month, $year) {
+                    foreach ($dynamicFilters as $key => $value) {
+                        $approvalRequestDataQuery->where("data->{$key}", $value);
+                    }
+
+                    if ($month !== null || $year !== null) {
+                        $approvalRequestDataQuery->where(function ($dateQuery) use ($month, $year) {
+                            $dateQuery->orWhere(function ($explicitQuery) use ($month, $year) {
+                                if ($month !== null) {
+                                    $explicitQuery->where('data->month', $month);
+                                }
+
+                                if ($year !== null) {
+                                    $explicitQuery->where('data->year', $year);
+                                }
+                            });
+
+                            // Supports date-based payloads with start_date/end_date.
+                            if ($year !== null) {
+                                $periodStart = $month !== null
+                                    ? \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString()
+                                    : \Carbon\Carbon::createFromDate($year, 1, 1)->startOfYear()->toDateString();
+
+                                $periodEnd = $month !== null
+                                    ? \Carbon\Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString()
+                                    : \Carbon\Carbon::createFromDate($year, 12, 1)->endOfYear()->toDateString();
+
+                                $dateQuery->orWhere(function ($rangeQuery) use ($periodStart, $periodEnd) {
+                                    $rangeQuery
+                                        ->whereRaw(
+                                            "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(data, '$.date'))) <= ?",
+                                            [$periodEnd]
+                                        )
+                                        ->whereRaw(
+                                            "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data, '$.end_date')), JSON_UNQUOTE(JSON_EXTRACT(data, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(data, '$.date'))) >= ?",
+                                            [$periodStart]
+                                        );
+                                });
+                            } elseif ($month !== null) {
+                                $dateQuery
+                                    ->orWhereRaw("MONTH(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(data, '$.start_date')), '%Y-%m-%d')) = ?", [$month])
+                                    ->orWhereRaw("MONTH(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(data, '$.end_date')), '%Y-%m-%d')) = ?", [$month]);
+                            }
+                        });
+                    }
+                });
+            }
+
+            return $query->get();
+        } catch (\Throwable $th) {
+           throw new \Exception($th->getMessage());
+        }
+    }
+
     public function put($request)
     {
         // TODO: Implement put() method.

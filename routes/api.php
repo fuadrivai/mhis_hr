@@ -101,6 +101,7 @@ Route::group(['middleware' => 'auth_login'], function () {
             Route::get('request/datatable', [ApprovalRequestApiController::class, 'dataTable']);
             Route::get('request/{id}/history', [ApprovalRequestApiController::class, 'history']);
             Route::get('request/{id}/approver', [ApprovalRequestApiController::class, 'approver']);
+            Route::get('request/user', [ApprovalRequestApiController::class, 'getRequestByUser']);
             Route::resource('request', ApprovalRequestApiController::class);
         });
 });
