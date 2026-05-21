@@ -62,7 +62,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
 
             ApprovalRequestData::create([
                 'approval_request_id' => $approvalRequest->id,
-                'data' => $request['dynamic_fields'] ?? [],
+                'payload' => $request['dynamic_fields'] ?? [],
             ]);
 
             foreach ($request['attachments'] as $file) {
@@ -133,18 +133,18 @@ class ApprovalRequestImplement implements ApprovalRequestService{
             if (!empty($dynamicFilters) || $month !== null || $year !== null) {
                 $query->whereHas('data', function ($approvalRequestDataQuery) use ($dynamicFilters, $month, $year) {
                     foreach ($dynamicFilters as $key => $value) {
-                        $approvalRequestDataQuery->where("data->{$key}", $value);
+                        $approvalRequestDataQuery->where("payload->{$key}", $value);
                     }
 
                     if ($month !== null || $year !== null) {
                         $approvalRequestDataQuery->where(function ($dateQuery) use ($month, $year) {
                             $dateQuery->orWhere(function ($explicitQuery) use ($month, $year) {
                                 if ($month !== null) {
-                                    $explicitQuery->where('data->month', $month);
+                                    $explicitQuery->where('payload->month', $month);
                                 }
 
                                 if ($year !== null) {
-                                    $explicitQuery->where('data->year', $year);
+                                    $explicitQuery->where('payload->year', $year);
                                 }
                             });
 
@@ -161,18 +161,18 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                                 $dateQuery->orWhere(function ($rangeQuery) use ($periodStart, $periodEnd) {
                                     $rangeQuery
                                         ->whereRaw(
-                                            "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(data, '$.date'))) <= ?",
+                                            "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) <= ?",
                                             [$periodEnd]
                                         )
                                         ->whereRaw(
-                                            "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(data, '$.end_date')), JSON_UNQUOTE(JSON_EXTRACT(data, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(data, '$.date'))) >= ?",
+                                            "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) >= ?",
                                             [$periodStart]
                                         );
                                 });
                             } elseif ($month !== null) {
                                 $dateQuery
-                                    ->orWhereRaw("MONTH(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(data, '$.start_date')), '%Y-%m-%d')) = ?", [$month])
-                                    ->orWhereRaw("MONTH(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(data, '$.end_date')), '%Y-%m-%d')) = ?", [$month]);
+                                    ->orWhereRaw("MONTH(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), '%Y-%m-%d')) = ?", [$month])
+                                    ->orWhereRaw("MONTH(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), '%Y-%m-%d')) = ?", [$month]);
                             }
                         });
                     }

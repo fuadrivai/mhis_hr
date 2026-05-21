@@ -10,5 +10,5 @@ class ApprovalRequestData extends Model
     use HasFactory;
     protected $guarded = ['id'];
     protected $hidden = ['approval_request_id'];
-    protected $casts = ['data' => 'array'];
+    protected $casts = ['payload' => 'array'];
 }

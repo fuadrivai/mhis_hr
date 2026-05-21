@@ -29,6 +29,28 @@ class ApprovalRequestApiController extends Controller
         return $this->approvalRequestService->post($validated);
     }
 
+    public function show($id)
+    {
+        $request = $this->approvalRequestService->show($id)->load(
+            'type',
+            'data',
+            'approval_rule',
+            'approval_rule.steps',
+            'approval_rule.branch',
+            'approval_rule.organization',
+            'approval_rule.level',
+            'approval_rule.position',
+            'requester.personal', 
+            'requester.employment', 
+            'approvals.approver.personal',
+            'approvals.approver.employment',
+            'approvals.approvalRequestData',
+            'attachments',
+            'histories'
+            );
+        return response()->json($request);
+    }
+
     public function history($id)
     {
         $history =  $this->approvalRequestService->show($id)->histories()->with('approver.personal')->get();
