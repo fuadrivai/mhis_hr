@@ -11,6 +11,10 @@ class ApprovalRequest extends Model
     protected $guarded = ['id'];
     protected $hidden = ['requester_employee_id','approval_rule_id','timeoff_id','approval_rule_id'];
 
+    protected $casts = [
+        'show_cancel' => 'boolean',
+    ];
+
     public function approval_rule()
     {
         return $this->belongsTo(ApprovalRule::class);

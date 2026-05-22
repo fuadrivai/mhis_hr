@@ -46,7 +46,7 @@ class ApprovalRequestApiController extends Controller
             'approvals.approver.employment',
             'approvals.approvalRequestData',
             'attachments',
-            'histories'
+            'histories.approver.personal',
             );
         return response()->json($request);
     }
@@ -65,7 +65,32 @@ class ApprovalRequestApiController extends Controller
     public function getRequestByUser(Request $request)
     {
         $request['user']= $request['user'];
-        $requests = $this->approvalRequestService->getByUser($request)->load('type','data');
+        $requests = $this->approvalRequestService->getRequestByUser($request)->load('type','data');
+        return response()->json($requests);
+    }
+    public function getApprovalByUser(Request $request)
+    {
+        $request['user']= $request['user'];
+        $requests = $this->approvalRequestService->getApprovalByUser($request)->load(
+            'approvalRequest.type',
+            'approvalRequest.data',
+            'approvalRequest.requester.personal',
+            'approvalRequest.requester.employment',
+            'approver',
+        );
+        return response()->json($requests);
+    }
+    public function action(Request $request)
+    {
+        $request['user']= $request['user'];
+        $requests = $this->approvalRequestService->action($request);
+        return response()->json($requests);
+    }
+    public function cancel($id, Request $request)
+    {
+        $request['user']= $request['user'];
+        $request['request_id'] = $id;
+        $requests = $this->approvalRequestService->cancel($request);
         return response()->json($requests);
     }
 }

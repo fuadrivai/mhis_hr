@@ -102,6 +102,9 @@ Route::group(['middleware' => 'auth_login'], function () {
             Route::get('request/{id}/history', [ApprovalRequestApiController::class, 'history']);
             Route::get('request/{id}/approver', [ApprovalRequestApiController::class, 'approver']);
             Route::get('request/user', [ApprovalRequestApiController::class, 'getRequestByUser']);
+            Route::get('request/approval', [ApprovalRequestApiController::class, 'getApprovalByUser']);
+            Route::post('request/action', [ApprovalRequestApiController::class, 'action']);
+            Route::post('request/cancel/{id}', [ApprovalRequestApiController::class, 'cancel']);
             Route::resource('request', ApprovalRequestApiController::class);
         });
 });

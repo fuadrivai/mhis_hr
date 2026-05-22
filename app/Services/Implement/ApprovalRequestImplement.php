@@ -58,6 +58,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 'note' => $request['note'] ?? null,
                 'current_step' => 1,
                 'status' => 'pending',
+                'show_cancel' => 1,
             ]);
 
             ApprovalRequestData::create([
@@ -84,6 +85,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                     'approver_employee_id' => $step->approver_employee_id,
                     'approval_mode' => $step->approval_mode,
                     'status' => 'pending',
+                    'show_action' => 1,
                 ]);
             }
 
@@ -101,7 +103,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
         }
     }
 
-    public function getByUser($request)
+    public function getRequestByUser($request)
     {
         try {
             $payload = is_array($request) ? $request : $request->all();
@@ -183,6 +185,189 @@ class ApprovalRequestImplement implements ApprovalRequestService{
         } catch (\Throwable $th) {
            throw new \Exception($th->getMessage());
         }
+    }
+
+    public function getApprovalByUser($request)
+    {
+        try {
+            $payload = is_array($request) ? $request : $request->all();
+            $userId = data_get($payload, 'user.id') ?? auth()->id();
+
+            if (!$userId) {
+                throw new \Exception('User ID is required');
+            }
+
+            $employee = Employee::where('user_id', $userId)->first();
+
+            if (!$employee) {
+                throw new \Exception('Employee not found for the given user ID');
+            }
+
+            $month = data_get($payload, 'month');
+            $year = data_get($payload, 'year');
+
+            $month = is_numeric($month) ? (int) $month : null;
+            $year = is_numeric($year) ? (int) $year : null;
+
+            $dynamicFilters = collect($payload)
+                ->except(['user', 'month', 'year'])
+                ->filter(fn ($value) => is_scalar($value) && $value !== '')
+                ->toArray();
+
+            $query = Approval::where('approver_employee_id', $employee->id)
+                // ->where('status', 'pending')
+                ->whereHas('approvalRequest', function ($approvalRequestQuery) use ($dynamicFilters, $month, $year) {
+                    foreach ($dynamicFilters as $key => $value) {
+                        $approvalRequestQuery->whereHas('data', function ($approvalRequestDataQuery) use ($key, $value) {
+                            $approvalRequestDataQuery->where("payload->{$key}", $value);
+                        });
+                    }
+
+                    if ($month !== null || $year !== null) {
+                        $approvalRequestQuery->whereHas('data', function ($approvalRequestDataQuery) use ($month, $year) {
+                            $approvalRequestDataQuery->where(function ($dateQuery) use ($month, $year) {
+                                if ($month !== null && $year !== null) {
+                                    $periodStart = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString();
+                                    $periodEnd = \Carbon\Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+
+                                    $dateQuery->whereRaw(
+                                        "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) <= ?",
+                                        [$periodEnd]
+                                    )->whereRaw(
+                                        "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) >= ?",
+                                        [$periodStart]
+                                    );
+                                } elseif ($year !== null) {
+                                    $periodStart = \Carbon\Carbon::createFromDate($year, 1, 1)->startOfYear()->toDateString();
+                                    $periodEnd = \Carbon\Carbon::createFromDate($year, 12, 1)->endOfYear()->toDateString();
+
+                                    $dateQuery->whereRaw(
+                                        "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) <= ?",
+                                        [$periodEnd]
+                                    )->whereRaw(
+                                        "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) >= ?",
+                                        [$periodStart]
+                                    );
+                                } elseif ($month !== null) {
+                                    $dateQuery
+                                        ->orWhereRaw("MONTH(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), '%Y-%m-%d')) = ?", [$month])
+                                        ->orWhereRaw("MONTH(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), '%Y-%m-%d')) = ?", [$month]);
+                                }
+                            });
+                        });
+                    }
+                });
+
+            return $query->get();
+        } catch (\Throwable $th) {
+            throw new \Exception($th->getMessage());
+        }
+    }
+
+    public function action($data)
+    {
+        $payload = is_array($data) ? $data : $data->all();
+        $userId = data_get($payload, 'user.id') ?? auth()->id();
+        if (!$userId) {
+            throw new \Exception('User ID is required');
+        }
+        $employee = Employee::where('user_id', $userId)->first();
+        if (!$employee) {
+            throw new \Exception('Employee not found for the given user ID');
+        }
+
+        $requestId = data_get($payload, 'request_id');
+        $request = ApprovalRequest::findOrFail($requestId);
+        $approval = $request->approvals()->where('approver_employee_id', $employee->id)->firstOrFail()->load('approver.personal');
+        $action = data_get($payload, 'action');
+        $note = data_get($payload, 'note');
+        if (!in_array($action, ['approved', 'rejected','cancelled'])) {
+            throw new \Exception('Invalid action. Allowed values are: approved, rejected, cancelled');
+        }
+
+        $approval->status = $action ;
+        $approval->note = $note;
+        $approval->actioned_date = now();
+        $approval->show_action = 0;
+        $approval->save();
+
+        if ($approval->status === 'rejected') {
+            $request->status = 'rejected';
+            $request->show_cancel = 0;
+            $request->save();
+            
+
+            Approval::where('approval_request_id', $request->id)
+                ->where('id', '!=', $approval->id)
+                ->where('status', 'pending')
+                ->update(['status' => 'skipped', 'show_action' => 0]);
+        } else if ($approval->status === 'cancelled') {
+            $request->status = 'cancelled';
+            $request->show_cancel = 0;
+            $request->save();
+
+            Approval::where('approval_request_id', $request->id)
+                ->where('id', '!=', $approval->id)
+                ->whereIn('status', ['pending'])
+                ->update(['status' => 'skipped', 'show_action' => 0]);
+        }else{
+            $nextApproval = Approval::where('approval_request_id', $request->id)
+                ->where('status', 'pending')
+                ->orderBy('step_order')
+                ->first();
+
+            if (!$nextApproval) {
+                $request->status = 'approved';
+                $request->show_cancel = 0;
+                $request->save();
+            } else {
+                $nextApproval->show_action = 1;
+                $nextApproval->save();
+            }
+        }
+
+        ApprovalHistory::create([
+            'approval_request_id' => $request->id,
+            'action' => $action,
+            'step_order' => $approval->step_order,
+            'approver_employee_id' => $employee->id,
+            'note' => "Time off request has been {$action}" . ($note ? " with note: {$note}" : ''),
+        ]);
+
+        return $approval;
+    }
+
+    public function cancel($data){
+        $payload = is_array($data) ? $data : $data->all();
+        $userId = data_get($payload, 'user.id') ?? auth()->id();
+        if (!$userId) {
+            throw new \Exception('User ID is required');
+        }
+        $employee = Employee::where('user_id', $userId)->first();
+        if (!$employee) {
+            throw new \Exception('Employee not found for the given user ID');
+        }
+
+        $requestId = data_get($payload, 'request_id');
+        $note = data_get($payload, 'note');
+        $request = ApprovalRequest::findOrFail($requestId);
+
+        $request->status = 'cancelled';
+        $request->show_cancel = 0;
+        $request->save();
+
+        Approval::where('approval_request_id', $request->id)
+                ->whereIn('status', ['pending'])
+                ->update(['status' => 'skipped', 'show_action' => 0]);
+
+        ApprovalHistory::create([
+            'approval_request_id' => $request->id,
+            'action' => $request->status,
+            'step_order' => $request->approvals()->max('step_order') + 1,
+            'approver_employee_id' => $employee->id,
+            'note' => "Time off request has been {$request->status}" . ($note ? " with note: {$note}" : ''),
+        ]);
+        return $request;
     }
 
     public function put($request)

@@ -18,14 +18,14 @@ class AuthImplement implements AuthService
         try {
 
             // cehcking account in academy.mhis.link
-            $isExist = $this->checkAcademyAccount($request['email']);
-            if (!$isExist) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Username is not registered in Academy System !',
-                    "logoutAll" => false,
-                ], 401);
-            }
+            // $isExist = $this->checkAcademyAccount($request['email']);
+            // if (!$isExist) {
+            //     return response()->json([
+            //         'status' => 'error',
+            //         'message' => 'Username is not registered in Academy System !',
+            //         "logoutAll" => false,
+            //     ], 401);
+            // }
 
             //get token login to system
             $token = Auth::guard('api')->attempt($request);

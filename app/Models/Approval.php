@@ -10,6 +10,9 @@ class Approval extends Model
     use HasFactory;
     protected $guarded = ['id'];
     protected $hidden = ['approval_request_id','approver_employee_id','approval_request_id'];
+    protected $casts = [
+        'show_action' => 'boolean',
+    ];
 
     public function approvalRequestData()
     {
