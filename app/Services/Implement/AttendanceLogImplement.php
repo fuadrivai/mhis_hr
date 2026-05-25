@@ -9,6 +9,7 @@ use App\Services\AttendanceLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
+use function App\Helpers\getShiftByDate;
 use function App\Helpers\resolveAttendanceDate;
 
 class AttendanceLogImplement implements AttendanceLogService
@@ -44,21 +45,7 @@ class AttendanceLogImplement implements AttendanceLogService
                 return response()->json(['message' => 'Employee not found'], 404);
             }
 
-            $shiftLength = $employee->activeSchedule->schedule->count_detail;
-            $target = Carbon::parse($data['date'])->startOfDay();
-            $effective = Carbon::parse($employee->activeSchedule->effective_start_date)->startOfDay();
-            $diffDays = $effective->diffInDays($target, false);
-
-            if ($diffDays < 0) {
-                return response()->json(['message' => 'Your schedule is not yet active on that date'], 400);
-            }
-
-            $dayNumber = ($diffDays % $shiftLength) + 1;
-            $shiftForToday = $employee->activeSchedule->schedule->details
-                ->where('number', $dayNumber)
-                ->first()
-                ->shift;
-
+            $shiftForToday = getShiftByDate($employee, $data['date']);
             $resolved = resolveAttendanceDate($shiftForToday, $data['date']);
             $attendanceDate = $resolved['attendance_date'];
 
@@ -153,21 +140,7 @@ class AttendanceLogImplement implements AttendanceLogService
                 return response()->json(['message' => 'Employee does not have a user account'], 400);
             }
 
-            $shiftLength = $employee->activeSchedule->schedule->count_detail;
-            $target = Carbon::parse($data['date'])->startOfDay();
-            $effective = Carbon::parse($employee->activeSchedule->effective_start_date)->startOfDay();
-            $diffDays = $effective->diffInDays($target, false);
-
-            if ($diffDays < 0) {
-                return response()->json(['message' => 'Your schedule is not yet active on that date'], 400);
-            }
-
-            $dayNumber = ($diffDays % $shiftLength) + 1;
-            $shiftForToday = $employee->activeSchedule->schedule->details
-                ->where('number', $dayNumber)
-                ->first()
-                ->shift;
-
+            $shiftForToday = getShiftByDate($employee, $data['date']);
             $resolved = resolveAttendanceDate($shiftForToday, $data['date']);
             $attendanceDate = $resolved['attendance_date'];
 

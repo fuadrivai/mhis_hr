@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Models\Employee;
 use Carbon\Carbon;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 use Google\Auth\HttpHandler\HttpHandlerFactory;
@@ -140,12 +141,30 @@ function diffTime($start, $end)
     return "$hours" . "h " . $minutes . "m";
 }
 
+function getShiftByDate(Employee $employee,$date)
+{
+    $shiftLength = $employee->activeSchedule->schedule->count_detail;
+    $target = Carbon::parse($date)->startOfDay();
+    $effective = Carbon::parse($employee->activeSchedule->effective_start_date)->startOfDay();
+    $diffDays = $effective->diffInDays($target, false);
+
+    if ($diffDays < 0) {
+        return response()->json(['message' => 'Your schedule is not yet active on that date'], 400);
+    }
+
+    $dayNumber = ($diffDays % $shiftLength) + 1;
+    $shiftForToday = $employee->activeSchedule->schedule->details
+        ->where('number', $dayNumber)
+        ->first()
+        ->shift;
+    return $shiftForToday;
+}
+
 function resolveAttendanceDate($shift, $clock)
 {
     $clockTime = Carbon::parse($clock);
     $scheduleOut = Carbon::parse($shift->schedule_out);
 
-    // NOT Overnight SHIFT
     if (!$shift->is_overnight) {
         return [
             'attendance_date' => $clockTime->toDateString(),
@@ -154,7 +173,6 @@ function resolveAttendanceDate($shift, $clock)
         ];
     }
 
-    // OVERNIGHT SHIFT
     if ($clockTime->format('H:i:s') < $scheduleOut->format('H:i:s')) {
         return [
             'attendance_date' => $clockTime->copy()->subDay()->toDateString(),
@@ -163,7 +181,6 @@ function resolveAttendanceDate($shift, $clock)
         ];
     }
 
-    // Jam 19:00–23:59 → shift hari ini
     return [
         'attendance_date' => $clockTime->toDateString(),
         'schedule_in' => $shift->schedule_in,

@@ -94,6 +94,9 @@ Route::group(['middleware' => 'auth_login'], function () {
 
     Route::prefix('employee')->name('employee.')->group(function () {
         Route::get('user/{id}', [EmployeeApiController::class, 'getByuserId'])->name('getByuserId');
+        Route::get('schedule/active', [EmployeeApiController::class, 'getActiveSchedule'])->name('getActiveSchedule');
+        Route::get('profile', [EmployeeApiController::class, 'profile'])->name('profile');
+        Route::get('datatable', [EmployeeApiController::class, 'paginate'])->name('datatable');
         Route::resource('/', EmployeeApiController::class)->parameters(['' => 'employee']);
     });
 

@@ -16,4 +16,5 @@ interface EmployeeService
     function deactivate($employeeIds);
     function deleteDocument($document_id, $driveService);
     function documentUpload($employeeId, $request, $driveService);
+    function getProfile($user);
 }

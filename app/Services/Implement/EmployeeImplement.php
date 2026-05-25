@@ -24,8 +24,85 @@ class EmployeeImplement implements EmployeeService
         return $employees;
     }
 
-    function paginate($request) {}
+    function paginate($request) {
+        $perPage = (int) ($request->input('perpage', $request->input('per_page', 10)));
+        $perPage = max(1, min($perPage, 100));
 
+        $query = Employee::with(['user', 'personal', 'employment', 'activeSchedule']);
+
+        $isActive = $request->input('is_active');
+        $includeInactive = filter_var($request->input('include_inactive', false), FILTER_VALIDATE_BOOLEAN);
+
+        if ($isActive !== null && $isActive !== '') {
+            $query->where('is_active', (int) $isActive);
+        } elseif (!$includeInactive) {
+            $query->where('is_active', 1);
+        }
+
+        $search = trim((string) $request->input('search', $request->input('q', '')));
+        if ($search !== '') {
+            $query->whereHas('personal', function ($q) use ($search) {
+                $q->where('fullname', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%')
+                    ->orWhere('barcode', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($request->filled('organization') && $request->organization !== 'all') {
+            $query->whereHas('employment', function ($q) use ($request) {
+                $q->where('organization_id', $request->organization);
+            });
+        }
+
+        if ($request->filled('position') && $request->position !== 'all') {
+            $query->whereHas('employment', function ($q) use ($request) {
+                $q->where('job_position_id', $request->position);
+            });
+        }
+
+        if ($request->filled('level') && $request->level !== 'all') {
+            $query->whereHas('employment', function ($q) use ($request) {
+                $q->where('job_level_id', $request->level);
+            });
+        }
+
+        if ($request->filled('branch') && $request->branch !== 'all') {
+            $query->whereHas('employment', function ($q) use ($request) {
+                $q->where('branch_id', $request->branch);
+            });
+        }
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->whereHas('employment', function ($q) use ($request) {
+                $q->where('employment_status', $request->status);
+            });
+        }
+
+        $sortBy = (string) $request->input('sort_by', 'fullname');
+        $sortDir = strtolower((string) $request->input('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+        if ($sortBy === 'created_at') {
+            $query->orderBy('employees.created_at', $sortDir);
+        } elseif (in_array($sortBy, ['fullname', 'email', 'barcode'], true)) {
+            $query->orderBy(
+                Personal::select($sortBy)->whereColumn('personals.id', 'employees.personal_id'),
+                $sortDir
+            );
+        } elseif (in_array($sortBy, ['employee_id', 'organization_name', 'job_position_name', 'job_level_name', 'branch_name', 'join_date', 'employment_status'], true)) {
+            $query->orderBy(
+                Employment::select($sortBy)->whereColumn('employments.id', 'employees.employment_id'),
+                $sortDir
+            );
+        } else {
+            $query->orderBy(
+                Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
+                'asc'
+            );
+        }
+
+        return $query->paginate($perPage)->appends($request->query());
+    }
+    
     function show($id,$with=[]) {
         return Employee::with($with)->find($id);
     }
@@ -312,5 +389,15 @@ class EmployeeImplement implements EmployeeService
     {
         $employees = Employee::where('is_active', 1)->get();
         return $employees;
+    }
+
+    public function getProfile($user)
+    {
+        $userId = $user->id ?? $user['id'] ?? auth()->id();
+        $employee = Employee::with(['personal', 'employment'])
+            ->where('user_id', $userId)
+            ->first();
+
+        return $employee;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Services\EmployeeScheduleService;
 use App\Services\EmployeeService;
 use Illuminate\Http\Request;
 
@@ -15,10 +16,12 @@ class EmployeeApiController extends Controller
      * @return \Illuminate\Http\Response
      */
     private EmployeeService $employeeService;
+    private EmployeeScheduleService $employeeScheduleService;  
 
-    public function __construct(EmployeeService $employeeService)
+    public function __construct(EmployeeService $employeeService, EmployeeScheduleService $employeeScheduleService)
     {
         $this->employeeService = $employeeService;
+        $this->employeeScheduleService = $employeeScheduleService;
     }
     public function index()
     {
@@ -32,6 +35,27 @@ class EmployeeApiController extends Controller
     public function getByuserId($id)
     {
         $employee =  $this->employeeService->getByuserId($id);
+        return response()->json($employee);
+    }
+    public function getActiveSchedule(Request $request)
+    {
+        $request['user']= $request['user'];
+        $employeeSchedule =  $this->employeeScheduleService->getActiveSchedule($request);
+        return response()->json($employeeSchedule);
+    }
+
+    public function profile()
+    {
+
+        $request= request();
+        $user = $request['user'];
+        $employee =  $this->employeeService->getProfile($user);
+        return response()->json($employee);
+    }
+
+    public function paginate(Request $request)
+    {
+        $employee =  $this->employeeService->paginate($request);
         return response()->json($employee);
     }
 
