@@ -50,12 +50,15 @@ class AuthController extends Controller
                 $session->save();
 
                 session(['Authorization' => $session->token]);
-                $isUser = auth()->user()->hasRole('user');
-                if (!$isUser) {
-                    return redirect()->intended('/');
-                }else{
-                    return redirect()->intended('/internal-document');
+                
+                $authUser = auth()->user();
+                $isUser = $authUser->hasRole('user');
+
+                if ($isUser) {
+                    return redirect('/internal-document');
                 }
+
+                return redirect('/');
 
             }
             return back()->with('LoginError', 'Email is not valid');

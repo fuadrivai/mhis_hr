@@ -24,6 +24,15 @@
     </div>
 
     <div class="container card-container">
+        <div class="d-flex justify-content-end mb-3">
+            <form action="{{ url('/logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="fa fa-sign-out mr-1"></i>Logout
+                </button>
+            </form>
+        </div>
+
         <div class="card main-card">
             <div class="card-header">
                 <div class="header-decoration"></div>

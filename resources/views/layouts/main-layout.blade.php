@@ -54,60 +54,66 @@
                             <ul class="nav side-menu">
                                 <li><a href="/"><i class="fa fa-dashboard"></i> Home </a></li>
                                 {{-- <li><a href="/location"><i class="fa fa-map"></i> Pin Location </a></li> --}}
-                                <li class={{ Request::is('employee*') ? 'active' : '' }}><a><i class="fa fa-users"></i>
-                                        Employee Directory <span class="fa fa-chevron-down"></span></a>
-                                    <ul class="nav child_menu"
-                                        style="display: {{ Request::is('employee*') ? 'block' : 'none' }}">
-                                        <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
-                                                href="/employee">Employee</a></li>
-                                        <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
-                                                href="/scheduler">Scheduler</a></li>
-                                    </ul>
-                                </li>
-                                <li class={{ Request::is('time*') ? 'active' : '' }}><a><i class="fa fa-clock-o"></i>
-                                        Time <span class="fa fa-chevron-down"></span></a>
-                                    <ul class="nav child_menu"
-                                        style="display: {{ Request::is('time*') ? 'block' : 'none' }}">
-                                        <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
-                                                href="/time/attendance">Attendance</a></li>
-                                        <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
-                                                href="#">Overtime</a></li>
-                                        <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
-                                                href="/time/request">Time Off</a></li>
-                                    </ul>
-                                </li>
-                                <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i class="fa fa-gears"></i>
-                                        Settings <span class="fa fa-chevron-down"></span></a>
-                                    <ul style="display: {{ Request::is('setting*') ? 'block' : 'none' }}"
-                                        class="nav child_menu">
-                                        <li><a>Company<span class="fa fa-chevron-down"></span></a>
-                                            <ul class="nav child_menu">
-                                                {{-- <li><a href="/setting/company">Company Info</a></li> --}}
-                                                <li><a href="/setting/branch">Branch</a></li>
-                                                <li><a href="/setting/organization">Organization</a></li>
-                                                <li><a href="/setting/position">Job Position</a></li>
-                                                <li><a href="/setting/level">Job Level</a></li>
-                                                <li><a href="/setting/religion">Religion</a></li>
-                                            </ul>
-                                        </li>
-                                        <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
-                                                    class="fa fa-chevron-down"></span></a>
-                                            <?php
-                                            $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*') || Request::is('setting/timeoff*') || Request::is('setting/holiday*') || Request::is('setting/location*');
-                                            ?>
-                                            <ul style="display: {{ $isBlock ? 'block' : 'none' }}"
-                                                class="nav child_menu">
-                                                <li><a href="/setting/schedule">Schedule</a></li>
-                                                <li><a href="/setting/timeoff">Time off</a></li>
-                                                <li><a href="/setting/holiday">Holiday</a></li>
-                                                <li><a href="/setting/location">Live Attendance</a></li>
-                                            </ul>
-                                        </li>
-                                        <li><a href="/setting/approval">Approval</a></li>
-                                        <li><a href="/setting/bank">Bank</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="/user"><i class="fa fa-user"></i> Management User </a></li>
+
+                                @if (auth()->user()->hasRole('admin'))
+                                    <li class={{ Request::is('employee*') ? 'active' : '' }}><a><i
+                                                class="fa fa-users"></i>
+                                            Employee Directory <span class="fa fa-chevron-down"></span></a>
+                                        <ul class="nav child_menu"
+                                            style="display: {{ Request::is('employee*') ? 'block' : 'none' }}">
+                                            <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
+                                                    href="/employee">Employee</a></li>
+                                            <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
+                                                    href="/scheduler">Scheduler</a></li>
+                                        </ul>
+                                    </li>
+                                    <li class={{ Request::is('time*') ? 'active' : '' }}><a><i
+                                                class="fa fa-clock-o"></i>
+                                            Time <span class="fa fa-chevron-down"></span></a>
+                                        <ul class="nav child_menu"
+                                            style="display: {{ Request::is('time*') ? 'block' : 'none' }}">
+                                            <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                    href="/time/attendance">Attendance</a></li>
+                                            <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                    href="#">Overtime</a></li>
+                                            <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                    href="/time/request">Time Off</a></li>
+                                        </ul>
+                                    </li>
+                                    <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i
+                                                class="fa fa-gears"></i>
+                                            Settings <span class="fa fa-chevron-down"></span></a>
+                                        <ul style="display: {{ Request::is('setting*') ? 'block' : 'none' }}"
+                                            class="nav child_menu">
+                                            <li><a>Company<span class="fa fa-chevron-down"></span></a>
+                                                <ul class="nav child_menu">
+                                                    {{-- <li><a href="/setting/company">Company Info</a></li> --}}
+                                                    <li><a href="/setting/branch">Branch</a></li>
+                                                    <li><a href="/setting/organization">Organization</a></li>
+                                                    <li><a href="/setting/position">Job Position</a></li>
+                                                    <li><a href="/setting/level">Job Level</a></li>
+                                                    <li><a href="/setting/religion">Religion</a></li>
+                                                </ul>
+                                            </li>
+                                            <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
+                                                        class="fa fa-chevron-down"></span></a>
+                                                <?php
+                                                $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*') || Request::is('setting/timeoff*') || Request::is('setting/holiday*') || Request::is('setting/location*');
+                                                ?>
+                                                <ul style="display: {{ $isBlock ? 'block' : 'none' }}"
+                                                    class="nav child_menu">
+                                                    <li><a href="/setting/schedule">Schedule</a></li>
+                                                    <li><a href="/setting/timeoff">Time off</a></li>
+                                                    <li><a href="/setting/holiday">Holiday</a></li>
+                                                    <li><a href="/setting/location">Live Attendance</a></li>
+                                                </ul>
+                                            </li>
+                                            <li><a href="/setting/approval">Approval</a></li>
+                                            <li><a href="/setting/bank">Bank</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/user"><i class="fa fa-user"></i> Management User </a></li>
+                                @endif
                                 <li><a href="/internal-document/create" target="_blank"><i class="fa fa-folder"></i>
                                         Form Document </a></li>
                                 {{-- <li><a href="/signature"><i class="fa fa-qrcode"></i> E Signature </a></li> --}}
