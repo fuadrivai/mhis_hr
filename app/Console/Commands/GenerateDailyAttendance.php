@@ -15,27 +15,25 @@ class GenerateDailyAttendance extends Command
     public function handle()
     {
         $today = Carbon::today()->toDateString();
-
-        // Ambil semua employee aktif
         $employees = Employee::with(['personal', 'activeSchedule.schedule.details.shift','employment','user'])->get();
 
         foreach ($employees as $employee) {
-
-            // ❌ Skip jika employee belum memiliki user
             if (empty($employee->user_id)) {
                 continue;
             }
 
-            // Cek apakah sudah ada attendance untuk hari ini
             $exists = Attendance::where('employee_id', $employee->id)
                 ->where('date', $today)
                 ->exists();
 
             if ($exists) {
-                continue; // sudah ada → skip
+                continue;
             }
 
-            // Tentukan shift hari ini
+            if (!$employee->activeSchedule) {
+                continue;
+            }
+
             $shift = $this->resolveShift($employee, $today);
 
             Attendance::create([
