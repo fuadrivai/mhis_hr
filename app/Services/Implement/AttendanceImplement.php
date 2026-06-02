@@ -10,6 +10,8 @@ use GuzzleHttp\Exception\ClientException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
+use function App\Helpers\getShiftByDate;
+use function App\Helpers\resolveAttendanceDate;
 use function App\Helpers\talentaHeader;
 
 class AttendanceImplement implements AttendanceService
@@ -284,14 +286,54 @@ class AttendanceImplement implements AttendanceService
         $year = data_get($payload, 'year');
         $month = is_numeric($month) ? (int) $month : null;
         $year = is_numeric($year) ? (int) $year : null;
-
-        $attendances = $employee->attendances()->whereYear('date', $year)->whereMonth('date', $month)->get();
-
+        
         if ($month === null || $year === null) {
             throw new \Exception('Month and year are required');
         }
 
-        $approvalRequests = $employee->requests()->where('status', 'approved')
+        $attendances = $employee->attendances()->whereYear('date', $year)->whereMonth('date', $month)->get();
+
+
+        $start = Carbon::create($year, $month, 1);
+        $length = $start->daysInMonth;
+        $period = collect();
+        for ($i = 0; $i < $length; $i++) {
+            $period->push($start->copy()->addDays($i)->toDateString());
+        }
+
+        $tempAttendance = $attendances->keyBy(fn($attendance) => $attendance->date->toDateString());
+
+        for ($j = 0; $j < $period->count(); $j++) {
+            $date = $period[$j];
+            if (!isset($tempAttendance[$date])) {
+                $shiftForToday = getShiftByDate($employee, $date);
+                $resolved = [
+                    'schedule_in' => null,
+                    'schedule_out' => null,
+                ];
+                $holiday = 0;
+
+                if (!($shiftForToday instanceof \Illuminate\Http\JsonResponse)) {
+                    $resolved = resolveAttendanceDate($shiftForToday, $date);
+                    $holiday = (int) data_get($shiftForToday, 'holiday', 0);
+                }
+
+                $attendances->push((object)[
+                    'date' => Carbon::createFromFormat('Y-m-d', $date, 'UTC'),
+                    'status' => 'absent',
+                    'employee_id' => $employee->id,
+                    'user_id' => $employee->user_id,
+                    'fullname' => $employee->personal->fullname ?? null,
+                    'shift_name' => $employee->activeSchedule->schedule_name ?? '-',
+                    'holiday' => $holiday,
+                    'schedule_in' =>  $resolved['schedule_in'] ?? null,
+                    'schedule_out' =>  $resolved['schedule_out'] ?? null,
+                    'approvals' => []
+                ]);
+            }
+        }
+
+        $approvalRequests = $employee->requests()->where('status', 'pending')
                             ->whereHas('data', function ($approvalRequestDataQuery) use ($month, $year) {
                                 $approvalRequestDataQuery->where(function ($dateQuery) use ($month, $year) {
                                     if ($month !== null && $year !== null) {
@@ -354,6 +396,6 @@ class AttendanceImplement implements AttendanceService
             return $attendance;
         });
         
-        return $attendances;
+        return $attendances->sortBy('date')->values();
     }
 }
