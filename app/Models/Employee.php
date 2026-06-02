@@ -62,4 +62,8 @@ class Employee extends Model
     {
         return $this->hasMany(Attendance::class);
     }
+    public function requests()
+    {
+        return $this->hasMany(ApprovalRequest::class ,'requester_employee_id');
+    }
 }

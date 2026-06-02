@@ -2,6 +2,7 @@
 
 namespace App\Services\Implement;
 
+use App\Models\Employee;
 use App\Services\AttendanceService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7;
@@ -270,9 +271,89 @@ class AttendanceImplement implements AttendanceService
 
     function getAttendanceHistory($request)
     {
-        $year = $request['year'];
-        $month = $request['month'];
-        $attendances = $request['user']->load('attendances')->attendances()->whereYear('date', $year)->whereMonth('date', $month)->get();
-        return $attendances->load('logs');
+        $payload = is_array($request) ? $request : $request->all();
+        $userId = data_get($payload, 'user.id') ?? auth()->id();
+        if (!$userId) {
+            throw new \Exception('User ID is required');
+        }
+        $employee = Employee::where('user_id', $userId)->first();
+        if (!$employee) {
+            throw new \Exception('Employee not found for the given user ID');
+        }
+        $month = data_get($payload, 'month');
+        $year = data_get($payload, 'year');
+        $month = is_numeric($month) ? (int) $month : null;
+        $year = is_numeric($year) ? (int) $year : null;
+
+        $attendances = $employee->attendances()->whereYear('date', $year)->whereMonth('date', $month)->get();
+
+        if ($month === null || $year === null) {
+            throw new \Exception('Month and year are required');
+        }
+
+        $approvalRequests = $employee->requests()->where('status', 'approved')
+                            ->whereHas('data', function ($approvalRequestDataQuery) use ($month, $year) {
+                                $approvalRequestDataQuery->where(function ($dateQuery) use ($month, $year) {
+                                    if ($month !== null && $year !== null) {
+                                        $periodStart = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString();
+                                        $periodEnd = \Carbon\Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+                                        $dateQuery->whereRaw(
+                                            "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) <= ?",
+                                            [$periodEnd]
+                                        )->whereRaw(
+                                            "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) >= ?",
+                                            [$periodStart]
+                                        );
+                                    } elseif ($year !== null) {
+                                        $periodStart = \Carbon\Carbon::createFromDate($year, 1, 1)->startOfYear()->toDateString();
+                                        $periodEnd = \Carbon\Carbon::createFromDate($year, 12, 1)->endOfYear()->toDateString();
+                                        $dateQuery->whereRaw(
+                                            "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) <= ?",
+                                            [$periodEnd]
+                                        )->whereRaw(
+                                            "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) >= ?",
+                                            [$periodStart]
+                                        );
+                                    } elseif ($month !== null) {
+                                        $dateQuery
+                                            ->orWhereRaw("MONTH(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), '%Y-%m-%d')) = ?", [$month])
+                                            ->orWhereRaw("MONTH(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), '%Y-%m-%d')) = ?", [$month]);
+                                    }
+                                });
+                            })->get();
+
+        $approvalMap = [];
+        foreach ($approvalRequests as $approvalRequest) {
+            $approvalData = $approvalRequest->data;
+            if ($approvalData) {
+                $startDate = data_get($approvalData->payload, 'start_date') ?? data_get($approvalData->payload, 'date');
+                $endDate = data_get($approvalData->payload, 'end_date') ?? data_get($approvalData->payload, 'start_date') ?? data_get($approvalData->payload, 'date');
+                if ($startDate && $endDate) {
+                    $currentDate = \Carbon\Carbon::parse($startDate);
+                    $endDateCarbon = \Carbon\Carbon::parse($endDate);
+                    while ($currentDate->lte($endDateCarbon)) {
+                        $dateKey = $currentDate->toDateString();
+                        if (!isset($approvalMap[$dateKey])) {
+                            $approvalMap[$dateKey] = [];
+                        }
+                        $approvalMap[$dateKey][] = [
+                            'type' => $approvalRequest->type ? $approvalRequest->type->name : null,
+                            'reason' => data_get($approvalData->payload, 'reason'),
+                            'status' => $approvalRequest->status,
+                        ];
+                        $currentDate->addDay();
+                    }
+                }
+            }
+        }
+
+        $attendances->transform(function ($attendance) use ($approvalMap) {
+            $date = $attendance->date->toDateString();
+            $attendance->approvals =
+                $approvalMap[$date] ?? [];
+            return $attendance;
+        });
+        
+        return $attendances;
     }
 }
