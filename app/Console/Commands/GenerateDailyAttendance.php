@@ -15,7 +15,7 @@ class GenerateDailyAttendance extends Command
     public function handle()
     {
         $today = Carbon::today()->toDateString();
-        $employees = Employee::with(['personal', 'activeSchedule.schedule.details.shift','employment','user'])->get();
+        $employees = Employee::where('is_active', 1)->with(['personal', 'activeSchedule.schedule.details.shift','employment','user'])->get();
 
         foreach ($employees as $employee) {
             if (empty($employee->user_id)) {
