@@ -31,14 +31,13 @@ class LocationImplement implements LocationService
     }
     function post($request)
     {
-        try {
+        return DB::transaction(function () use ($request) {
             $location = null;
-            DB::transaction(function () use ($request, &$location) {
-                $location = new Location();
-                $location->name = $request['name'];
-                $location->need_location = $request['need_location'] ? 1 : 0;
-                $location->save();
-
+            $location = new Location();
+            $location->name = $request['name'];
+            $location->need_location = $request['need_location']=="true" ? 1 : 0;
+            $location->save();
+            if ($location->need_location == 1) {
                 $details = [];
                 foreach ($request['details'] as $d) {
                     $details[] = [
@@ -54,16 +53,13 @@ class LocationImplement implements LocationService
                 if (!empty($details)) {
                     LocationDetail::insert($details);
                 }
-
-                $employeeIds = collect($request['employees'] ?? [])->pluck('id');
-                if ($employeeIds->isNotEmpty()) {
-                    Employee::whereIn('id', $employeeIds)->update(['location_id' => $location->id]);
-                }
-            });
+            }
+            $employeeIds = collect($request['employees'] ?? [])->pluck('id');
+            if ($employeeIds->isNotEmpty()) {
+                Employee::whereIn('id', $employeeIds)->update(['location_id' => $location->id]);
+            }
             return $location;
-        } catch (\Throwable $th) {
-            return response()->json(["message" => $th->getMessage()], 500);
-        }
+        });
     }
     function put($request)
     {
