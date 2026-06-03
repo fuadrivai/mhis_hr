@@ -13,7 +13,7 @@
                                     <img src="{{ asset('images/user.png') }}" class="employee-avatar"
                                         alt="{{ $emp->personal->fullname ?? '--' }}">
                                 @else
-                                    <img src="{{ asset('storage/' . $pr->image) }}" class="employee-avatar"
+                                    <img src="{{ asset('storage/' . $emp->personal->avatar) }}" class="employee-avatar"
                                         alt="{{ $emp->personal->fullname ?? '--' }}">
                                 @endif
                                 <div>
