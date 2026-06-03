@@ -2,6 +2,8 @@
 
 namespace App\Helpers;
 
+use App\Models\Attendance;
+use App\Models\AttendanceLog;
 use App\Models\Employee;
 use Carbon\Carbon;
 use Google\Auth\Credentials\ServiceAccountCredentials;
@@ -9,6 +11,8 @@ use Google\Auth\HttpHandler\HttpHandlerFactory;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Exception\ClientException;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 function talentaSandboxHeader($method, $pathWithQueryParam)
 {
@@ -187,3 +191,187 @@ function resolveAttendanceDate($shift, $clock)
         'schedule_out' => $shift->schedule_out,
     ];
 }
+
+
+function validateUser(array $data)
+{
+    $user = $data['user'] ?? null;
+    if (!$user) {
+        throw new \Exception('Unauthenticated', 403);
+    }
+    return $user;
+}
+
+function getEmployee($userId)
+{
+    $employee = Employee::with([
+        'personal',
+        'activeSchedule.schedule.details.shift',
+        'location.details'
+    ])
+    ->where('user_id', $userId)
+    ->first();
+    if (!$employee) {
+        throw new \Exception('Employee not found', 404);
+    }
+    return $employee;
+}
+
+function validateLocation($employee, $data)
+{
+    $location = $employee->location;
+    if (!$location) {
+        throw new \Exception(
+            'Employee does not have a location assigned',
+            400
+        );
+    }
+    if (!$location->need_location) {
+        return;
+    }
+    foreach ($location->details as $detail) {
+        $distanceInKM = distance(
+            $data['latitude'],
+            $data['longitude'],
+            $detail->latitude,
+            $detail->longitude,
+            "K"
+        );
+        $distance = $distanceInKM * 1000;
+        if ($distance <= (float)$detail->radius) {
+            return;
+        }
+    }
+    throw new \Exception('Out of coverage area', 400);
+}
+
+function prepareAttendance($employee,$user,$clockTime) {
+    $shift = getShiftByDate($employee, $clockTime);
+    $resolved = resolveAttendanceDate($shift,$clockTime);
+    $attendanceDate = $resolved['attendance_date'];
+
+    $attendance = Attendance::firstOrCreate(
+        [
+            'employee_id' => $employee->id,
+            'date' => $attendanceDate,
+        ],
+        [
+            'user_id' => $user['id'],
+            'fullname' => $employee->personal->fullname,
+            'shift_name' => $employee->activeSchedule->schedule_name ?? '-',
+            'status' => 'present',
+            'holiday' => $shift->holiday ? 1 : 0,
+            'schedule_in' => $resolved['schedule_in'],
+            'schedule_out' => $resolved['schedule_out'],
+        ]
+    );
+    return [
+        $attendance,
+        $attendanceDate
+    ];
+}
+
+    function handlePhotoAndFaceRecognition($employee,?string $photo): ?string
+    {
+        if (!$photo) {
+            return null;
+        }
+        // upload photo
+        $photoPath = storeAttendancePhoto($employee,$photo);
+        verifyFaceRecognition($employee,$photoPath);
+        return $photoPath;
+    }
+
+    function storeAttendancePhoto($employee,string $photo): string
+    {
+        $rawPhoto = $photo;
+        $extension = 'png';
+        if (preg_match('/^data:image\/(png|jpe?g);base64,/', $rawPhoto, $matches)) {
+            $extension = strtolower($matches[1]) === 'jpeg' ? 'jpg' : strtolower($matches[1]);
+            $rawPhoto = substr($rawPhoto,strpos($rawPhoto, ',') + 1);
+        }
+        $imageName = sprintf('attendance_%s_%s.%s',$employee->id,time(),$extension);
+        $photoPath = 'attendance_photos/' . $imageName;
+        file_put_contents(storage_path('app/public/' . $photoPath),base64_decode(str_replace(' ', '+', $rawPhoto)));
+        return $photoPath;
+    }
+
+    function verifyFaceRecognition($employee,string $photoPath) {
+
+        $faceRecognitionApiUrl = env('FACERECOGNITION_API_URL');
+        if (empty($faceRecognitionApiUrl)) {
+            return;
+        }
+        $fullPath = storage_path('app/public/' . $photoPath);
+
+        try {
+            $response = Http::timeout(15)
+                ->attach('image',file_get_contents($fullPath),basename($fullPath))
+                ->post(rtrim($faceRecognitionApiUrl, '/') . '/recognize',['employeeId' => $employee->id,]);
+            if (!$response->successful()) {
+                deleteAttendancePhoto($fullPath);
+                throw new \Exception((string) $response->json('detail'),502);
+            }
+            if ($detail = $response->json('detail')) {
+                deleteAttendancePhoto($fullPath);
+                throw new \Exception($detail,422);
+            }
+            $similarity = (float) ($response->json('similarity_percentage') ?? 0);
+            if ($similarity < 50) {
+                deleteAttendancePhoto($fullPath);
+                throw new \Exception('Face is not recognized',422);
+            }
+        } catch (\Throwable $e) {
+            deleteAttendancePhoto($fullPath);
+            Log::warning('Face recognition request failed', [
+                'employee_id' => $employee->id,
+                'photo_path' => $photoPath,
+                'message' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    function deleteAttendancePhoto(string $path): void
+    {
+        if (file_exists($path)) {
+            unlink($path);
+        }
+    }
+
+    function createAttendanceLog($employee,$attendance,string $attendanceDate,?string $photoPath,array $data,string $type = 'check_in')
+    {
+        return AttendanceLog::create([
+            'employee_id' => $employee->id,
+            'attendance_id' => $attendance->id,
+            'type' => $type,
+            'fullname' => $attendance->fullname,
+            'shift_name' => $attendance->shift_name,
+            'photo' => $photoPath??null,
+            'clock_datetime' => $data['date'],
+            'clock_date' => $attendanceDate,
+            'time' => Carbon::parse($data['date'])->format('H:i:s'),
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
+            'radius' => $data['radius'] ?? null,
+        ]);
+    }
+
+    function updateAttendanceCheckIn($attendance,?string $photoPath,array $data) {
+
+        if (
+            !$attendance->check_in ||
+            Carbon::parse($data['date'])
+                ->lt(Carbon::parse($attendance->check_in))
+        ) {
+
+            $attendance->update([
+                'check_in' => $data['date'],
+                'status' => 'present',
+                'check_in_photo' => $photoPath??null,
+                'check_in_latitude' => $data['latitude'] ?? null,
+                'check_in_longitude' => $data['longitude'] ?? null,
+                'check_in_radius' => $data['radius'] ?? null,
+            ]);
+        }
+    }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Services\EmployeeScheduleService;
 use App\Services\EmployeeService;
+use App\Services\PersonalService;
 use Illuminate\Http\Request;
 
 class EmployeeApiController extends Controller
@@ -17,12 +18,15 @@ class EmployeeApiController extends Controller
      */
     private EmployeeService $employeeService;
     private EmployeeScheduleService $employeeScheduleService;  
+    private PersonalService  $personalService;  
 
-    public function __construct(EmployeeService $employeeService, EmployeeScheduleService $employeeScheduleService)
-    {
+    public function __construct(EmployeeService $employeeService, EmployeeScheduleService $employeeScheduleService, PersonalService $personalService)
+    {  
         $this->employeeService = $employeeService;
         $this->employeeScheduleService = $employeeScheduleService;
+        $this->personalService = $personalService;
     }
+
     public function index()
     {
         // return $this->employeeService->get();
@@ -46,11 +50,16 @@ class EmployeeApiController extends Controller
 
     public function profile()
     {
-
         $request= request();
         $user = $request['user'];
         $employee =  $this->employeeService->getProfile($user);
         return response()->json($employee);
+    }
+
+    public function registerFace(Request $request)
+    {
+        $employee = $this->personalService->registerFace($request);
+        return response()->json(['message' => 'Face registered successfully']);
     }
 
     public function paginate(Request $request)

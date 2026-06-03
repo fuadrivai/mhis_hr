@@ -9,4 +9,5 @@ interface PersonalService
     function post($request);
     function put($request);
     function delete($id);
+    function registerFace($request);
 }
