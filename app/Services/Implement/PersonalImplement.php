@@ -6,7 +6,6 @@ use App\Models\Employee;
 use App\Models\Personal;
 use App\Services\PersonalService;
 use Carbon\Carbon;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
@@ -34,32 +33,25 @@ class PersonalImplement implements PersonalService
                 throw new \Exception('Personal data not found', 404);
             }
             $imageInput = is_array($request)
-                ? ($request['image'] ?? $request['photo'] ?? null)
-                : ($request->file('image') ?? $request->input('image') ?? $request->input('photo'));
+                ? ($request['photo'] ?? $request['image'] ?? null)
+                : ($request->input('photo') ?? $request->input('image'));
 
-            if (empty($imageInput)) {
-                throw new \Exception('image is required', 422);
+            if (empty($imageInput) || !is_string($imageInput)) {
+                throw new \Exception('image base64 is required', 422);
             }
 
-            $extension = 'jpg';
-            $binaryImage = null;
+            $rawPhoto = $imageInput;
+            $extension = 'png';
+            $mimeType = 'image/png';
 
-            if ($imageInput instanceof UploadedFile) {
-                $extension = strtolower($imageInput->getClientOriginalExtension() ?: 'jpg');
-                if ($extension === 'jpeg') {
-                    $extension = 'jpg';
-                }
-                $binaryImage = file_get_contents($imageInput->getRealPath());
-            } elseif (is_string($imageInput)) {
-                $rawPhoto = $imageInput;
-                if (preg_match('/^data:image\/(png|jpe?g);base64,/', $rawPhoto, $matches)) {
-                    $extension = strtolower($matches[1]) === 'jpeg' ? 'jpg' : strtolower($matches[1]);
-                    $rawPhoto = substr($rawPhoto, strpos($rawPhoto, ',') + 1);
-                }
-
-                $rawPhoto = str_replace(' ', '+', $rawPhoto);
-                $binaryImage = base64_decode($rawPhoto, true);
+            if (preg_match('/^data:image\/(png|jpe?g);base64,/', $rawPhoto, $matches)) {
+                $extension = strtolower($matches[1]) === 'jpeg' ? 'jpg' : strtolower($matches[1]);
+                $mimeType = $extension === 'png' ? 'image/png' : 'image/jpeg';
+                $rawPhoto = substr($rawPhoto, strpos($rawPhoto, ',') + 1);
             }
+
+            $rawPhoto = str_replace(' ', '+', $rawPhoto);
+            $binaryImage = base64_decode($rawPhoto, true);
 
             if (empty($binaryImage)) {
                 throw new \Exception('Invalid image payload', 422);
@@ -68,13 +60,38 @@ class PersonalImplement implements PersonalService
             $imageName = 'profile_' . $employee->id . '_' . time() . '.' . $extension;
             $photoPath = 'profile/' . $imageName;
             Storage::disk('public')->put($photoPath, $binaryImage);
-            $absolutePath = storage_path('app/public/' . $photoPath);
 
-            $faceRecognitionResponse = Http::timeout(15)
-                ->attach('image', file_get_contents($absolutePath), $imageName)
-                ->post(rtrim($faceRecognitionBaseUrl, '/') . '/register', [
-                    'employeeId' => $employee->id,
-                ]);
+            $sendFaceRecognitionRequest = function (string $method, string $endpoint) use ($binaryImage, $imageName, $mimeType, $employee, $faceRecognitionBaseUrl) {
+                return Http::timeout(15)
+                    ->send($method, rtrim($faceRecognitionBaseUrl, '/') . $endpoint, [
+                        'multipart' => [
+                            [
+                                'name' => 'employeeId',
+                                'contents' => (string) $employee->id,
+                            ],
+                            [
+                                'name' => 'image',
+                                'contents' => $binaryImage,
+                                'filename' => $imageName,
+                                'headers' => [
+                                    'Content-Type' => $mimeType,
+                                ],
+                            ],
+                        ],
+                    ]);
+            };
+
+            $hasAvatar = !empty($personal->avatar);
+            $faceRecognitionResponse = $hasAvatar
+                ? $sendFaceRecognitionRequest('PUT', '/update')
+                : $sendFaceRecognitionRequest('POST', '/register');
+
+            $responseDetail = $faceRecognitionResponse->json('detail');
+
+            if (!$hasAvatar && (!$faceRecognitionResponse->successful() || !empty($responseDetail))) {
+                $faceRecognitionResponse = $sendFaceRecognitionRequest('PUT', '/update');
+                $responseDetail = $faceRecognitionResponse->json('detail');
+            }
 
             if (!$faceRecognitionResponse->successful()) {
                 if (Storage::disk('public')->exists($photoPath)) {
@@ -88,7 +105,6 @@ class PersonalImplement implements PersonalService
                 throw new \Exception($message, 502);
             }
 
-            $responseDetail = $faceRecognitionResponse->json('detail');
             if (!empty($responseDetail)) {
                 if (Storage::disk('public')->exists($photoPath)) {
                     Storage::disk('public')->delete($photoPath);

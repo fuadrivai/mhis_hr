@@ -42,6 +42,8 @@ Route::get('employee/job-level', [EmployeeApiController::class, 'getByJobLevel']
 
 Route::post('post/attendance/ga', [AttendanceApiController::class, 'liveAttendanceGa']);
 
+Route::post('ga/employee/face', [EmployeeApiController::class, 'registerFace']);
+
 Route::group(['middleware' => 'auth_login'], function () {
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::post('register', [AuthController::class, 'register']);
