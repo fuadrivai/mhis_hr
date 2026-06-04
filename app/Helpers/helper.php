@@ -242,7 +242,9 @@ function validateLocation($employee, $data)
             return;
         }
     }
-    throw new \Exception('Out of coverage area', 400);
+    throw new \Illuminate\Http\Exceptions\HttpResponseException(
+        response()->json(['message' => "Out of coverage area"], 422)
+    );
 }
 
 function prepareAttendance($employee,$user,$clockTime) {
@@ -310,16 +312,22 @@ function prepareAttendance($employee,$user,$clockTime) {
                 ->post(rtrim($faceRecognitionApiUrl, '/') . '/recognize',['employeeId' => $employee->id,]);
             if (!$response->successful()) {
                 deleteAttendancePhoto($fullPath);
-                throw new \Exception((string) $response->json('detail'),502);
+                    throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                        response()->json(['message' => (string) $response->json('detail')], 502)
+                    );
             }
             if ($detail = $response->json('detail')) {
                 deleteAttendancePhoto($fullPath);
-                throw new \Exception($detail,422);
+                    throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                        response()->json(['message' => $detail], 422)
+                    );
             }
             $similarity = (float) ($response->json('similarity_percentage') ?? 0);
             if ($similarity < 50) {
                 deleteAttendancePhoto($fullPath);
-                throw new \Exception('Face is not recognized',422);
+                    throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                        response()->json(['message' => 'Face is not recognized'], 422)
+                    );
             }
         } catch (\Throwable $e) {
             deleteAttendancePhoto($fullPath);
