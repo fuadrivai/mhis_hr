@@ -281,7 +281,7 @@ class EmployeeImplement implements EmployeeService
     function getByJobLevel($request)
     {
         $jobLevelName = $request->input('name');
-        $employees =  Employee::with(['personal', 'employment.job_level','user','activeSchedule'])
+        $employees =  Employee::where('is_active', 1)-> with(['personal', 'employment.job_level','user','activeSchedule'])
             ->whereHas('employment.job_level', function ($query) use ($jobLevelName) {
                 $query->where('name', $jobLevelName);
             })
