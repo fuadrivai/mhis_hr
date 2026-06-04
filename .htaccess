@@ -11,7 +11,3 @@
 RewriteEngine on
 RewriteCond %{REQUEST_URI} !^/.well-known
 </IfModule>
-
-<IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-</IfModule>
