@@ -39,6 +39,7 @@ class AttendanceLogImplement implements AttendanceLogService
             if (!$attendance) {
                 throw new \Exception('Attendance not found', 404);
             }
+            $photoPath = null;
             $photoPath = handlePhotoAndFaceRecognition($employee,$data['photo'] ?? null); // it's to validate face recognation of the employee.
             $log = createAttendanceLog($employee,$attendance,$attendanceDate,$photoPath,$data);
             updateAttendanceCheckIn($attendance,$photoPath,$data);

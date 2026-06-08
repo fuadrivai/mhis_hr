@@ -8,10 +8,13 @@ use App\Models\ApprovalRequest;
 use App\Models\ApprovalRequestAttachment;
 use App\Models\ApprovalRequestData;
 use App\Models\Employee;
+use App\Models\Session;
 use App\Models\TimeOff;
 use App\Services\ApprovalEngine;
 use App\Services\ApprovalRequestService;
 use Illuminate\Support\Facades\DB;
+
+use function App\Helpers\sendMessage;
 
 class ApprovalRequestImplement implements ApprovalRequestService{
     private ApprovalEngine $approvalEngine;
@@ -94,6 +97,19 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 'action' => 'submitted',
                 'step_order' => 1,
             ]);
+
+            $approval = Approval::where('approval_request_id', $request->id)
+                ->where('status', 'pending')
+                ->orderBy('step_order')
+                ->first();
+            $sessions = Session::select('device_id')->where('user_id', $approval->approver->user_id)->get();
+            foreach ($sessions as $session) {
+                $data = [
+                    "title" => "Approval Request Pending",
+                    "body" => "You have a new time off request to approve.",
+                ];
+                sendMessage($session->device_id, $data);
+            }
 
             DB::commit();
             return $approvalRequest;
@@ -183,7 +199,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
 
             return $query->get();
         } catch (\Throwable $th) {
-           throw new \Exception($th->getMessage());
+            throw new \Exception($th->getMessage());
         }
     }
 
@@ -301,6 +317,15 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 ->where('id', '!=', $approval->id)
                 ->where('status', 'pending')
                 ->update(['status' => 'skipped', 'show_action' => 0]);
+            
+            $sessions = Session::select('device_id')->where('user_id', $request->requester->user_id)->get();
+            foreach ($sessions as $session) {
+                $data = [
+                    "title" => "Approval Request Rejected",
+                    "body" => "Your time off request has been rejected.",
+                ];
+                sendMessage($session->device_id, $data);
+            }
         } else if ($approval->status === 'cancelled') {
             $request->status = 'cancelled';
             $request->show_cancel = 0;
@@ -320,9 +345,26 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 $request->status = 'approved';
                 $request->show_cancel = 0;
                 $request->save();
+                
+                $sessions = Session::select('device_id')->where('user_id', $request->requester->user_id)->get();
+                foreach ($sessions as $session) {
+                     $data = [
+                        "title" => "Approval Request Approved",
+                        "body" => "Your time off request has been approved.",
+                    ];
+                    sendMessage($session->device_id, $data);
+                }
             } else {
                 $nextApproval->show_action = 1;
                 $nextApproval->save();
+                $sessions = Session::select('device_id')->where('user_id', $nextApproval->approver->user_id)->get();
+                foreach ($sessions as $session) {
+                    $data = [
+                        "title" => "Approval Request Pending",
+                        "body" => "You have a new time off request to approve.",
+                    ];
+                    sendMessage($session->device_id, $data);
+                }
             }
         }
 

@@ -12,7 +12,7 @@ class Attendance extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'date:Y-m-d',
         'check_in' => 'datetime:H:i',
         'check_out' => 'datetime:H:i',
         'employee_id' => 'integer',

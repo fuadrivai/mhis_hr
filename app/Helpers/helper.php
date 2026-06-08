@@ -13,6 +13,7 @@ use GuzzleHttp\Psr7;
 use GuzzleHttp\Exception\ClientException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Intervention\Image\ImageManagerStatic as Image;
 
 function talentaSandboxHeader($method, $pathWithQueryParam)
 {
@@ -287,7 +288,7 @@ function prepareAttendance($employee,$user,$clockTime) {
     function storeAttendancePhoto($employee,string $photo): string
     {
         $rawPhoto = $photo;
-        $extension = 'png';
+        $extension = 'jpg';
         if (preg_match('/^data:image\/(png|jpe?g);base64,/', $rawPhoto, $matches)) {
             $extension = strtolower($matches[1]) === 'jpeg' ? 'jpg' : strtolower($matches[1]);
             $rawPhoto = substr($rawPhoto,strpos($rawPhoto, ',') + 1);
@@ -307,6 +308,30 @@ function prepareAttendance($employee,$user,$clockTime) {
         $fullPath = storage_path('app/public/' . $photoPath);
 
         try {
+            $image = Image::make($fullPath);
+            $jpgPath = preg_replace('/\.(png|jpeg|jpg)$/i', '.jpg', $fullPath);
+            $image->orientate();
+            if ($image->width() > 1280) {
+                $image->resize(1280, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                });
+            }
+            $image->save($fullPath, 50);
+            if ($jpgPath !== $fullPath) {
+                unlink($fullPath);
+            }
+
+            $fullPath = $jpgPath;
+
+            Log::info('Face Recognition Image', [
+                'employee_id' => $employee->id,
+                'path'        => $fullPath,
+                'mime'        => mime_content_type($fullPath),
+                'size_kb'     => round(filesize($fullPath) / 1024, 2),
+                'width'       => $image->width(),
+                'height'      => $image->height(),
+            ]);
             $response = Http::timeout(15)
                 ->attach('image',file_get_contents($fullPath),basename($fullPath))
                 ->post(rtrim($faceRecognitionApiUrl, '/') . '/recognize',['employeeId' => $employee->id,]);

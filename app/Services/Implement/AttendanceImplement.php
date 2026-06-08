@@ -291,8 +291,7 @@ class AttendanceImplement implements AttendanceService
             throw new \Exception('Month and year are required');
         }
 
-        $attendances = $employee->attendances()->whereYear('date', $year)->whereMonth('date', $month)->get();
-
+        $attendances = $employee->attendances()->whereYear('date', $year)->whereMonth('date', $month)->with('logs')->get();
 
         $start = Carbon::create($year, $month, 1);
         $length = $start->daysInMonth;
@@ -319,7 +318,7 @@ class AttendanceImplement implements AttendanceService
                 }
 
                 $attendances->push((object)[
-                    'date' => Carbon::createFromFormat('Y-m-d', $date, 'UTC'),
+                    'date' => Carbon::createFromFormat('Y-m-d', $date),
                     'status' => 'absent',
                     'employee_id' => $employee->id,
                     'user_id' => $employee->user_id,
@@ -333,7 +332,7 @@ class AttendanceImplement implements AttendanceService
             }
         }
 
-        $approvalRequests = $employee->requests()->where('status', 'pending')
+        $approvalRequests = $employee->requests()->where('status', 'approved')
                             ->whereHas('data', function ($approvalRequestDataQuery) use ($month, $year) {
                                 $approvalRequestDataQuery->where(function ($dateQuery) use ($month, $year) {
                                     if ($month !== null && $year !== null) {
