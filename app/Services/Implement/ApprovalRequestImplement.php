@@ -98,19 +98,18 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 'step_order' => 1,
             ]);
 
-            $approval = Approval::where('approval_request_id', $request->id)
+            $approval = Approval::with('approver')
+                ->where('approval_request_id', $approvalRequest->id)
                 ->where('status', 'pending')
                 ->orderBy('step_order')
                 ->first();
-            $sessions = Session::select('device_id')->where('user_id', $approval->approver->user_id)->get();
-            foreach ($sessions as $session) {
-                $data = [
-                    "title" => "Approval Request Pending",
-                    "body" => "You have a new time off request to approve.",
-                ];
-                sendMessage($session->device_id, $data);
-            }
 
+            $approver = $approval->approver->load('user');
+            $this->_sendNotification($approver->user->id, [
+                    'title' => 'Approval Request Pending',
+                    'body'  => 'You have a new time off request to approve.',
+                ]);
+            
             DB::commit();
             return $approvalRequest;
         } catch (\Throwable $th) {
@@ -317,15 +316,10 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 ->where('id', '!=', $approval->id)
                 ->where('status', 'pending')
                 ->update(['status' => 'skipped', 'show_action' => 0]);
-            
-            $sessions = Session::select('device_id')->where('user_id', $request->requester->user_id)->get();
-            foreach ($sessions as $session) {
-                $data = [
-                    "title" => "Approval Request Rejected",
-                    "body" => "Your time off request has been rejected.",
-                ];
-                sendMessage($session->device_id, $data);
-            }
+            $this->_sendNotification($request->requester->user_id, [
+                "title" => "Approval Request Rejected",
+                "body" => "Your time off request has been rejected.",
+            ]);
         } else if ($approval->status === 'cancelled') {
             $request->status = 'cancelled';
             $request->show_cancel = 0;
@@ -346,25 +340,17 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 $request->show_cancel = 0;
                 $request->save();
                 
-                $sessions = Session::select('device_id')->where('user_id', $request->requester->user_id)->get();
-                foreach ($sessions as $session) {
-                     $data = [
-                        "title" => "Approval Request Approved",
-                        "body" => "Your time off request has been approved.",
-                    ];
-                    sendMessage($session->device_id, $data);
-                }
+                $this->_sendNotification($request->requester->user_id, [
+                    "title" => "Approval Request Approved",
+                    "body" => "Your time off request has been approved.",
+                ]);
             } else {
                 $nextApproval->show_action = 1;
                 $nextApproval->save();
-                $sessions = Session::select('device_id')->where('user_id', $nextApproval->approver->user_id)->get();
-                foreach ($sessions as $session) {
-                    $data = [
-                        "title" => "Approval Request Pending",
-                        "body" => "You have a new time off request to approve.",
-                    ];
-                    sendMessage($session->device_id, $data);
-                }
+                $this->_sendNotification($nextApproval->approver->user_id, [
+                    "title" => "Approval Request Pending",
+                    "body" => "You have a new time off request to approve.",
+                ]);
             }
         }
 
@@ -420,5 +406,27 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     public function delete($id)
     {
         // TODO: Implement delete() method.
+    }
+
+    private function _sendNotification($userId, $data)
+    {
+        $sessions = Session::where('user_id', $userId)
+                ->whereIn('device', ['android', 'ios'])
+                ->get();
+        foreach ($sessions as $session) {
+            if (empty($session->device_id)) {
+                continue;
+            }
+            $result = sendMessage($session->device_id, $data);
+            logger()->info('FCM Send Result', [
+                'session_id'   => $session->id,
+                'device'       => $session->device,
+                'device_token' => $session->device_id,
+                'result'       => $result,
+            ]);
+            if (!$result['success']) {
+                dd($result);
+            }
+        }
     }
 }

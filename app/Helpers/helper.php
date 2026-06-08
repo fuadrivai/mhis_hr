@@ -72,48 +72,102 @@ function getUserTalentaByEmail($email)
     }
 }
 
-function sendMessage($deviceToken, $d)
+function sendMessage(string $deviceToken, array $d): array
 {
-    $credential = new ServiceAccountCredentials(
-        "https://www.googleapis.com/auth/firebase.messaging",
-        json_decode(file_get_contents(storage_path('token/mhis-hub-87009f572c21.json')), true)
-    );
-    $token = $credential->fetchAuthToken(HttpHandlerFactory::build());
-    $ch = curl_init("https://fcm.googleapis.com/v1/projects/mhis-hub/messages:send");
+    try {
 
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . $token['access_token']
-    ]);
-    $postFields = json_encode([
-        "message" => [
-            "token" => $deviceToken,
-            "notification" => [
-                "title" => $d['title'],
-                "body" => $d['body'],
-                "image" => $d['image'] ?? "",
-            ],
-            "apns" => [
-                "payload" => [
-                    "aps" => [
-                        "alert" => [
-                            "title" => $d['title'],
-                            "body" => $d['body'],
-                            "image" => $d['image'] ?? "",
+        $credential = new ServiceAccountCredentials(
+            'https://www.googleapis.com/auth/firebase.messaging',
+            json_decode(
+                file_get_contents(storage_path('token/mhis-hub-87009f572c21.json')),
+                true
+            )
+        );
+
+        $token = $credential->fetchAuthToken(
+            HttpHandlerFactory::build()
+        );
+
+        $payload = [
+            'message' => [
+                'token' => $deviceToken,
+                'notification' => [
+                    'title' => $d['title'],
+                    'body'  => $d['body'],
+                ],
+                'data' => [
+                    'title' => $d['title'],
+                    'body'  => $d['body'],
+                ],
+                'apns' => [
+                    'payload' => [
+                        'aps' => [
+                            'alert' => [
+                                'title' => $d['title'],
+                                'body'  => $d['body'],
+                            ],
+                            'badge' => 1,
+                            'sound' => 'default',
                         ],
-                        "badge" => 1
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
+        ];
 
-        ]
-    ]);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "post");
-    curl_exec($ch);
-    curl_close($ch);
-    // echo $response;
-    // return response()->json(json_decode($postFields));
+        if (!empty($d['image'])) {
+            $payload['message']['notification']['image'] = $d['image'];
+        }
+
+        $ch = curl_init(
+            'https://fcm.googleapis.com/v1/projects/mhis-hub/messages:send'
+        );
+
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $token['access_token'],
+            ],
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+        ]);
+
+        $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+
+            $error = curl_error($ch);
+
+            curl_close($ch);
+
+            return [
+                'success' => false,
+                'error'   => $error,
+            ];
+        }
+
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        curl_close($ch);
+
+        $decoded = json_decode($response, true);
+
+        return [
+            'success'   => $httpCode >= 200 && $httpCode < 300,
+            'http_code' => $httpCode,
+            'response'  => $decoded,
+            'raw'       => $response,
+        ];
+
+    } catch (\Throwable $e) {
+
+        return [
+            'success' => false,
+            'error'   => $e->getMessage(),
+            'trace'   => $e->getTraceAsString(),
+        ];
+    }
 }
 
 function distance($lat1, $lon1, $lat2, $lon2, $unit)
