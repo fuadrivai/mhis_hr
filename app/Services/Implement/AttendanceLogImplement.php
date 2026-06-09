@@ -2,6 +2,8 @@
 
 namespace App\Services\Implement;
 
+use App\Models\AttendanceLog;
+use App\Models\Employee;
 use App\Services\AttendanceLogService;
 use Illuminate\Support\Facades\DB;
 
@@ -18,6 +20,12 @@ class AttendanceLogImplement implements AttendanceLogService
     public function get($id)
     {
         // TODO: Implement get() method.
+    }
+     public function getCurrent($request)
+    {
+        $employee = Employee::where('user_id', $request['user']['id'])->first();
+        return AttendanceLog::where('employee_id', $employee->id)
+            ->whereDate('clock_datetime', now()->toDateString())->get();
     }
 
     public function show($id)

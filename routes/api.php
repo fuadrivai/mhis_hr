@@ -67,6 +67,7 @@ Route::group(['middleware' => 'auth_login'], function () {
         Route::post('clockout', [AttendanceApiController::class, 'clockOut'])->name('clockout');
         Route::post('live', [AttendanceApiController::class, 'liveAttendanceGa'])->name('live');
         Route::get('history', [AttendanceApiController::class, 'getAttendaceHistory'])->name('getAttendaceHistory');
+        Route::get('history/current', [AttendanceApiController::class, 'getCurrent'])->name('getCurrent');
         Route::resource('/', AttendanceApiController::class)->parameters(['' => 'attendance']);
     });
 

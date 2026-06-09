@@ -49,6 +49,10 @@ class AttendanceApiController extends Controller
     {
         return $this->attendanceService->getHistory($request);
     }
+    public function getCurrent()
+    {
+        return $this->attendanceLogService->getCurrent(request());
+    }
     public function liveAttendanceList(Request $request)
     {
         return $this->attendanceService->liveAttendanceList($request);

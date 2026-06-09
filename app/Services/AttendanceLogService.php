@@ -5,6 +5,7 @@ namespace App\Services;
 interface AttendanceLogService
 {
     function get($request);
+    function getCurrent($request);
     function show($id);
     function showByEmployeeId($employeeId);
     function clock_in($request);
