@@ -296,6 +296,7 @@ function validateLocation($employee, $data)
         if ($distance <= (float)$detail->radius) {
             return;
         }
+        $data['radius'] = $detail->radius;
     }
     throw new \Illuminate\Http\Exceptions\HttpResponseException(
         response()->json(['message' => "Out of coverage area"], 422)
