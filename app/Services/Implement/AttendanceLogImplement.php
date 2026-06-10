@@ -24,8 +24,12 @@ class AttendanceLogImplement implements AttendanceLogService
      public function getCurrent($request)
     {
         $employee = Employee::where('user_id', $request['user']['id'])->first();
+        $today = now()->startOfDay();
+        $tomorrow = now()->endOfDay();
+
         return AttendanceLog::where('employee_id', $employee->id)
-            ->whereDate('clock_datetime', now()->toDateString())->get();
+            ->whereBetween('clock_datetime', [$today, $tomorrow])
+            ->get();
     }
 
     public function show($id)
