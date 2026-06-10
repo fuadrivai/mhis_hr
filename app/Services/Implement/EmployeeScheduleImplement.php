@@ -19,7 +19,10 @@ class EmployeeScheduleImplement implements EmployeeScheduleService
     {
         $payload = is_array($request) ? $request : $request->all();
         $userId = data_get($payload, 'user.id') ?? auth()->id();
-        $employee = Employee::with('personal')->where('user_id', $userId)->first();
+        $employee = Employee::with([
+                        'personal',
+                        'activeSchedule.schedule.details.shift'
+                    ])->where('user_id', $userId)->first();
         $shiftForToday = getShiftByDate($employee, date('Y-m-d'));
         $shiftForToday['fullname'] = $employee->personal->fullname ?? null;
         return $shiftForToday;
