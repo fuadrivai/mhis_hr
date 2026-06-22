@@ -98,6 +98,15 @@
                 <li class="list-group-item li"><a href="">Attendance</a></li>
                 <li class="list-group-item li"><a href="">Time Off</a></li>
             </ul>
+            <?php $bool4 = Request::is('profile/kpi*'); ?>
+            <li class="list-group-item menu-toggle collapsed li" data-toggle="collapse" data-target="#menu4"
+                aria-expanded="false">
+                <span>Performance</span>
+                <i class="fa fa-chevron-down toggle-icon"></i>
+            </li>
+            <ul class="collapse list-group list-group-flush text-left {{ $bool4 ? 'show' : '' }}" id="menu4">
+                <li class="list-group-item li" style="{{ Request::is('profile/kpi*') ? 'background-color:aquamarine' : '' }}"><a href="/profile/kpi/{{ $data->id }}">KPI</a></li>
+            </ul>
         </ul>
     </div>
     <div class="col-2 col-md-10">

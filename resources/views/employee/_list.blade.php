@@ -1,4 +1,4 @@
-    @forelse ($employees as $emp)
+@forelse ($employees as $emp)
         <div class="col-md-12 col-sm-12 col-xs-12">
             <div class="x_panel employee-card">
                 <div class="x_content">

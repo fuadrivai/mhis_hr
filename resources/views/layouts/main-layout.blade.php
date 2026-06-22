@@ -55,7 +55,12 @@
                                 <li><a href="/"><i class="fa fa-dashboard"></i> Home </a></li>
                                 {{-- <li><a href="/location"><i class="fa fa-map"></i> Pin Location </a></li> --}}
 
-                                @if (auth()->user()->hasRole('admin'))
+                                <?php
+                                  $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->roles->contains('id', 1);
+                                  $isRole3 = auth()->user()->roles->contains('id', 3);
+                                ?>
+
+                                @if ($isAdmin || $isRole3)
                                     <li class={{ Request::is('employee*') ? 'active' : '' }}><a><i
                                                 class="fa fa-users"></i>
                                             Employee Directory <span class="fa fa-chevron-down"></span></a>
@@ -63,10 +68,17 @@
                                             style="display: {{ Request::is('employee*') ? 'block' : 'none' }}">
                                             <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
                                                     href="/employee">Employee</a></li>
+                                            @if ($isAdmin)
+                                            <li class={{ Request::is('employee/reprimand*') ? 'current-page' : '' }}><a
+                                                    href="/employee/reprimand">Reprimand</a></li>
                                             <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
                                                     href="/scheduler">Scheduler</a></li>
+                                            @endif
                                         </ul>
                                     </li>
+                                @endif
+
+                                @if ($isAdmin)
                                     <li class={{ Request::is('time*') ? 'active' : '' }}><a><i
                                                 class="fa fa-clock-o"></i>
                                             Time <span class="fa fa-chevron-down"></span></a>
@@ -80,6 +92,9 @@
                                                     href="/time/request">Time Off</a></li>
                                         </ul>
                                     </li>
+                                @endif
+
+                                @if ($isAdmin || $isRole3)
                                     <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i
                                                 class="fa fa-gears"></i>
                                             Settings <span class="fa fa-chevron-down"></span></a>
@@ -87,14 +102,19 @@
                                             class="nav child_menu">
                                             <li><a>Company<span class="fa fa-chevron-down"></span></a>
                                                 <ul class="nav child_menu">
-                                                    {{-- <li><a href="/setting/company">Company Info</a></li> --}}
+                                                    @if ($isAdmin)
                                                     <li><a href="/setting/branch">Branch</a></li>
                                                     <li><a href="/setting/organization">Organization</a></li>
                                                     <li><a href="/setting/position">Job Position</a></li>
                                                     <li><a href="/setting/level">Job Level</a></li>
                                                     <li><a href="/setting/religion">Religion</a></li>
+                                                    <li><a href="/setting/reprimand-type">Reprimand Type</a></li>
+                                                    <li><a href="/setting/academic-year">Academic Year</a></li>
+                                                    @endif
+                                                    <li><a href="/setting/kpi-template">KPI Template</a></li>
                                                 </ul>
                                             </li>
+                                            @if ($isAdmin)
                                             <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
                                                         class="fa fa-chevron-down"></span></a>
                                                 <?php
@@ -110,8 +130,12 @@
                                             </li>
                                             <li><a href="/setting/approval">Approval</a></li>
                                             <li><a href="/setting/bank">Bank</a></li>
+                                            @endif
                                         </ul>
                                     </li>
+                                @endif
+
+                                @if ($isAdmin)
                                     <li><a href="/user"><i class="fa fa-user"></i> Management User </a></li>
                                 @endif
                                 <li><a href="/internal-document/create" target="_blank"><i class="fa fa-folder"></i>

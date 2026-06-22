@@ -66,4 +66,12 @@ class Employee extends Model
     {
         return $this->hasMany(ApprovalRequest::class ,'requester_employee_id');
     }
+    public function kpis()
+    {
+        return $this->hasMany(EmployeeKpi::class);
+    }
+    public function reprimands()
+    {
+        return $this->hasMany(Reprimand::class);
+    }
 }

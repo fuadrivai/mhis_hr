@@ -24,6 +24,11 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\TimeOffController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\KpiTemplateController;
+use App\Http\Controllers\EmployeeKpiController;
+use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\ReprimandController;
+use App\Http\Controllers\ReprimandTypeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -65,6 +70,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('filter', [EmployeeController::class, 'filterLocation']);
             Route::POST('{employeeId}/document/upload', [EmployeeController::class, 'documentUpload']);
             Route::post('deactivate', [EmployeeController::class, 'deactivate']);
+            Route::resource('reprimand', ReprimandController::class);
             Route::resource('/', EmployeeController::class);
         });
 
@@ -88,6 +94,16 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
             Route::resource('bank', BankController::class);
             Route::resource('approval', ApprovalRuleController::class);
+            Route::resource('reprimand-type', ReprimandTypeController::class);
+            Route::post('kpi-template/{kpi_template}/copy', [KpiTemplateController::class, 'copy'])->name('kpi-template.copy');
+            Route::resource('kpi-template', KpiTemplateController::class)->parameters([
+                'kpi-template' => 'kpi_template'
+            ]);
+            
+            Route::put('academic-year/{id}/active', [AcademicYearController::class, 'setActive'])->name('academic-year.active');
+            Route::resource('academic-year', AcademicYearController::class)->parameters([
+                'academic-year' => 'academic_year'
+            ]);
         });
 
         Route::group(['prefix' => 'profile'], function () {
@@ -109,6 +125,14 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
             Route::post('emergency', [EmployeeController::class, 'postEcon']);
             Route::delete('emergency/{id}', [EmployeeController::class, 'deleteEcon']);
+
+            Route::get('kpi/{id}', [EmployeeKpiController::class, 'index'])->name('employee.kpi.index');
+            Route::post('kpi/{id}', [EmployeeKpiController::class, 'store'])->name('employee.kpi.store');
+            Route::get('kpi/edit/{kpi_id}', [EmployeeKpiController::class, 'edit'])->name('employee.kpi.edit');
+            Route::put('kpi/{kpi_id}', [EmployeeKpiController::class, 'update'])->name('employee.kpi.update');
+            Route::delete('kpi/{kpi_id}', [EmployeeKpiController::class, 'destroy'])->name('employee.kpi.destroy');
+            Route::get('kpi/{kpi_id}/calculate', [EmployeeKpiController::class, 'calculate'])->name('employee.kpi.calculate');
+            Route::post('kpi/{kpi_id}/save-score', [EmployeeKpiController::class, 'saveScore'])->name('employee.kpi.save-score');
         });
         Route::group(['prefix' => 'time'], function () {
             Route::get('attendance', [AttendanceController::class, 'attendance']);
