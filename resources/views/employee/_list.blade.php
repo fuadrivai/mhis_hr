@@ -1,4 +1,4 @@
-    @forelse ($employees as $emp)
+@forelse ($employees as $emp)
         <div class="col-md-12 col-sm-12 col-xs-12">
             <div class="x_panel employee-card">
                 <div class="x_content">
@@ -13,7 +13,7 @@
                                     <img src="{{ asset('images/user.png') }}" class="employee-avatar"
                                         alt="{{ $emp->personal->fullname ?? '--' }}">
                                 @else
-                                    <img src="{{ asset('storage/' . $pr->image) }}" class="employee-avatar"
+                                    <img src="{{ asset('storage/' . $emp->personal->avatar) }}" class="employee-avatar"
                                         alt="{{ $emp->personal->fullname ?? '--' }}">
                                 @endif
                                 <div>

@@ -22,7 +22,8 @@
         "maatwebsite/excel": "^3.1",
         "php-open-source-saver/jwt-auth": "2.2",
         "yajra/laravel-datatables": "^1.5",
-        "yajra/laravel-datatables-oracle": "~9.0"
+        "yajra/laravel-datatables-oracle": "~9.0",
+        "intervention/image": "^2.7.2"
     },
     "require-dev": {
         "facade/ignition": "^2.5",
@@ -70,7 +71,12 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "policy": {
+            "advisories": {
+                "block": false
+            }
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true

@@ -78,7 +78,22 @@ class EmployeeController extends Controller
     }
     public function filterLocation(UtilitiesRequest $request)
     {
-        $employees = Employee::whereNull('pin_location_id', null);
+        $employees = Employee::whereNull('pin_location_id');
+
+        $user = auth()->user();
+        if ($user && $user->roles->contains('id', 3)) {
+            if ($user->employee && $user->employee->employment) {
+                $branchId = $user->employee->employment->branch_id;
+                $orgId = $user->employee->employment->organization_id;
+                $employees->whereHas('employment', function ($q) use ($branchId, $orgId) {
+                    $q->where('branch_id', $branchId)
+                      ->where('organization_id', $orgId);
+                });
+            } else {
+                $employees->where('id', 0);
+            }
+        }
+
         if ($request->ajax()) {
             return datatables()->of($employees->with(['user', 'personal', 'employment']))
                 ->make(true);
@@ -96,6 +111,21 @@ class EmployeeController extends Controller
         );
 
         $query->where('is_active', 1 );
+
+        $user = auth()->user();
+        if ($user && $user->roles->contains('id', 3)) {
+            if ($user->employee && $user->employee->employment) {
+                $branchId = $user->employee->employment->branch_id;
+                $orgId = $user->employee->employment->organization_id;
+                $query->whereHas('employment', function ($q) use ($branchId, $orgId) {
+                    $q->where('branch_id', $branchId)
+                      ->where('organization_id', $orgId);
+                });
+            } else {
+                // If user has role 3 but no employee data, restrict to none
+                $query->where('id', 0);
+            }
+        }
 
         if ($request->search) {
             $query->whereHas('personal', function ($q) use ($request) {
