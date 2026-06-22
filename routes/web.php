@@ -27,6 +27,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\KpiTemplateController;
 use App\Http\Controllers\EmployeeKpiController;
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\ReprimandController;
+use App\Http\Controllers\ReprimandTypeController;
 use Illuminate\Support\Facades\Route;
 
 /*
