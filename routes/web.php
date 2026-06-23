@@ -104,6 +104,23 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::resource('academic-year', AcademicYearController::class)->parameters([
                 'academic-year' => 'academic_year'
             ]);
+
+            // Lesson Plan Settings
+            Route::get('lesson-plan', [\App\Http\Controllers\LessonPlanSettingController::class, 'index'])->name('lesson-plan-setting.index');
+            Route::post('lesson-plan/class', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeClass'])->name('lesson-plan-setting.class.store');
+            Route::delete('lesson-plan/class/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyClass'])->name('lesson-plan-setting.class.destroy');
+            Route::post('lesson-plan/category', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeCategory'])->name('lesson-plan-setting.category.store');
+            Route::delete('lesson-plan/category/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyCategory'])->name('lesson-plan-setting.category.destroy');
+            Route::post('lesson-plan/subject', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeSubject'])->name('lesson-plan-setting.subject.store');
+            Route::delete('lesson-plan/subject/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroySubject'])->name('lesson-plan-setting.subject.destroy');
+            Route::post('lesson-plan/approver', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeApprover'])->name('lesson-plan-setting.approver.store');
+            Route::delete('lesson-plan/approver/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyApprover'])->name('lesson-plan-setting.approver.destroy');
+            Route::post('lesson-plan/assignment', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeAssignment'])->name('lesson-plan-setting.assignment.store');
+            Route::delete('lesson-plan/assignment/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyAssignment'])->name('lesson-plan-setting.assignment.destroy');
+            
+            Route::get('lesson-plan-target', [\App\Http\Controllers\LessonPlanTargetController::class, 'index'])->name('lesson-plan-target.index');
+            Route::post('lesson-plan-target', [\App\Http\Controllers\LessonPlanTargetController::class, 'store'])->name('lesson-plan-target.store');
+            Route::delete('lesson-plan-target/{id}', [\App\Http\Controllers\LessonPlanTargetController::class, 'destroy'])->name('lesson-plan-target.destroy');
         });
 
         Route::group(['prefix' => 'profile'], function () {
@@ -140,6 +157,15 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('request/{id}/history', [ApprovalRequestController::class, 'history']);
             Route::get('request/{id}/approver', [ApprovalRequestController::class, 'approver']);
             Route::resource('request', ApprovalRequestController::class);
+        });
+
+        Route::group(['prefix' => 'lesson-plan'], function () {
+            Route::get('my', [\App\Http\Controllers\EmployeeLessonPlanController::class, 'index'])->name('employee.lesson-plan.index');
+            Route::get('my/target/{targetId}/assignment/{assignmentId}', [\App\Http\Controllers\EmployeeLessonPlanController::class, 'showTarget'])->name('employee.lesson-plan.submit-form');
+            Route::post('my/month/{monthId}/assignment/{assignmentId}/week/{week}', [\App\Http\Controllers\EmployeeLessonPlanController::class, 'submit'])->name('employee.lesson-plan.submit');
+            
+            Route::get('approvals', [\App\Http\Controllers\LessonPlanApprovalController::class, 'index'])->name('lesson-plan.approvals.index');
+            Route::post('approvals/{id}', [\App\Http\Controllers\LessonPlanApprovalController::class, 'process'])->name('lesson-plan.approvals.process');
         });
 
         Route::resource('signature', SignatureController::class);

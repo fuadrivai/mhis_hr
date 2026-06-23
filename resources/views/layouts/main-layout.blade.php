@@ -92,7 +92,19 @@
                                                     href="/time/request">Time Off</a></li>
                                         </ul>
                                     </li>
+                                    </li>
                                 @endif
+
+                                <li class={{ Request::is('lesson-plan*') ? 'active' : '' }}><a><i class="fa fa-book"></i>
+                                        Lesson Plan <span class="fa fa-chevron-down"></span></a>
+                                    <ul class="nav child_menu"
+                                        style="display: {{ Request::is('lesson-plan*') ? 'block' : 'none' }}">
+                                        <li class={{ Request::is('lesson-plan/my*') ? 'current-page' : '' }}><a
+                                                href="{{ route('employee.lesson-plan.index') }}">My Lesson Plans</a></li>
+                                        <li class={{ Request::is('lesson-plan/approvals*') ? 'current-page' : '' }}><a
+                                                href="{{ route('lesson-plan.approvals.index') }}">Approvals</a></li>
+                                    </ul>
+                                </li>
 
                                 @if ($isAdmin || $isRole3)
                                     <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i
@@ -112,6 +124,10 @@
                                                     <li><a href="/setting/academic-year">Academic Year</a></li>
                                                     @endif
                                                     <li><a href="/setting/kpi-template">KPI Template</a></li>
+                                                    @if ($isAdmin)
+                                                    <li><a href="/setting/lesson-plan">Lesson Plan Settings</a></li>
+                                                    <li><a href="/setting/lesson-plan-target">Lesson Plan Targets</a></li>
+                                                    @endif
                                                 </ul>
                                             </li>
                                             @if ($isAdmin)
