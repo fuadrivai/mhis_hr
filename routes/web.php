@@ -93,7 +93,10 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::resource('location', LocationController::class);
 
             Route::resource('bank', BankController::class);
+
+            Route::get('approval/employee/active', [ApprovalRuleController::class, 'getActiveEmployees']);
             Route::resource('approval', ApprovalRuleController::class);
+
             Route::resource('reprimand-type', ReprimandTypeController::class);
             Route::post('kpi-template/{kpi_template}/copy', [KpiTemplateController::class, 'copy'])->name('kpi-template.copy');
             Route::resource('kpi-template', KpiTemplateController::class)->parameters([

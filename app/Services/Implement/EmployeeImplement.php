@@ -387,7 +387,7 @@ class EmployeeImplement implements EmployeeService
 
     public function getActive()
     {
-        $employees = Employee::where('is_active', 1)->get();
+        $employees = Employee::where('is_active', 1);
         return $employees;
     }
 

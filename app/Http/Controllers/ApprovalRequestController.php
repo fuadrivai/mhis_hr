@@ -48,7 +48,7 @@ class ApprovalRequestController extends Controller
 
     public function create()
     {
-        $employees = $this->employeeService->getActive()->load('personal');
+        $employees = $this->employeeService->getActive()->get()->load('personal');
         $timeoffs = $this->timeOffService->get();
 
         return view('approval.request.form', [
@@ -99,7 +99,7 @@ class ApprovalRequestController extends Controller
     }
     public function edit(ApprovalRequest $request)
     {
-        $employees = $this->employeeService->getActive()->load('personal');
+        $employees = $this->employeeService->getActive()->get()->load('personal');
         $timeoffs = $this->timeOffService->get();
         return view('approval.request.form', [
             'title' => 'Edit Approval Request',

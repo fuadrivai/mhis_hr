@@ -10,6 +10,7 @@ use App\Services\JobLevelService;
 use App\Services\OrganizationService;
 use App\Services\PositionService;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
 
 class ApprovalRuleController extends Controller
 {
@@ -140,5 +141,14 @@ class ApprovalRuleController extends Controller
     public function destroy(ApprovalRule $approvalRule)
     {
         //
+    }
+
+     function getActiveEmployees(UtilitiesRequest $request)
+    {
+        $employees =  $this->employeeService->getActive();
+        if ($request->ajax()) {
+            return datatables()->of($employees->with(['user', 'personal', 'employment']))
+                ->make(true);
+        }
     }
 }

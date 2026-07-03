@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Location;
-use App\Http\Requests\UpdateLocationRequest;
 use App\Services\LocationService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;

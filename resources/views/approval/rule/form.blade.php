@@ -238,7 +238,7 @@
                     serverSide: true,
                     ordering: false,
                     ajax: {
-                        url: "{{ URL::to('setting/location/employee/filter') }}",
+                        url: "{{ URL::to('setting/approval/employee/active') }}",
                         type: "GET",
                     },
                     columns: [{
