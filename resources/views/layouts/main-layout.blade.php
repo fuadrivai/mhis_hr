@@ -106,6 +106,17 @@
                                     </ul>
                                 </li>
 
+                                <li class={{ Request::is('assessment*') ? 'active' : '' }}><a><i class="fa fa-list-alt"></i>
+                                        Assessment <span class="fa fa-chevron-down"></span></a>
+                                    <ul class="nav child_menu"
+                                        style="display: {{ Request::is('assessment*') ? 'block' : 'none' }}">
+                                        <li class={{ Request::is('assessment/my*') ? 'current-page' : '' }}><a
+                                                href="{{ route('employee.assessment.index') }}">My Assessments</a></li>
+                                        <li class={{ Request::is('assessment/approvals*') ? 'current-page' : '' }}><a
+                                                href="{{ route('assessment.approvals.index') }}">Approvals</a></li>
+                                    </ul>
+                                </li>
+
                                 @if ($isAdmin || $isRole3)
                                     <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i
                                                 class="fa fa-gears"></i>
@@ -127,6 +138,8 @@
                                                     @if ($isAdmin)
                                                     <li><a href="/setting/lesson-plan">Lesson Plan Settings</a></li>
                                                     <li><a href="/setting/lesson-plan-target">Lesson Plan Targets</a></li>
+                                                    <li><a href="/setting/assessment">Assessment Settings</a></li>
+                                                    <li><a href="/setting/assessment-target">Assessment Targets</a></li>
                                                     @endif
                                                 </ul>
                                             </li>
