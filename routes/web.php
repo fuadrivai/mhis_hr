@@ -121,6 +121,16 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('lesson-plan-target', [\App\Http\Controllers\LessonPlanTargetController::class, 'index'])->name('lesson-plan-target.index');
             Route::post('lesson-plan-target', [\App\Http\Controllers\LessonPlanTargetController::class, 'store'])->name('lesson-plan-target.store');
             Route::delete('lesson-plan-target/{id}', [\App\Http\Controllers\LessonPlanTargetController::class, 'destroy'])->name('lesson-plan-target.destroy');
+            // Assessment Settings
+            Route::get('assessment', [\App\Http\Controllers\AssessmentSettingController::class, 'index'])->name('assessment-setting.index');
+            Route::post('assessment/approver', [\App\Http\Controllers\AssessmentSettingController::class, 'storeApprover'])->name('assessment-setting.approver.store');
+            Route::delete('assessment/approver/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyApprover'])->name('assessment-setting.approver.destroy');
+            Route::post('assessment/assignment', [\App\Http\Controllers\AssessmentSettingController::class, 'storeAssignment'])->name('assessment-setting.assignment.store');
+            Route::delete('assessment/assignment/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyAssignment'])->name('assessment-setting.assignment.destroy');
+            
+            Route::get('assessment-target', [\App\Http\Controllers\AssessmentTargetController::class, 'index'])->name('assessment-target.index');
+            Route::post('assessment-target', [\App\Http\Controllers\AssessmentTargetController::class, 'store'])->name('assessment-target.store');
+            Route::delete('assessment-target/{id}', [\App\Http\Controllers\AssessmentTargetController::class, 'destroy'])->name('assessment-target.destroy');
         });
 
         Route::group(['prefix' => 'profile'], function () {
@@ -166,6 +176,15 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             
             Route::get('approvals', [\App\Http\Controllers\LessonPlanApprovalController::class, 'index'])->name('lesson-plan.approvals.index');
             Route::post('approvals/{id}', [\App\Http\Controllers\LessonPlanApprovalController::class, 'process'])->name('lesson-plan.approvals.process');
+        });
+
+        Route::group(['prefix' => 'assessment'], function () {
+            Route::get('my', [\App\Http\Controllers\EmployeeAssessmentController::class, 'index'])->name('employee.assessment.index');
+            Route::get('my/target/{targetId}/assignment/{assignmentId}', [\App\Http\Controllers\EmployeeAssessmentController::class, 'showTarget'])->name('employee.assessment.submit-form');
+            Route::post('my/target/{targetId}/assignment/{assignmentId}', [\App\Http\Controllers\EmployeeAssessmentController::class, 'submit'])->name('employee.assessment.submit');
+            
+            Route::get('approvals', [\App\Http\Controllers\AssessmentApprovalController::class, 'index'])->name('assessment.approvals.index');
+            Route::post('approvals/{id}', [\App\Http\Controllers\AssessmentApprovalController::class, 'process'])->name('assessment.approvals.process');
         });
 
         Route::resource('signature', SignatureController::class);
