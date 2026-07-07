@@ -16,7 +16,7 @@ class PersonalImplement implements PersonalService
     function post($request) {}
     function registerFace($request) {
         try {
-            $faceRecognitionBaseUrl = env('FACERECOGNITION_API_URL');
+            $faceRecognitionBaseUrl = config('services.face_recognition.url');;
             if (empty($faceRecognitionBaseUrl)) {
                 throw new \Exception('FACERECOGNITION_API_URL is not configured', 500);
             }
