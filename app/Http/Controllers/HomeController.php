@@ -16,7 +16,8 @@ class HomeController extends Controller
         $user = auth()->user();
 
         if ($user->hasRole('user')) {
-            return redirect('/internal-document/create');
+            $employee = $user->employee;
+            return redirect('/profile/personal/' . $employee->id);
         }
         return view('home.home', [
             "title" => "Home Page"

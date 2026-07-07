@@ -41,7 +41,14 @@
     <div class="col-12 col-md-2 text-center">
         <div class="clearfix">
             <div class="">
-                <img src="/images/img.jpg" alt="{{ $data->personal->fullname }}" class="img-circle profile_img">
+                @if (!isset($data->personal->avatar) || $data->personal->avatar == '')
+                    <img src="{{ asset('images/user.png') }}" alt="{{ $data->personal->fullname }}"
+                        class="img-circle profile_img">
+                @else
+                    <img src="{{ asset('storage/' . $data->personal->avatar) }}" alt="{{ $data->personal->fullname }}"
+                        class="img-circle profile_img">
+                @endif
+
             </div>
         </div>
         <div class="">
@@ -70,26 +77,26 @@
                     <li class="list-group-item li"
                         style="{{ Request::is('profile/employment*') ? 'background-color:aquamarine' : '' }}"><a
                             href="/profile/employment/{{ $data->id }}">Employment</a></li>
-                    <li class="list-group-item li"
+                    {{-- <li class="list-group-item li"
                         style="{{ Request::is('profile/education*') ? 'background-color:aquamarine' : '' }}"><a
                             href="/profile/education/{{ $data->id }}">Education & Experience</a></li>
                     <li class="list-group-item li"
                         style="{{ Request::is('profile/portofolio*') ? 'background-color:aquamarine' : '' }}"><a
-                            href="/profile/portofolio/{{ $data->id }}">Additional Info</a></li>
+                            href="/profile/portofolio/{{ $data->id }}">Additional Info</a></li> --}}
                     <li class="list-group-item li"
                         style="{{ Request::is('profile/document*') ? 'background-color:aquamarine' : '' }}"><a
                             href="/profile/document/{{ $data->id }}">Documents</a></li>
                 </ul>
             </li>
-            <li class="list-group-item menu-toggle collapsed li" data-toggle="collapse" data-target="#menu2"
+            {{-- <li class="list-group-item menu-toggle collapsed li" data-toggle="collapse" data-target="#menu2"
                 aria-expanded="false">
                 <span>Payroll</span>
                 <i class="fa fa-chevron-down toggle-icon li"></i>
             </li>
             <ul class="collapse list-group list-group-flush text-left" id="menu2">
                 <li class="list-group-item li"><a href="">Payroll Info</a></li>
-            </ul>
-            <li class="list-group-item menu-toggle collapsed li" data-toggle="collapse" data-target="#menu3"
+            </ul> --}}
+            {{-- <li class="list-group-item menu-toggle collapsed li" data-toggle="collapse" data-target="#menu3"
                 aria-expanded="false">
                 <span>Time Management</span>
                 <i class="fa fa-chevron-down toggle-icon"></i>
@@ -97,7 +104,7 @@
             <ul class="collapse list-group list-group-flush text-left" id="menu3">
                 <li class="list-group-item li"><a href="">Attendance</a></li>
                 <li class="list-group-item li"><a href="">Time Off</a></li>
-            </ul>
+            </ul> --}}
             <?php $bool4 = Request::is('profile/kpi*'); ?>
             <li class="list-group-item menu-toggle collapsed li" data-toggle="collapse" data-target="#menu4"
                 aria-expanded="false">
@@ -105,7 +112,9 @@
                 <i class="fa fa-chevron-down toggle-icon"></i>
             </li>
             <ul class="collapse list-group list-group-flush text-left {{ $bool4 ? 'show' : '' }}" id="menu4">
-                <li class="list-group-item li" style="{{ Request::is('profile/kpi*') ? 'background-color:aquamarine' : '' }}"><a href="/profile/kpi/{{ $data->id }}">KPI</a></li>
+                <li class="list-group-item li"
+                    style="{{ Request::is('profile/kpi*') ? 'background-color:aquamarine' : '' }}"><a
+                        href="/profile/kpi/{{ $data->id }}">KPI</a></li>
             </ul>
         </ul>
     </div>

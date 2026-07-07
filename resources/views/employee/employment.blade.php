@@ -5,19 +5,22 @@
 @endsection
 
 @section('content-employee')
+    <?php $isAdmin = auth()->user()->hasRole('admin'); ?>
     <div class="row">
         <div class="col-12">
             <div class="x_panel">
                 <div class="x_content">
                     <div class="tab-content" id="myTabContent">
                         <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
-                            <div class="row">
-                                <div class="col-12 text-right">
-                                    <button onclick="showForm()" type="button" class="btn btn-info btn-sm btn-edit">
-                                        <i class="fa fa-edit"></i> Edit
-                                    </button>
+                            @if ($isAdmin)
+                                <div class="row">
+                                    <div class="col-12 text-right">
+                                        <button onclick="showForm()" type="button" class="btn btn-info btn-sm btn-edit">
+                                            <i class="fa fa-edit"></i> Edit
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                             <form action="/profile/employment" autocomplete="off" method="POST">
                                 @csrf
                                 @method('PUT')

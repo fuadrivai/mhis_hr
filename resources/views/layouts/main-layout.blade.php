@@ -25,6 +25,7 @@
 </head>
 
 <body class="nav-md">
+    <?php $image = session('avatar'); ?>
     <div class="container body">
         <div class="main_container">
             <div class="col-md-3 left_col">
@@ -38,7 +39,9 @@
                     <!-- menu profile quick info -->
                     <div class="profile clearfix">
                         <div class="profile_pic">
-                            <img src="/images/img.jpg" alt="..." class="img-circle profile_img">
+
+                            <img src="{{ $image ? asset('storage/' . $image) : asset('images/user.png') }}"
+                                alt="..." class="img-circle profile_img">
                         </div>
                         <div class="profile_info">
                             <span>Welcome,</span>
@@ -56,8 +59,8 @@
                                 {{-- <li><a href="/location"><i class="fa fa-map"></i> Pin Location </a></li> --}}
 
                                 <?php
-                                  $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->roles->contains('id', 1);
-                                  $isRole3 = auth()->user()->roles->contains('id', 3);
+                                $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->roles->contains('id', 1);
+                                $isRole3 = auth()->user()->roles->contains('id', 3);
                                 ?>
 
                                 @if ($isAdmin || $isRole3)
@@ -69,10 +72,12 @@
                                             <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
                                                     href="/employee">Employee</a></li>
                                             @if ($isAdmin)
-                                            <li class={{ Request::is('employee/reprimand*') ? 'current-page' : '' }}><a
-                                                    href="/employee/reprimand">Reprimand</a></li>
-                                            <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
-                                                    href="/scheduler">Scheduler</a></li>
+                                                <li
+                                                    class={{ Request::is('employee/reprimand*') ? 'current-page' : '' }}>
+                                                    <a href="/employee/reprimand">Reprimand</a>
+                                                </li>
+                                                <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
+                                                        href="/scheduler">Scheduler</a></li>
                                             @endif
                                         </ul>
                                     </li>
@@ -95,18 +100,21 @@
                                     </li>
                                 @endif
 
-                                <li class={{ Request::is('lesson-plan*') ? 'active' : '' }}><a><i class="fa fa-book"></i>
+                                <li class={{ Request::is('lesson-plan*') ? 'active' : '' }}><a><i
+                                            class="fa fa-book"></i>
                                         Lesson Plan <span class="fa fa-chevron-down"></span></a>
                                     <ul class="nav child_menu"
                                         style="display: {{ Request::is('lesson-plan*') ? 'block' : 'none' }}">
                                         <li class={{ Request::is('lesson-plan/my*') ? 'current-page' : '' }}><a
-                                                href="{{ route('employee.lesson-plan.index') }}">My Lesson Plans</a></li>
+                                                href="{{ route('employee.lesson-plan.index') }}">My Lesson Plans</a>
+                                        </li>
                                         <li class={{ Request::is('lesson-plan/approvals*') ? 'current-page' : '' }}><a
                                                 href="{{ route('lesson-plan.approvals.index') }}">Approvals</a></li>
                                     </ul>
                                 </li>
 
-                                <li class={{ Request::is('assessment*') ? 'active' : '' }}><a><i class="fa fa-list-alt"></i>
+                                <li class={{ Request::is('assessment*') ? 'active' : '' }}><a><i
+                                            class="fa fa-list-alt"></i>
                                         Assessment <span class="fa fa-chevron-down"></span></a>
                                     <ul class="nav child_menu"
                                         style="display: {{ Request::is('assessment*') ? 'block' : 'none' }}">
@@ -126,39 +134,41 @@
                                             <li><a>Company<span class="fa fa-chevron-down"></span></a>
                                                 <ul class="nav child_menu">
                                                     @if ($isAdmin)
-                                                    <li><a href="/setting/branch">Branch</a></li>
-                                                    <li><a href="/setting/organization">Organization</a></li>
-                                                    <li><a href="/setting/position">Job Position</a></li>
-                                                    <li><a href="/setting/level">Job Level</a></li>
-                                                    <li><a href="/setting/religion">Religion</a></li>
-                                                    <li><a href="/setting/reprimand-type">Reprimand Type</a></li>
-                                                    <li><a href="/setting/academic-year">Academic Year</a></li>
+                                                        <li><a href="/setting/branch">Branch</a></li>
+                                                        <li><a href="/setting/organization">Organization</a></li>
+                                                        <li><a href="/setting/position">Job Position</a></li>
+                                                        <li><a href="/setting/level">Job Level</a></li>
+                                                        <li><a href="/setting/religion">Religion</a></li>
+                                                        <li><a href="/setting/reprimand-type">Reprimand Type</a></li>
+                                                        <li><a href="/setting/academic-year">Academic Year</a></li>
                                                     @endif
                                                     <li><a href="/setting/kpi-template">KPI Template</a></li>
                                                     @if ($isAdmin)
-                                                    <li><a href="/setting/lesson-plan">Lesson Plan Settings</a></li>
-                                                    <li><a href="/setting/lesson-plan-target">Lesson Plan Targets</a></li>
-                                                    <li><a href="/setting/assessment">Assessment Settings</a></li>
-                                                    <li><a href="/setting/assessment-target">Assessment Targets</a></li>
+                                                        <li><a href="/setting/lesson-plan">Lesson Plan Settings</a></li>
+                                                        <li><a href="/setting/lesson-plan-target">Lesson Plan
+                                                                Targets</a></li>
+                                                        <li><a href="/setting/assessment">Assessment Settings</a></li>
+                                                        <li><a href="/setting/assessment-target">Assessment Targets</a>
+                                                        </li>
                                                     @endif
                                                 </ul>
                                             </li>
                                             @if ($isAdmin)
-                                            <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
-                                                        class="fa fa-chevron-down"></span></a>
-                                                <?php
-                                                $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*') || Request::is('setting/timeoff*') || Request::is('setting/holiday*') || Request::is('setting/location*');
-                                                ?>
-                                                <ul style="display: {{ $isBlock ? 'block' : 'none' }}"
-                                                    class="nav child_menu">
-                                                    <li><a href="/setting/schedule">Schedule</a></li>
-                                                    <li><a href="/setting/timeoff">Time off</a></li>
-                                                    <li><a href="/setting/holiday">Holiday</a></li>
-                                                    <li><a href="/setting/location">Live Attendance</a></li>
-                                                </ul>
-                                            </li>
-                                            <li><a href="/setting/approval">Approval</a></li>
-                                            <li><a href="/setting/bank">Bank</a></li>
+                                                <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
+                                                            class="fa fa-chevron-down"></span></a>
+                                                    <?php
+                                                    $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*') || Request::is('setting/timeoff*') || Request::is('setting/holiday*') || Request::is('setting/location*');
+                                                    ?>
+                                                    <ul style="display: {{ $isBlock ? 'block' : 'none' }}"
+                                                        class="nav child_menu">
+                                                        <li><a href="/setting/schedule">Schedule</a></li>
+                                                        <li><a href="/setting/timeoff">Time off</a></li>
+                                                        <li><a href="/setting/holiday">Holiday</a></li>
+                                                        <li><a href="/setting/location">Live Attendance</a></li>
+                                                    </ul>
+                                                </li>
+                                                <li><a href="/setting/approval">Approval</a></li>
+                                                <li><a href="/setting/bank">Bank</a></li>
                                             @endif
                                         </ul>
                                     </li>
@@ -188,7 +198,9 @@
                             <li class="nav-item dropdown open" style="padding-left: 15px;">
                                 <a href="javascript:;" class="user-profile dropdown-toggle" aria-haspopup="true"
                                     id="navbarDropdown" data-toggle="dropdown" aria-expanded="false">
-                                    <img src="/images/img.jpg" alt="">{{ auth()->user()->name }}
+                                    <img src="{{ $image ? asset('storage/' . $image) : asset('images/user.png') }}"
+                                        alt="">{{ auth()->user()->name }}
+
                                 </a>
                                 <div class="dropdown-menu dropdown-usermenu pull-right"
                                     aria-labelledby="navbarDropdown">

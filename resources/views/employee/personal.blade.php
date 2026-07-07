@@ -5,6 +5,7 @@
 @endsection
 
 @section('content-employee')
+    <?php $isAdmin = auth()->user()->hasRole('admin'); ?>
     <div class="row">
         <div class="col-12">
             <div class="x_panel">
@@ -31,13 +32,15 @@
                     </ul>
                     <div class="tab-content" id="myTabContent">
                         <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
-                            <div class="row">
-                                <div class="col-12 text-right">
-                                    <button onclick="showForm()" type="button" class="btn btn-info btn-sm btn-edit">
-                                        <i class="fa fa-edit"></i> Edit
-                                    </button>
+                            @if ($isAdmin)
+                                <div class="row">
+                                    <div class="col-12 text-right">
+                                        <button onclick="showForm()" type="button" class="btn btn-info btn-sm btn-edit">
+                                            <i class="fa fa-edit"></i> Edit
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                             <form action="/profile/personal" autocomplete="off" method="POST">
                                 @csrf
                                 @if (isset($data['personal']['id']))
@@ -336,12 +339,14 @@
                             </form>
                         </div>
                         <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-                            <div class="row">
-                                <div class="col-12 text-right">
-                                    <button data-toggle="modal" data-target="#modal-family"
-                                        class="btn btn-success btn-sm"><i class="fa fa-plus"></i> Add Family</button>
+                            @if ($isAdmin)
+                                <div class="row">
+                                    <div class="col-12 text-right">
+                                        <button data-toggle="modal" data-target="#modal-family"
+                                            class="btn btn-success btn-sm"><i class="fa fa-plus"></i> Add Family</button>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                             <div class="row">
                                 <div class="col-12">
                                     <div class="table-responsive card-box">
@@ -384,13 +389,15 @@
                             </div>
                         </div>
                         <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
-                            <div class="row">
-                                <div class="col-12 text-right">
-                                    <button data-toggle="modal" data-target="#modal-econ"
-                                        class="btn btn-success btn-sm"><i class="fa fa-plus"></i> Add Emergency
-                                        Contact</button>
+                            @if ($isAdmin)
+                                <div class="row">
+                                    <div class="col-12 text-right">
+                                        <button data-toggle="modal" data-target="#modal-econ"
+                                            class="btn btn-success btn-sm"><i class="fa fa-plus"></i> Add Emergency
+                                            Contact</button>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                             <div class="row">
                                 <div class="col-12">
                                     <div class="table-responsive card-box">
