@@ -15,6 +15,7 @@ use App\Services\FamilyService;
 use App\Services\GoogleDriveService;
 use App\Services\JobLevelService;
 use App\Services\OrganizationService;
+use App\Services\PersonalService;
 use App\Services\PositionService;
 use App\Services\RelationshipService;
 use App\Services\ReligionService;
@@ -46,6 +47,7 @@ class EmployeeController extends Controller
     private RelationshipService $relationshipService;
     private FamilyService $familyService;
     private EmergencyContactService $econService;
+    private PersonalService $personalService;
 
     public function __construct(
         BranchService $branchService,
@@ -60,7 +62,8 @@ class EmployeeController extends Controller
         GoogleDriveService $googleDriveService,
         RelationshipService $relationshipService,
         FamilyService $familyService,
-        EmergencyContactService $econService
+        EmergencyContactService $econService,
+        PersonalService $personalService
     ) {
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
@@ -75,6 +78,7 @@ class EmployeeController extends Controller
         $this->relationshipService = $relationshipService;
         $this->familyService = $familyService;
         $this->econService = $econService;
+        $this->personalService = $personalService;
     }
     public function filterLocation(UtilitiesRequest $request)
     {
@@ -454,6 +458,19 @@ class EmployeeController extends Controller
             "positions" => $positions,
             "levels" => $levels,
             "branches" => $branches,
+        ]);
+    }
+
+    public function registerFace(Request $request)
+    {
+        $employee = $this->personalService->registerFace($request);
+        if ($employee && $employee->personal) {
+            session(['avatar' => $employee->personal->avatar ?? '']);
+        }
+
+        return response()->json([
+            'message' => 'Face registered successfully',
+            'avatar' => $employee->personal->avatar ?? null,
         ]);
     }
 }

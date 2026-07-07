@@ -70,6 +70,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('filter', [EmployeeController::class, 'filterLocation']);
             Route::POST('{employeeId}/document/upload', [EmployeeController::class, 'documentUpload']);
             Route::post('deactivate', [EmployeeController::class, 'deactivate']);
+            Route::post('face/register', [EmployeeController::class, 'registerFace'])->name('registerFace');
             Route::resource('reprimand', ReprimandController::class);
             Route::resource('/', EmployeeController::class);
         });

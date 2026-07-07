@@ -40,15 +40,25 @@
 @section('content-child')
     <div class="col-12 col-md-2 text-center">
         <div class="clearfix">
-            <div class="">
+            <div class="" style="text-align: center;">
                 @if (!isset($data->personal->avatar) || $data->personal->avatar == '')
                     <img src="{{ asset('images/user.png') }}" alt="{{ $data->personal->fullname }}"
-                        class="img-circle profile_img">
+                        class="img-circle profile_img profile-image-preview-trigger"
+                        data-preview-src="{{ asset('images/user.png') }}"
+                        style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; cursor: pointer; display: block; margin: 0 auto; float: none;">
                 @else
                     <img src="{{ asset('storage/' . $data->personal->avatar) }}" alt="{{ $data->personal->fullname }}"
-                        class="img-circle profile_img">
+                        class="img-circle profile_img profile-image-preview-trigger"
+                        data-preview-src="{{ asset('storage/' . $data->personal->avatar) }}"
+                        style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; cursor: pointer; display: block; margin: 0 auto; float: none;">
                 @endif
 
+                <div style="margin-top: 5px;">
+                    <a class="btn btn-primary btn-sm profile-image-preview-trigger text-white"
+                        data-preview-src="{{ !isset($data->personal->avatar) || $data->personal->avatar == '' ? asset('images/user.png') : asset('storage/' . $data->personal->avatar) }}">
+                        <i class="fa fa-pencil"></i> Edit Picture
+                    </a>
+                </div>
             </div>
         </div>
         <div class="">

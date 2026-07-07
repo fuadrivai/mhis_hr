@@ -65,12 +65,13 @@ class AuthController extends Controller
                 $isUser = $authUser->hasRole('user');
 
                 session(['avatar' => $employee->personal->avatar ?? '']);
+                session(['empId' => $employee->id ?? '']);
 
                 if ($isUser) {
                     return redirect('/profile/personal/' . $employee->id);
                 }
 
-                // return redirect('/');
+                return redirect('/');
 
             }
             return back()->with('LoginError', 'Email is not valid');

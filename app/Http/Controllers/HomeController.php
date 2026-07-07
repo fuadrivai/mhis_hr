@@ -15,7 +15,7 @@ class HomeController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('user')) {
+        if (!$user->hasRole('admin')) {
             $employee = $user->employee;
             return redirect('/profile/personal/' . $employee->id);
         }
