@@ -356,7 +356,8 @@
                                     class="row">
                                     @csrf
                                     <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <select name="employee_id" class="form-control" required>
+                                        <select name="employee_id" class="form-control select2" style="width: 100%"
+                                            required>
                                             <option value="">-- Select Employee --</option>
                                             @foreach ($employees as $emp)
                                                 <option value="{{ $emp->id }}">
