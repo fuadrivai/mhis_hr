@@ -44,7 +44,7 @@ class EmployeeImport implements ToModel
             $personal->blood_type = $row[34] == "" ? null : $row[34];
             $personal->religion_id = $religion->id;
             $personal->identity_number = $row[26];
-            switch ($row[32]) {
+            switch ($row[33]) {
                 case 'Single':
                     $personal->marital_status = 1;
                     break;
@@ -124,6 +124,15 @@ class EmployeeImport implements ToModel
             $user->email = $row[11];
             $user->password = '$2y$10$zMzXBaCLSTLnNJnPIYsN6OJHisOlgA/g6LW2kWsYN11Zq4aF2FjDS';
             $user->save();
+        }
+
+        $employee = Employee::where('personal_id', $personal->id)
+            ->orWhere('employment_id', $employment->id)
+            ->orWhere('user_id', $user->id)
+            ->first();
+
+        if ($employee) {
+            return null;
         }
         return new Employee([
             "personal_id" => $personal->id,
