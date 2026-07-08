@@ -77,6 +77,7 @@ class EmployeeLessonPlanController extends Controller
 
         // Send email notification to the level 1 approver
         $approver = \App\Models\SubjectCategoryApprover::where('subject_id', $assignment->subject_id)
+                        ->where('school_class_id', $assignment->school_class_id)
                         ->where('level', 1)->first();
         if ($approver && $approver->employee && $approver->employee->user) {
             $approver->employee->user->notify(new \App\Notifications\LessonPlanSubmitted($submission));

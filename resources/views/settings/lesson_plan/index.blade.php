@@ -173,7 +173,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
+                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
                                         <select name="subject_id" id="approver_subject_id" class="form-control" required>
                                             <option value="">-- Select Subject --</option>
                                             @foreach($subjects as $sub)
@@ -181,7 +181,15 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
+                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
+                                        <select name="school_class_id" class="form-control" required>
+                                            <option value="">-- Select Class --</option>
+                                            @foreach($classes as $c)
+                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
                                         <select name="employee_id" class="form-control" required>
                                             <option value="">-- Select Approver (Employee) --</option>
                                             @foreach($employees as $emp)
@@ -198,11 +206,12 @@
                                 </form>
                             </div>
                             <table class="table table-striped table-bordered datatable" style="width: 100%">
-                                <thead><tr><th>Subject</th><th>Approver</th><th>Level</th><th style="width: 15%;">Action</th></tr></thead>
+                                <thead><tr><th>Subject</th><th>Class</th><th>Approver</th><th>Level</th><th style="width: 15%;">Action</th></tr></thead>
                                 <tbody>
                                     @foreach($approvers as $a)
                                     <tr>
                                         <td><span class="label label-info">{{ $a->subject->name ?? '' }}</span></td>
+                                        <td><span class="badge bg-blue">{{ $a->schoolClass->name ?? '' }}</span></td>
                                         <td><strong>{{ $a->employee->user->name ?? 'Unknown User' }}</strong></td>
                                         <td><span class="badge bg-green">Level {{ $a->level }}</span></td>
                                         <td>
