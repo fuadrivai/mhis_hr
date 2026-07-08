@@ -51,6 +51,9 @@
                             <a href="#tab_approvers" id="approvers-tab" role="tab" data-toggle="tab" aria-expanded="false"><i class="fa fa-users"></i> Approvers</a>
                         </li>
                         <li role="presentation">
+                            <a href="#tab_monitors" id="monitors-tab" role="tab" data-toggle="tab" aria-expanded="false"><i class="fa fa-eye"></i> Monitors</a>
+                        </li>
+                        <li role="presentation">
                             <a href="#tab_assignments" id="assignments-tab" role="tab" data-toggle="tab" aria-expanded="false"><i class="fa fa-check-square-o"></i> Employee Assignments</a>
                         </li>
                     </ul>
@@ -163,10 +166,10 @@
                                 <form action="{{ route('lesson-plan-setting.approver.store') }}" method="POST" class="row">
                                     @csrf
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="subject_category_id" class="form-control" required>
-                                            <option value="">-- Select Category --</option>
-                                            @foreach($categories as $cat)
-                                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                        <select name="subject_id" class="form-control" required>
+                                            <option value="">-- Select Subject --</option>
+                                            @foreach($subjects as $sub)
+                                                <option value="{{ $sub->id }}">{{ $sub->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -187,17 +190,62 @@
                                 </form>
                             </div>
                             <table class="table table-striped table-bordered datatable" style="width: 100%">
-                                <thead><tr><th>Category</th><th>Approver</th><th>Level</th><th style="width: 15%;">Action</th></tr></thead>
+                                <thead><tr><th>Subject</th><th>Approver</th><th>Level</th><th style="width: 15%;">Action</th></tr></thead>
                                 <tbody>
                                     @foreach($approvers as $a)
                                     <tr>
-                                        <td><span class="label label-info">{{ $a->subjectCategory->name ?? '' }}</span></td>
+                                        <td><span class="label label-info">{{ $a->subject->name ?? '' }}</span></td>
                                         <td><strong>{{ $a->employee->user->name ?? 'Unknown User' }}</strong></td>
                                         <td><span class="badge bg-green">Level {{ $a->level }}</span></td>
                                         <td>
                                             <form action="{{ route('lesson-plan-setting.approver.destroy', $a->id) }}" method="POST">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this approver?')"><i class="fa fa-trash"></i> Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Monitors -->
+                        <div role="tabpanel" class="tab-pane fade" id="tab_monitors" aria-labelledby="monitors-tab">
+                            <div class="form-section">
+                                <form action="{{ route('lesson-plan-setting.monitor.store') }}" method="POST" class="row">
+                                    @csrf
+                                    <div class="col-md-4 col-sm-4 col-xs-12 form-group">
+                                        <select name="subject_category_id" class="form-control" required>
+                                            <option value="">-- Select Category --</option>
+                                            @foreach($categories as $cat)
+                                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5 col-sm-5 col-xs-12 form-group">
+                                        <select name="employee_id" class="form-control" required>
+                                            <option value="">-- Select Monitor (Employee) --</option>
+                                            @foreach($employees as $emp)
+                                                <option value="{{ $emp->id }}">{{ $emp->user->name ?? 'Unknown User' }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
+                                        <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-plus"></i> Add Monitor</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <table class="table table-striped table-bordered datatable" style="width: 100%">
+                                <thead><tr><th>Category</th><th>Monitor</th><th style="width: 15%;">Action</th></tr></thead>
+                                <tbody>
+                                    @foreach($monitors as $m)
+                                    <tr>
+                                        <td><span class="label label-info">{{ $m->subjectCategory->name ?? '' }}</span></td>
+                                        <td><strong>{{ $m->employee->user->name ?? 'Unknown User' }}</strong></td>
+                                        <td>
+                                            <form action="{{ route('lesson-plan-setting.monitor.destroy', $m->id) }}" method="POST">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this monitor?')"><i class="fa fa-trash"></i> Delete</button>
                                             </form>
                                         </td>
                                     </tr>

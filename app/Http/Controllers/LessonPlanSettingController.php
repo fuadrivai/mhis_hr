@@ -6,6 +6,7 @@ use App\Models\SchoolClass;
 use App\Models\SubjectCategory;
 use App\Models\Subject;
 use App\Models\SubjectCategoryApprover;
+use App\Models\SubjectCategoryMonitor;
 use App\Models\EmployeeSubject;
 use App\Models\Employee;
 use Illuminate\Http\Request;
@@ -18,12 +19,13 @@ class LessonPlanSettingController extends Controller
         $classes = SchoolClass::all();
         $categories = SubjectCategory::all();
         $subjects = Subject::with('subjectCategory')->get();
-        $approvers = SubjectCategoryApprover::with(['subjectCategory', 'employee'])->get();
+        $approvers = SubjectCategoryApprover::with(['subject', 'employee'])->get();
+        $monitors = SubjectCategoryMonitor::with(['subjectCategory', 'employee'])->get();
         $employeeSubjects = EmployeeSubject::with(['employee', 'subject', 'schoolClass'])->get();
         $employees = Employee::with('user')->get();
 
         return view('settings.lesson_plan.index', compact(
-            'title', 'classes', 'categories', 'subjects', 'approvers', 'employeeSubjects', 'employees'
+            'title', 'classes', 'categories', 'subjects', 'approvers', 'monitors', 'employeeSubjects', 'employees'
         ));
     }
 
@@ -70,7 +72,7 @@ class LessonPlanSettingController extends Controller
     public function storeApprover(Request $request)
     {
         $request->validate([
-            'subject_category_id' => 'required|exists:subject_categories,id',
+            'subject_id' => 'required|exists:subjects,id',
             'employee_id' => 'required|exists:employees,id',
             'level' => 'required|integer|min:1'
         ]);
@@ -98,5 +100,32 @@ class LessonPlanSettingController extends Controller
     {
         EmployeeSubject::findOrFail($id)->delete();
         return redirect()->back()->with('success', 'Assignment deleted');
+    }
+
+    // --- Monitor ---
+    public function storeMonitor(Request $request)
+    {
+        $request->validate([
+            'subject_category_id' => 'required|exists:subject_categories,id',
+            'employee_id' => 'required|exists:employees,id'
+        ]);
+        
+        // Prevent duplicate assignment
+        $exists = SubjectCategoryMonitor::where('subject_category_id', $request->subject_category_id)
+            ->where('employee_id', $request->employee_id)
+            ->exists();
+            
+        if ($exists) {
+            return redirect()->back()->with('error', 'Monitor already assigned to this category.');
+        }
+
+        SubjectCategoryMonitor::create($request->all());
+        return redirect()->back()->with('success', 'Monitor added successfully');
+    }
+
+    public function destroyMonitor($id)
+    {
+        SubjectCategoryMonitor::findOrFail($id)->delete();
+        return redirect()->back()->with('success', 'Monitor deleted');
     }
 }

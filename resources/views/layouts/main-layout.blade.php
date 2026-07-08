@@ -103,6 +103,11 @@
                                                 href="{{ route('employee.lesson-plan.index') }}">My Lesson Plans</a></li>
                                         <li class={{ Request::is('lesson-plan/approvals*') ? 'current-page' : '' }}><a
                                                 href="{{ route('lesson-plan.approvals.index') }}">Approvals</a></li>
+                                        <?php $isMonitor = \App\Models\SubjectCategoryMonitor::where('employee_id', auth()->user()->employee->id ?? 0)->exists(); ?>
+                                        @if($isMonitor)
+                                            <li class={{ Request::is('lesson-plan/monitoring*') ? 'current-page' : '' }}><a
+                                                    href="{{ route('employee.lesson-plan.monitoring.index') }}">Monitoring Lesson Plan</a></li>
+                                        @endif
                                     </ul>
                                 </li>
 

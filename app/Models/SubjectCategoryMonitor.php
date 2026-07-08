@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Subject extends Model
+class SubjectCategoryMonitor extends Model
 {
     use HasFactory;
-    
+
     protected $guarded = [];
 
     public function subjectCategory()
@@ -16,13 +16,8 @@ class Subject extends Model
         return $this->belongsTo(SubjectCategory::class);
     }
 
-    public function employeeSubjects()
+    public function employee()
     {
-        return $this->hasMany(EmployeeSubject::class);
-    }
-
-    public function approvers()
-    {
-        return $this->hasMany(SubjectCategoryApprover::class);
+        return $this->belongsTo(Employee::class);
     }
 }
