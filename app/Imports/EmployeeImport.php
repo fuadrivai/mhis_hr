@@ -12,14 +12,15 @@ use App\Models\Position;
 use App\Models\Religion;
 use App\Models\User;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithStartRow;
 
-class EmployeeImport implements ToModel
+class EmployeeImport implements ToModel, WithStartRow
 {
-    /**
-     * @param array $row
-     *
-     * @return \Illuminate\Database\Eloquent\Model|null
-     */
+
+    public function startRow(): int
+    {
+        return 2; //start from row 2, assuming row 1 contains headers
+    }
     public function model(array $row)
     {
         $religion = Religion::where('name', $row[31])->first();
