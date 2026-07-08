@@ -18,6 +18,11 @@ class SubjectCategoryApprover extends Model
     {
         return $this->belongsTo(Employee::class);
     }
+
+    public function schoolClass()
+    {
+        return $this->belongsTo(SchoolClass::class);
+    }
 }
 
 

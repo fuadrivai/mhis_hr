@@ -30,6 +30,9 @@ class LessonPlanApprovalController extends Controller
                 ->where('current_approval_level', $role->level)
                 ->whereHas('employeeSubject.subject', function($q) use ($role) {
                     $q->where('id', $role->subject_id);
+                })
+                ->whereHas('employeeSubject.schoolClass', function($q) use ($role) {
+                    $q->where('id', $role->school_class_id);
                 })->get();
             
             $pendingSubmissions = $pendingSubmissions->merge($submissions);
@@ -68,9 +71,11 @@ class LessonPlanApprovalController extends Controller
         } else {
             // Find if there is a next level
             $subjectId = $submission->employeeSubject->subject_id;
+            $classId = $submission->employeeSubject->school_class_id;
             $currentLevel = $submission->current_approval_level;
 
             $nextLevelApprover = SubjectCategoryApprover::where('subject_id', $subjectId)
+                                    ->where('school_class_id', $classId)
                                     ->where('level', '>', $currentLevel)
                                     ->orderBy('level', 'asc')
                                     ->first();

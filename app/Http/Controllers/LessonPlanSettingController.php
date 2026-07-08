@@ -19,7 +19,7 @@ class LessonPlanSettingController extends Controller
         $classes = SchoolClass::all();
         $categories = SubjectCategory::all();
         $subjects = Subject::with('subjectCategory')->get();
-        $approvers = SubjectCategoryApprover::with(['subject', 'employee'])->get();
+        $approvers = SubjectCategoryApprover::with(['subject', 'employee', 'schoolClass'])->get();
         $monitors = SubjectCategoryMonitor::with(['subjectCategory', 'employee'])->get();
         $employeeSubjects = EmployeeSubject::with(['employee', 'subject', 'schoolClass'])->get();
         $employees = Employee::with('user')->get();
@@ -73,6 +73,7 @@ class LessonPlanSettingController extends Controller
     {
         $request->validate([
             'subject_id' => 'required|exists:subjects,id',
+            'school_class_id' => 'required|exists:school_classes,id',
             'employee_id' => 'required|exists:employees,id',
             'level' => 'required|integer|min:1'
         ]);
