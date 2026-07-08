@@ -16,8 +16,9 @@ class SubjectCategory extends Model
         return $this->hasMany(Subject::class);
     }
 
-    public function approvers()
+
+    public function monitors()
     {
-        return $this->hasMany(SubjectCategoryApprover::class);
+        return $this->hasMany(SubjectCategoryMonitor::class);
     }
 }

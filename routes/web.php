@@ -119,6 +119,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::delete('lesson-plan/subject/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroySubject'])->name('lesson-plan-setting.subject.destroy');
             Route::post('lesson-plan/approver', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeApprover'])->name('lesson-plan-setting.approver.store');
             Route::delete('lesson-plan/approver/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyApprover'])->name('lesson-plan-setting.approver.destroy');
+            Route::post('lesson-plan/monitor', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeMonitor'])->name('lesson-plan-setting.monitor.store');
+            Route::delete('lesson-plan/monitor/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyMonitor'])->name('lesson-plan-setting.monitor.destroy');
             Route::post('lesson-plan/assignment', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeAssignment'])->name('lesson-plan-setting.assignment.store');
             Route::delete('lesson-plan/assignment/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyAssignment'])->name('lesson-plan-setting.assignment.destroy');
             
@@ -180,6 +182,10 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             
             Route::get('approvals', [\App\Http\Controllers\LessonPlanApprovalController::class, 'index'])->name('lesson-plan.approvals.index');
             Route::post('approvals/{id}', [\App\Http\Controllers\LessonPlanApprovalController::class, 'process'])->name('lesson-plan.approvals.process');
+
+            Route::get('monitoring', [\App\Http\Controllers\LessonPlanMonitoringController::class, 'index'])->name('employee.lesson-plan.monitoring.index');
+            Route::get('monitoring/target/{id}', [\App\Http\Controllers\LessonPlanMonitoringController::class, 'showTarget'])->name('employee.lesson-plan.monitoring.show');
+            Route::get('monitoring/target/{id}/subject/{subject_id}', [\App\Http\Controllers\LessonPlanMonitoringController::class, 'showSubject'])->name('employee.lesson-plan.monitoring.subject');
         });
 
         Route::group(['prefix' => 'assessment'], function () {
