@@ -165,15 +165,23 @@
                             <div class="form-section">
                                 <form action="{{ route('lesson-plan-setting.approver.store') }}" method="POST" class="row">
                                     @csrf
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="subject_id" class="form-control" required>
-                                            <option value="">-- Select Subject --</option>
-                                            @foreach($subjects as $sub)
-                                                <option value="{{ $sub->id }}">{{ $sub->name }}</option>
+                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
+                                        <select id="approver_category_id" class="form-control" required>
+                                            <option value="">-- Select Category --</option>
+                                            @foreach($categories as $cat)
+                                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-4 col-sm-4 col-xs-12 form-group">
+                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
+                                        <select name="subject_id" id="approver_subject_id" class="form-control" required>
+                                            <option value="">-- Select Subject --</option>
+                                            @foreach($subjects as $sub)
+                                                <option value="{{ $sub->id }}" data-category="{{ $sub->subject_category_id }}">{{ $sub->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
                                         <select name="employee_id" class="form-control" required>
                                             <option value="">-- Select Approver (Employee) --</option>
                                             @foreach($employees as $emp)
@@ -184,7 +192,7 @@
                                     <div class="col-md-2 col-sm-2 col-xs-12 form-group">
                                         <input type="number" name="level" class="form-control" placeholder="Level (1, 2...)" min="1" required>
                                     </div>
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
+                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
                                         <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-plus"></i> Add Approver</button>
                                     </div>
                                 </form>
@@ -259,7 +267,7 @@
                             <div class="form-section">
                                 <form action="{{ route('lesson-plan-setting.assignment.store') }}" method="POST" class="row">
                                     @csrf
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
+                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
                                         <select name="employee_id" class="form-control" required>
                                             <option value="">-- Select Employee --</option>
                                             @foreach($employees as $emp)
@@ -267,11 +275,19 @@
                                             @endforeach
                                         </select>
                                     </div>
+                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
+                                        <select id="assignment_category_id" class="form-control" required>
+                                            <option value="">-- Select Category --</option>
+                                            @foreach($categories as $cat)
+                                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="subject_id" class="form-control" required>
+                                        <select name="subject_id" id="assignment_subject_id" class="form-control" required>
                                             <option value="">-- Select Subject --</option>
                                             @foreach($subjects as $s)
-                                                <option value="{{ $s->id }}">{{ $s->name }} ({{ $s->subjectCategory->name ?? '' }})</option>
+                                                <option value="{{ $s->id }}" data-category="{{ $s->subject_category_id }}">{{ $s->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -283,7 +299,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
+                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
                                         <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-link"></i> Assign Subject</button>
                                     </div>
                                 </form>
@@ -336,6 +352,35 @@
                 // Force Classes as default if no tab is saved
                 $('#myTab a[href="#tab_classes"]').tab('show');
             }
+
+            function setupSubjectFilter(categorySelectId, subjectSelectId) {
+                var $categorySelect = $('#' + categorySelectId);
+                var $subjectSelect = $('#' + subjectSelectId);
+                
+                // Store all original options
+                var $subjectOptions = $subjectSelect.find('option[value!=""]').clone();
+
+                $categorySelect.on('change', function() {
+                    var selectedCategory = $(this).val();
+                    
+                    // Clear current options except the placeholder
+                    $subjectSelect.find('option[value!=""]').remove();
+
+                    // Re-add options that match the category
+                    $subjectOptions.each(function() {
+                        var catId = $(this).data('category');
+                        if (selectedCategory === '' || catId == selectedCategory) {
+                            $subjectSelect.append($(this).clone());
+                        }
+                    });
+                });
+                
+                // Trigger change immediately to set initial state
+                $categorySelect.trigger('change');
+            }
+
+            setupSubjectFilter('approver_category_id', 'approver_subject_id');
+            setupSubjectFilter('assignment_category_id', 'assignment_subject_id');
         });
     </script>
 @endsection
