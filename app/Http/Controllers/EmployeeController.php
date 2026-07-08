@@ -345,10 +345,12 @@ class EmployeeController extends Controller
 
         $fileName = rand() . $file->getClientOriginalName();
 
-        $file->move('file_employee', $fileName);
+        $destination = public_path('file_employee');
+
+        $file->move($destination, $fileName);
 
         // import data
-        Excel::import(new EmployeeImport, public_path('/file_employee/' . $fileName));
+        Excel::import(new EmployeeImport, $destination . '/' . $fileName);
 
         // notifikasi dengan session
         session()->flash('message', 'Data Siswa Berhasil Diimport!');
@@ -436,7 +438,7 @@ class EmployeeController extends Controller
     public function documentUpload($employeeId, Request $request)
     {
         $data = $this->employeeService->documentUpload($employeeId, $request, $this->googleDriveService);
-        return redirect()->back()->with('message', 'Document deleted successfully');
+        return redirect()->back()->with('message', 'Document uploaded successfully');
     }
     public function deleteDocument($id)
     {
