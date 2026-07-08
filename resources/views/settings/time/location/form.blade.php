@@ -367,9 +367,6 @@
             })
 
             tblUserLocation = $("#tbl-employee-location").DataTable({
-                searching: false,
-                paging: false,
-                lengthChange: false,
                 ordering: false,
                 data: location.employees,
                 columns: [{
