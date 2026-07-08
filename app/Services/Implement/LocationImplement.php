@@ -111,7 +111,7 @@ class LocationImplement implements LocationService
     function delete($id) {}
     function filterEmployee()
     {
-        $employees = Employee::whereNull('location_id');
+        $employees = Employee::whereNull('location_id')->where('is_active', 1);
         return $employees;
     }
 }
