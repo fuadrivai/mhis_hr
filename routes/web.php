@@ -43,7 +43,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::group(['middleware' => 'prevent-back-history'], function () {
-    Route::get('/login', [AuthController::class, 'index'])->middleware('guest')->name('login');
+    Route::get('/login', [AuthController::class, 'index'])->middleware('guest')->name('login-page');
     Route::get('live-attendance', [AttendanceController::class, 'liveAttendance']);
     Route::resource('attendance', AttendanceController::class);
     Route::post('/login', [AuthController::class, 'authenticate']);
@@ -54,7 +54,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('/', [HomeController::class, 'index']);
         Route::get('clockin', [AttendanceLogController::class, 'clockin']);
 
-        Route::resource('location', PinLocationController::class);
+        Route::resource('pin-location', PinLocationController::class);
         Route::resource('scheduler', EmployeeScheduleController::class);
         Route::get('shift/get', [ShiftController::class, 'get']);
 
@@ -74,6 +74,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::resource('reprimand', ReprimandController::class);
             Route::resource('/', EmployeeController::class);
         });
+        
 
         Route::group(['prefix' => 'setting'], function () {
             Route::resource('bank', BankController::class);
@@ -92,8 +93,6 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
             Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);
             Route::resource('location', LocationController::class);
-
-            Route::resource('bank', BankController::class);
 
             Route::get('approval/employee/active', [ApprovalRuleController::class, 'getActiveEmployees']);
             Route::resource('approval', ApprovalRuleController::class);

@@ -60,7 +60,7 @@
                         <div class="menu_section">
                             <ul class="nav side-menu">
                                 <li><a href="/"><i class="fa fa-dashboard"></i> Home </a></li>
-                                {{-- <li><a href="/location"><i class="fa fa-map"></i> Pin Location </a></li> --}}
+                                {{-- <li><a href="/pin-location"><i class="fa fa-map"></i> Pin Location </a></li> --}}
 
                                 <?php
                                 $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->roles->contains('id', 1);
@@ -115,9 +115,11 @@
                                         <li class={{ Request::is('lesson-plan/approvals*') ? 'current-page' : '' }}><a
                                                 href="{{ route('lesson-plan.approvals.index') }}">Approvals</a></li>
                                         <?php $isMonitor = \App\Models\SubjectCategoryMonitor::where('employee_id', auth()->user()->employee->id ?? 0)->exists(); ?>
-                                        @if($isMonitor)
-                                            <li class={{ Request::is('lesson-plan/monitoring*') ? 'current-page' : '' }}><a
-                                                    href="{{ route('employee.lesson-plan.monitoring.index') }}">Monitoring Lesson Plan</a></li>
+                                        @if ($isMonitor)
+                                            <li
+                                                class={{ Request::is('lesson-plan/monitoring*') ? 'current-page' : '' }}>
+                                                <a href="{{ route('employee.lesson-plan.monitoring.index') }}">Monitoring
+                                                    Lesson Plan</a></li>
                                         @endif
                                     </ul>
                                 </li>

@@ -31,87 +31,88 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::name('api.')->group(function () {
+    Route::post('/login', [AuthController::class, 'login'])->middleware('guest')->name('login');
+    Route::post('/payslip/post', [PayslipApiController::class, 'post']);
+    Route::post('/push/notif', [PushNotificationApiController::class, 'sendMessage']);
+    Route::get('attendance/summary', [AttendanceApiController::class, 'getSummaryReport']);
+    Route::get('attendance/auth', [AttendanceApiController::class, 'mekariOauth2']);
 
-Route::post('/login', [AuthController::class, 'login'])->middleware('guest')->name('login');
-Route::post('/payslip/post', [PayslipApiController::class, 'post']);
-Route::post('/push/notif', [PushNotificationApiController::class, 'sendMessage']);
-Route::get('attendance/summary', [AttendanceApiController::class, 'getSummaryReport']);
-Route::get('attendance/auth', [AttendanceApiController::class, 'mekariOauth2']);
+    Route::get('employee/job-level', [EmployeeApiController::class, 'getByJobLevel']);
 
-Route::get('employee/job-level', [EmployeeApiController::class, 'getByJobLevel']);
+    Route::post('post/attendance/ga', [AttendanceApiController::class, 'liveAttendanceGa']);
 
-Route::post('post/attendance/ga', [AttendanceApiController::class, 'liveAttendanceGa']);
+    Route::post('ga/employee/face', [EmployeeApiController::class, 'registerFace']);
 
-Route::post('ga/employee/face', [EmployeeApiController::class, 'registerFace']);
+    Route::group(['middleware' => 'auth_login'], function () {
+        Route::post('refresh', [AuthController::class, 'refresh']);
+        Route::post('register', [AuthController::class, 'register']);
+        Route::delete('logout', [AuthController::class, 'logout']);
+        Route::post('password/change', [AuthController::class, 'changePassword']);
 
-Route::group(['middleware' => 'auth_login'], function () {
-    Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::post('register', [AuthController::class, 'register']);
-    Route::delete('logout', [AuthController::class, 'logout']);
-    Route::post('password/change', [AuthController::class, 'changePassword']);
+        Route::get('school/calendar', [GsheetLinkApiController::class, 'getSchoolCalendar']);
+        Route::get('newsletter', [GsheetLinkApiController::class, 'getNewsletter']);
+        Route::get('kpi', [GsheetLinkApiController::class, 'kpi']);
 
-    Route::get('school/calendar', [GsheetLinkApiController::class, 'getSchoolCalendar']);
-    Route::get('newsletter', [GsheetLinkApiController::class, 'getNewsletter']);
-    Route::get('kpi', [GsheetLinkApiController::class, 'kpi']);
+        Route::get('person/email/{email}', [PersonApiController::class, 'byEmail']);
+        Route::get('person/personal/{companyId}', [PersonApiController::class, 'getPersonalData']);
+        Route::resource('person', PersonApiController::class);
 
-    Route::get('person/email/{email}', [PersonApiController::class, 'byEmail']);
-    Route::get('person/personal/{companyId}', [PersonApiController::class, 'getPersonalData']);
-    Route::resource('person', PersonApiController::class);
+        Route::get('attendance/schedule/{user_id}', [AttendanceApiController::class, 'getUserScheduleById']);
+        Route::get('attendance/history', [AttendanceApiController::class, 'getHistory']);
+        Route::get('attendance/list', [AttendanceApiController::class, 'liveAttendanceList']);
 
-    Route::get('attendance/schedule/{user_id}', [AttendanceApiController::class, 'getUserScheduleById']);
-    Route::get('attendance/history', [AttendanceApiController::class, 'getHistory']);
-    Route::get('attendance/list', [AttendanceApiController::class, 'liveAttendanceList']);
-
-    Route::prefix('attendance')->name('attendance.')->group(function () {
-        Route::post('clockin', [AttendanceApiController::class, 'clockIn'])->name('clockin');
-        Route::post('clockout', [AttendanceApiController::class, 'clockOut'])->name('clockout');
-        Route::post('live', [AttendanceApiController::class, 'liveAttendanceGa'])->name('live');
-        Route::get('history', [AttendanceApiController::class, 'getAttendaceHistory'])->name('getAttendaceHistory');
-        Route::get('history/current', [AttendanceApiController::class, 'getCurrent'])->name('getCurrent');
-        Route::resource('/', AttendanceApiController::class)->parameters(['' => 'attendance']);
-    });
-
-    Route::get('absent/filter', [LiveAbsentApiController::class, 'filterByUser']);
-    Route::get('absent/city/{city}', [LiveAbsentApiController::class, 'getCity']);
-    Route::resource('absent', LiveAbsentApiController::class);
-
-    Route::resource('payslip', PayslipApiController::class);
-
-    Route::resource('category', AnnouncementCategoryApiController::class);
-
-    Route::resource('branch', BranchApiController::class);
-
-    Route::resource('organization', OrganizationApiController::class);
-
-    Route::resource('position', PositionApiController::class);
-
-    Route::resource('level', JobLevelApiController::class);
-
-    Route::resource('announcement', AnnouncementApiController::class);
-
-    Route::resource('location', PinLocationApiController::class);
-
-    Route::resource('religion', ReligionApiController::class);
-
-    Route::resource('timeoff', TimeOffApiController::class);
-
-    Route::prefix('employee')->name('employee.')->group(function () {
-        Route::get('user/{id}', [EmployeeApiController::class, 'getByuserId'])->name('getByuserId');
-        Route::get('schedule/active', [EmployeeApiController::class, 'getActiveSchedule'])->name('getActiveSchedule');
-        Route::get('profile', [EmployeeApiController::class, 'profile'])->name('profile');
-        Route::post('face/register', [EmployeeApiController::class, 'registerFace'])->name('registerFace');
-        Route::get('datatable', [EmployeeApiController::class, 'paginate'])->name('datatable');
-        Route::resource('/', EmployeeApiController::class)->parameters(['' => 'employee']);
-    });
-
-    Route::group(['prefix' => 'time'], function () {
-            Route::get('request/datatable', [ApprovalRequestApiController::class, 'dataTable']);
-            Route::get('request/{id}/history', [ApprovalRequestApiController::class, 'history']);
-            Route::get('request/{id}/approver', [ApprovalRequestApiController::class, 'approver']);
-            Route::get('request/user', [ApprovalRequestApiController::class, 'getRequestByUser']);
-            Route::get('request/approval', [ApprovalRequestApiController::class, 'getApprovalByUser']);
-            Route::post('request/action', [ApprovalRequestApiController::class, 'action']);
-            Route::post('request/cancel/{id}', [ApprovalRequestApiController::class, 'cancel']);
-            Route::resource('request', ApprovalRequestApiController::class);
+        Route::prefix('attendance')->name('attendance.')->group(function () {
+            Route::post('clockin', [AttendanceApiController::class, 'clockIn'])->name('clockin');
+            Route::post('clockout', [AttendanceApiController::class, 'clockOut'])->name('clockout');
+            Route::post('live', [AttendanceApiController::class, 'liveAttendanceGa'])->name('live');
+            Route::get('history', [AttendanceApiController::class, 'getAttendaceHistory'])->name('getAttendaceHistory');
+            Route::get('history/current', [AttendanceApiController::class, 'getCurrent'])->name('getCurrent');
+            Route::resource('/', AttendanceApiController::class)->parameters(['' => 'attendance']);
         });
+
+        Route::get('absent/filter', [LiveAbsentApiController::class, 'filterByUser']);
+        Route::get('absent/city/{city}', [LiveAbsentApiController::class, 'getCity']);
+        Route::resource('absent', LiveAbsentApiController::class);
+
+        Route::resource('payslip', PayslipApiController::class);
+
+        Route::resource('category', AnnouncementCategoryApiController::class);
+
+        Route::resource('branch', BranchApiController::class);
+
+        Route::resource('organization', OrganizationApiController::class);
+
+        Route::resource('position', PositionApiController::class);
+
+        Route::resource('level', JobLevelApiController::class);
+
+        Route::resource('announcement', AnnouncementApiController::class);
+
+        Route::resource('location', PinLocationApiController::class);
+
+        Route::resource('religion', ReligionApiController::class);
+
+        Route::resource('timeoff', TimeOffApiController::class);
+
+        Route::prefix('employee')->name('employee.')->group(function () {
+            Route::get('user/{id}', [EmployeeApiController::class, 'getByuserId'])->name('getByuserId');
+            Route::get('schedule/active', [EmployeeApiController::class, 'getActiveSchedule'])->name('getActiveSchedule');
+            Route::get('profile', [EmployeeApiController::class, 'profile'])->name('profile');
+            Route::post('face/register', [EmployeeApiController::class, 'registerFace'])->name('registerFace');
+            Route::get('datatable', [EmployeeApiController::class, 'paginate'])->name('datatable');
+            Route::resource('/', EmployeeApiController::class)->parameters(['' => 'employee']);
+        });
+
+        Route::group(['prefix' => 'time'], function () {
+                Route::get('request/datatable', [ApprovalRequestApiController::class, 'dataTable']);
+                Route::get('request/{id}/history', [ApprovalRequestApiController::class, 'history']);
+                Route::get('request/{id}/approver', [ApprovalRequestApiController::class, 'approver']);
+                Route::get('request/user', [ApprovalRequestApiController::class, 'getRequestByUser']);
+                Route::get('request/approval', [ApprovalRequestApiController::class, 'getApprovalByUser']);
+                Route::post('request/action', [ApprovalRequestApiController::class, 'action']);
+                Route::post('request/cancel/{id}', [ApprovalRequestApiController::class, 'cancel']);
+                Route::resource('request', ApprovalRequestApiController::class);
+            });
+    });
 });

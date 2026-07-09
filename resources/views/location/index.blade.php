@@ -5,49 +5,51 @@
 @endsection
 
 @section('content-child')
-<div class="col-md-12 col-sm-12">
-    <div class="x_panel">
-        <div class="x_title">
-            <h2>Location Table</h2>
-            <ul class="nav navbar-right panel_toolbox">
-                <li>
-                    <a href="/location/create" class="btn btn-success btn-sm text-white"><i class="fa fa-plus"></i> Add Location</a>
-                </li>
-            </ul>
-            <div class="clearfix"></div>
-        </div>
-        <div class="x_content">
-            <table id="tbl-location" class="table table-striped table-bordered table-sm" style="width: 100%">
-                <thead>
-                    <tr>
-                        <th>Location</th>
-                        <th>Branch</th>
-                        <th>Employee</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($locations as $loc)
+    <div class="col-md-12 col-sm-12">
+        <div class="x_panel">
+            <div class="x_title">
+                <h2>Location Table</h2>
+                <ul class="nav navbar-right panel_toolbox">
+                    <li>
+                        <a href="/pin-location/create" class="btn btn-success btn-sm text-white"><i class="fa fa-plus"></i>
+                            Add
+                            Location</a>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                <table id="tbl-location" class="table table-striped table-bordered table-sm" style="width: 100%">
+                    <thead>
                         <tr>
-                            <td>{{$loc->name}}</td>
-                            <td>{{$loc->branch->name}}</td>
-                            <td>{{$loc->total}}</td>
-                            <td><a href="/location/{{$loc->id}}/edit" class="btn btn-sm btn-info text-white"><i class="fa fa-pencil"></i> Edit</a></td>
+                            <th>Location</th>
+                            <th>Branch</th>
+                            <th>Employee</th>
+                            <th>Action</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach ($locations as $loc)
+                            <tr>
+                                <td>{{ $loc->name }}</td>
+                                <td>{{ $loc->branch->name }}</td>
+                                <td>{{ $loc->total }}</td>
+                                <td><a href="/pin-location/{{ $loc->id }}/edit"
+                                        class="btn btn-sm btn-info text-white"><i class="fa fa-pencil"></i> Edit</a></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
-
 @endsection
 @section('content-script')
-<script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
-<script src="/plugins/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
-<script>
-    $(document).ready(function(){
-        $("#tbl-location").DataTable()
-    })
-</script>
+    <script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="/plugins/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#tbl-location").DataTable()
+        })
+    </script>
 @endsection
