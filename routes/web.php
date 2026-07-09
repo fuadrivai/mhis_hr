@@ -217,3 +217,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         ]);
     })->where('path', '.*');
 });
+
+Route::get('/ping', function () {
+    return "OK";
+});
