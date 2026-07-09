@@ -23,11 +23,13 @@ class AuthMiddleware
         if (!isset($token)) {
             return response()->json(["message" => "Forbidden"], 403);
         } else {
-            $session = Session::where('token', $token)->first();
+            $session = Session::with('user')
+                        ->where('token', $token)
+                        ->first();
             if (!isset($session)) {
                 return response()->json(["message" => "Forbidden"], 403);
             } else {
-                $user = User::find($session->user_id);
+                $user = $session->user;
                 $request['user'] = $user;
                 return $next($request);
             }
