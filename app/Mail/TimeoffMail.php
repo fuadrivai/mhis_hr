@@ -30,9 +30,9 @@ class TimeoffMail extends Mailable
      */
     public function build()
     {
-        $data = $this->approvalRequest;
-        return $this->subject($data['subject'])
-            ->view($data['template'])
-            ->with('data', $this->approvalRequest);
+        $approvalRequest = $this->approvalRequest;
+        return $this->subject($approvalRequest['subject'])
+            ->view($approvalRequest['template'])
+            ->with('data',$this->approvalRequest);
     }
 }

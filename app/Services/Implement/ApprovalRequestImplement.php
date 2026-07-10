@@ -462,7 +462,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 'subject'=>'Approval Request Pending',
                 'template'=>'email-template.timeoff',
             ];
-            Mail::to($email)->send(new TimeoffMail($data));
+            Mail::mailer('smtp2')->to($email)->send(new TimeoffMail($data));
         } catch (\Exception $e) {
             logger()->error('Failed to send email notification', [
                 'approval_request_id' => $approvalRequest->id,
