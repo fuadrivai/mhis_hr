@@ -69,7 +69,8 @@ class ApprovalRequestController extends Controller
         ]);
         $validated['attachments'] = $request->file('attachments', []);
 
-        return $this->approvalRequestService->post($validated);
+        $approvalRequest = $this->approvalRequestService->post($validated);
+        return response()->json(['message' => 'Approval request created successfully', 'data' => $approvalRequest->load('approvals.approver.personal', 'requester.personal')], 201);
     }
 
     public function show($id)

@@ -33,7 +33,9 @@ class TimeOffImplement implements TimeOffService
                 'code' => $request['code'],
                 'name' => $request['name'],
                 'schema' => $request['schema'] ? json_decode($request['schema'], true) : null,
-                'is_active' => true
+                'is_active' => true,
+                'is_global' => $request->boolean('is_global'),
+                'deduct_leave_balance' => $request->boolean('deduct_leave_balance')
             ]);
 
             DB::commit();
@@ -57,7 +59,9 @@ class TimeOffImplement implements TimeOffService
                 'code' => $request['code'],
                 'name' => $request['name'],
                 'schema' => isset($request['schema']) ? json_decode($request['schema'], true) : $timeOff->schema,
-                'is_active' => $request['is_active'] ?? $timeOff->is_active
+                'is_active' => $request['is_active'] ?? $timeOff->is_active,
+                'is_global' => $request->boolean('is_global'),
+                'deduct_leave_balance' => $request->boolean('deduct_leave_balance')
             ]);
 
             DB::commit();

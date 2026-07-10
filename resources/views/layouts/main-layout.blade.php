@@ -67,7 +67,7 @@
                                 $isRole3 = auth()->user()->roles->contains('id', 3);
                                 ?>
 
-                                @if ($isAdmin || $isRole3)
+                                @if ($isAdmin)
                                     <li class={{ Request::is('employee*') ? 'active' : '' }}><a><i
                                                 class="fa fa-users"></i>
                                             Employee Directory <span class="fa fa-chevron-down"></span></a>
@@ -75,14 +75,11 @@
                                             style="display: {{ Request::is('employee*') ? 'block' : 'none' }}">
                                             <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
                                                     href="/employee">Employee</a></li>
-                                            @if ($isAdmin)
-                                                <li
-                                                    class={{ Request::is('employee/reprimand*') ? 'current-page' : '' }}>
-                                                    <a href="/employee/reprimand">Reprimand</a>
-                                                </li>
-                                                <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
-                                                        href="/scheduler">Scheduler</a></li>
-                                            @endif
+                                            <li class={{ Request::is('employee/reprimand*') ? 'current-page' : '' }}>
+                                                <a href="/employee/reprimand">Reprimand</a>
+                                            </li>
+                                            <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
+                                                    href="/scheduler">Scheduler</a></li>
                                         </ul>
                                     </li>
                                 @endif
@@ -119,7 +116,8 @@
                                             <li
                                                 class={{ Request::is('lesson-plan/monitoring*') ? 'current-page' : '' }}>
                                                 <a href="{{ route('employee.lesson-plan.monitoring.index') }}">Monitoring
-                                                    Lesson Plan</a></li>
+                                                    Lesson Plan</a>
+                                            </li>
                                         @endif
                                     </ul>
                                 </li>
