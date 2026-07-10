@@ -363,33 +363,30 @@ function prepareAttendance($employee,$user,$clockTime) {
         $fullPath = storage_path('app/public/' . $photoPath);
 
         try {
-            $image = Image::make($fullPath);
-            $jpgPath = preg_replace('/\.(png|jpeg|jpg)$/i', '.jpg', $fullPath);
-            $image->orientate();
-            if ($image->width() > 1280) {
-                $image->resize(1280, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
-            }
-            $image->save($fullPath, 50);
-            if ($jpgPath !== $fullPath) {
-                unlink($fullPath);
-            }
 
-            $fullPath = $jpgPath;
-
-            Log::info('Face Recognition Image', [
-                'employee_id' => $employee->id,
-                'path'        => $fullPath,
-                'mime'        => mime_content_type($fullPath),
-                'size_kb'     => round(filesize($fullPath) / 1024, 2),
-                'width'       => $image->width(),
-                'height'      => $image->height(),
-            ]);
+            // Log::info('Face Recognition Image', [
+            //     'employee_id' => $employee->id,
+            //     'path'        => $fullPath,
+            //     'mime'        => mime_content_type($fullPath),
+            //     'size_kb'     => round(filesize($fullPath) / 1024, 2),
+            //     'width'       => $image->width(),
+            //     'height'      => $image->height(),
+            // ]);
             $response = Http::timeout(15)
-                ->attach('image',file_get_contents($fullPath),basename($fullPath))
-                ->post(rtrim($faceRecognitionApiUrl, '/') . '/recognize',['employeeId' => $employee->id,]);
+                ->attach(
+                    'image',
+                    fopen($fullPath, 'r'),
+                    basename($fullPath),
+                    [
+                        'Content-Type' => mime_content_type($fullPath),
+                    ]
+                )
+                ->post(
+                    rtrim($faceRecognitionApiUrl, '/') . '/recognize',
+                    [
+                        'employeeId' => $employee->id,
+                    ]
+                );
             if (!$response->successful()) {
                 deleteAttendancePhoto($fullPath);
                     throw new \Illuminate\Http\Exceptions\HttpResponseException(
@@ -409,6 +406,22 @@ function prepareAttendance($employee,$user,$clockTime) {
                         response()->json(['message' => 'Face is not recognized'], 422)
                     );
             }
+            
+            // $image = Image::make($fullPath);
+            $jpgPath = preg_replace('/\.(png|jpeg|jpg)$/i', '.jpg', $fullPath);
+            // if ($image->width() > 1280) {
+            //     $image->orientate();
+            //     $image->resize(1280, null, function ($constraint) {
+            //         $constraint->aspectRatio();
+            //         $constraint->upsize();
+            //     });
+            // }
+            // $image->encode('jpg', 50)->save($fullPath);
+            if ($jpgPath !== $fullPath) {
+                unlink($fullPath);
+            }
+
+            // $fullPath = $jpgPath;
         } catch (\Throwable $e) {
             deleteAttendancePhoto($fullPath);
             Log::warning('Face recognition request failed', [
