@@ -540,7 +540,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 'reason' => $approvalRequest['approver_note'] ?? null,
                 'timeoff_name' => $timeoff->name ?? null,
                 'timeoff_date'=> $formattedStartDate,
-                'subject'=>'Approval Request ${approvalRequest->status}',
+                'subject'=>'Approval Request ' . $approvalRequest->status,
                 'template'=>'email-template.timeoff-approved-rejected',
                 'status'=> $approvalRequest->status,
             ];
