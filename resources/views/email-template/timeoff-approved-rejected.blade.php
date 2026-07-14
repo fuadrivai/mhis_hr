@@ -65,12 +65,12 @@
                     <h1
                         style="
                 margin: 0 0 15px;
-                font-size: 24px;
+                font-size: 18px;
                 color: #800000;
                 font-weight: bold;
                 letter-spacing: 0.5px;
               ">
-                        Timeoff Approval Request
+                        Timeoff Approval Request {{ $data['status'] }}
                     </h1>
 
                     <!-- Arabic Greeting -->
@@ -91,7 +91,7 @@
             <tr>
                 <td align="center"
                     style="
-              padding: 0 30px 35px;
+              padding: 0 30px;
               background-color: #ffffff;
               border-left: 1px solid #f0f0f0;
               border-right: 1px solid #f0f0f0;
@@ -102,7 +102,6 @@
                         <tr>
                             <td
                                 style="
-                    padding: 0 0 25px;
                     text-align: left;
                     color: #444444;
                     font-size: 15px;
@@ -110,11 +109,9 @@
                   ">
                                 <p style="margin: 0 0 18px">
                                     Dear
-                                    <strong style="color: #800000">{{ $data['approver_name'] }}</strong>
-                                </p>
-                                <p style="margin: 0">
-                                    {{ $data['requester_name'] }} would like to request time off
-                                    with the following details:
+                                    <strong style="color: #800000">{{ $data['requester_name'] }}</strong>,<br />
+                                    Your time off request has been {{ $data['status'] }} by
+                                    {{ $data['approver_name'] }}.
                                 </p>
                             </td>
                         </tr>
@@ -134,7 +131,7 @@
                                     <tr>
                                         <td
                                             style="
-                          border-bottom: 1px solid #f0f0f0;
+                          /* border-bottom: 1px solid #f0f0f0; */
                           padding: 16px 15px;
                           text-align: left;
                           font-weight: bold;
@@ -144,7 +141,7 @@
                                         </td>
                                         <td
                                             style="
-                          border-bottom: 1px solid #f0f0f0;
+                          /* border-bottom: 1px solid #f0f0f0; */
                           padding: 16px 15px;
                           text-align: left;
                         ">
@@ -154,7 +151,7 @@
                             font-weight: bold;
                             color: #333;
                           ">
-                                                {{ $data['timeoff_name'] }}
+                                                : {{ $data['timeoff_name'] }}
                                             </p>
                                         </td>
                                     </tr>
@@ -176,7 +173,7 @@
                             font-weight: bold;
                             color: #333;
                           ">
-                                                {{ $data['timeoff_date'] }}
+                                                : {{ $data['timeoff_date'] }}
                                             </p>
                                         </td>
                                     </tr>
@@ -188,7 +185,7 @@
                           font-weight: bold;
                           color: #800000;
                         ">
-                                            Reason
+                                            Note
                                         </td>
                                         <td style="padding: 16px 15px; text-align: left">
                                             <p
@@ -197,96 +194,11 @@
                             font-weight: bold;
                             color: #333;
                           ">
-                                                {{ $data['reason'] }}
-                                            </p>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td
-                                            style="
-                          padding: 16px 15px;
-                          text-align: left;
-                          font-weight: bold;
-                          color: #800000;
-                        ">
-                                            Remaining balance
-                                        </td>
-                                        <td style="padding: 16px 15px; text-align: left">
-                                            <p
-                                                style="
-                            margin: 0 0 8px;
-                            font-weight: bold;
-                            color: #333;
-                          ">
-                                                {{ $data['remaining_balance'] }}
+                                                : {{ $data['reason'] }}
                                             </p>
                                         </td>
                                     </tr>
                                 </table>
-                            </td>
-                        </tr>
-
-                        <!-- Approval Action Buttons -->
-                        <tr>
-                            <td align="center" style="padding: 0 0 30px">
-                                <table role="presentation" border="0" cellpadding="0" cellspacing="0"
-                                    align="center">
-                                    <tr>
-                                        <td style="padding: 0 6px 0 0">
-                                            <a href="{{ $data['approve_url'] ?? '#' }}"
-                                                style="
-                            background-color: #2d7d46;
-                            border: 2px solid #2d7d46;
-                            border-radius: 8px;
-                            color: #ffffff;
-                            display: inline-block;
-                            font-family: &quot;Arial&quot;, sans-serif;
-                            font-size: 16px;
-                            font-weight: bold;
-                            line-height: 48px;
-                            text-align: center;
-                            text-decoration: none;
-                            width: 170px;
-                            -webkit-text-size-adjust: none;
-                            mso-hide: all;
-                            box-shadow: 0 4px 12px rgba(45, 125, 70, 0.18);
-                          ">
-                                                <span style="color: #ffffff">Approve</span>
-                                            </a>
-                                        </td>
-                                        <td style="padding: 0 0 0 6px">
-                                            <a href="{{ $data['reject_url'] ?? '#' }}"
-                                                style="
-                            background-color: #b33a3a;
-                            border: 2px solid #b33a3a;
-                            border-radius: 8px;
-                            color: #ffffff;
-                            display: inline-block;
-                            font-family: &quot;Arial&quot;, sans-serif;
-                            font-size: 16px;
-                            font-weight: bold;
-                            line-height: 48px;
-                            text-align: center;
-                            text-decoration: none;
-                            width: 170px;
-                            -webkit-text-size-adjust: none;
-                            mso-hide: all;
-                            box-shadow: 0 4px 12px rgba(179, 58, 58, 0.18);
-                          ">
-                                                <span style="color: #ffffff">Reject</span>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                </table>
-                                <p
-                                    style="
-                      margin: 12px 0 0;
-                      color: #666666;
-                      font-size: 13px;
-                      font-style: italic;
-                    ">
-                                    Please review this request and choose one action
-                                </p>
                             </td>
                         </tr>
                     </table>
@@ -352,9 +264,8 @@
                     <p style="margin: 0 0 10px">
                         &copy; 2026 Mutiara Harapan Islamic School. All Rights Reserved.
                     </p>
-                    <p style="margin: 0; font-size: 11px; color: #999999">
-                        This email confirms successful enrolment payment receipt.<br />
-                        Jl. Pondok Kacang Raya No.2 Pondok Kacang Timur, Pondok Aren
+                    <p style="margin: 0; font-size: 11px; color: #999999">Jl. Pondok Kacang Raya No.2 Pondok Kacang
+                        Timur, Pondok Aren
                         Tangerang Selatan – 15426
                     </p>
                 </td>

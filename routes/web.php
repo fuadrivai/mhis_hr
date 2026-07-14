@@ -47,6 +47,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::get('live-attendance', [AttendanceController::class, 'liveAttendance']);
     Route::resource('attendance', AttendanceController::class);
     Route::post('/login', [AuthController::class, 'authenticate']);
+    Route::get('/timeoff/action', [ApprovalRequestController::class, 'timeoffAction'])->name('timeoff.action');
 
 
     Route::group(['middleware' => 'auth'], function () {

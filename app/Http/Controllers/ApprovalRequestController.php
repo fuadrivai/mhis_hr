@@ -22,6 +22,11 @@ class ApprovalRequestController extends Controller
         $this->approvalRequestService = $approvalRequestService;
     }
 
+    public function timeoffAction(Request $request)
+    {
+        return view('approval.email-action');
+    }
+
     public function index()
     {
         return view('approval.request.index', [
