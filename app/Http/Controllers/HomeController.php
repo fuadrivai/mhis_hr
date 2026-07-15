@@ -15,11 +15,12 @@ class HomeController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('user')) {
-            return redirect('/internal-document/create');
+        if (!$user->hasRole('admin')) {
+            $employee = $user->employee;
+            return redirect('/profile/personal/' . $employee->id);
         }
 
-        if ($user->hasRole('administrator')) {
+        if ($user->hasRole('admin')) {
             // Active Employees right now
             $now = \Carbon\Carbon::now();
             $employees = \App\Models\Employee::where('is_active', 1)->whereHas('employment')->with('employment')->get();

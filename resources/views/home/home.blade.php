@@ -1,6 +1,6 @@
 @extends('layouts.main-layout')
 
-@if(auth()->user()->hasRole('administrator'))
+@if(auth()->user()->hasRole('admin'))
 @section('content-class')
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
