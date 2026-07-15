@@ -4,7 +4,7 @@ namespace App\Services;
 
 interface AnnouncementCategoryService
 {
-    function get($request);
+    function get();
     function show($id);
     function post($request);
     function put($request);

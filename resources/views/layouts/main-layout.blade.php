@@ -68,6 +68,18 @@
                                 ?>
 
                                 @if ($isAdmin || $isRole3)
+                                    <li class={{ Request::is('announcement*') ? 'active' : '' }}><a><i
+                                                class="fa fa-bell"></i>
+                                            Announcement <span class="fa fa-chevron-down"></span></a>
+                                        <ul class="nav child_menu"
+                                            style="display: {{ Request::is('announcement*') ? 'block' : 'none' }}">
+                                            <li class={{ Request::is('announcement*') ? 'current-page' : '' }}><a
+                                                    href="/announcement">Announcement</a></li>
+                                            <li class={{ Request::is('announcement/category*') ? 'current-page' : '' }}>
+                                                <a href="/announcement/category">Category</a>
+                                            </li>
+                                        </ul>
+                                    </li>
                                     <li class={{ Request::is('employee*') ? 'active' : '' }}><a><i
                                                 class="fa fa-users"></i>
                                             Employee Directory <span class="fa fa-chevron-down"></span></a>
@@ -119,7 +131,8 @@
                                             <li
                                                 class={{ Request::is('lesson-plan/monitoring*') ? 'current-page' : '' }}>
                                                 <a href="{{ route('employee.lesson-plan.monitoring.index') }}">Monitoring
-                                                    Lesson Plan</a></li>
+                                                    Lesson Plan</a>
+                                            </li>
                                         @endif
                                     </ul>
                                 </li>

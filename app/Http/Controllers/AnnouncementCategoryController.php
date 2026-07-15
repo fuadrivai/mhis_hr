@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AnnouncementCategory;
+use App\Services\AnnouncementCategoryService;
 use Illuminate\Http\Request;
 
 class AnnouncementCategoryController extends Controller
@@ -12,9 +13,18 @@ class AnnouncementCategoryController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+    private AnnouncementCategoryService $announcementCategoryService;
+    public function __construct(AnnouncementCategoryService $announcementCategoryService)
+    {
+        $this->announcementCategoryService = $announcementCategoryService;
+    }
     public function index()
     {
-        //
+        $categories = $this->announcementCategoryService->get();
+        return view('announcement.category.index', [
+            'title' => 'Announcement Category',
+            'categories' => $categories
+        ]);
     }
 
     /**
@@ -35,7 +45,8 @@ class AnnouncementCategoryController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $category = $this->announcementCategoryService->post($request->all());
+        return redirect()->back()->with('success', 'Category created successfully.');
     }
 
     /**

@@ -27,6 +27,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\KpiTemplateController;
 use App\Http\Controllers\EmployeeKpiController;
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\AnnouncementCategoryController;
 use App\Http\Controllers\ReprimandController;
 use App\Http\Controllers\ReprimandTypeController;
 use Illuminate\Support\Facades\Route;
@@ -65,6 +66,12 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             ]);
         });
 
+        Route::group(['prefix' => 'announcement'], function () {
+            Route::group(['prefix' => 'category'], function () {
+                Route::resource('/', AnnouncementCategoryController::class);
+            });
+            Route::resource('/', EmployeeController::class);
+        });
         Route::group(['prefix' => 'employee'], function () {
             Route::post('import', [EmployeeController::class, 'import_excel']);
             Route::get('filter', [EmployeeController::class, 'filterLocation']);
