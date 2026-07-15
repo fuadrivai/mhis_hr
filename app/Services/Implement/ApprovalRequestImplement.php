@@ -411,7 +411,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     private function _sendNotification($userId, $data)
     {
         $sessions = Session::where('user_id', $userId)
-                ->whereIn('device', ['android', 'ios'])
+                ->whereIn('device', ['android'])
                 ->get();
         foreach ($sessions as $session) {
             if (empty($session->device_id)) {
