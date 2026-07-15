@@ -16,32 +16,20 @@
                                     <th>No</th>
                                     <th>Title</th>
                                     <th>Category</th>
-                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Creator</th>
                                     <th class="text-center">#</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($categories as $item)
+                                @foreach ($announcements as $item)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $item->name }}</td>
-                                        <td>{{ $item->description ?? 'N/A' }}</td>
+                                        <td>{{ $item->title }}</td>
+                                        <td>{{ $item->category->name ?? 'N/A' }}</td>
+                                        <td>{{ $item->creator->name ?? 'N/A' }}</td>
                                         <td class="text-center">
-                                            <span
-                                                class="badge {{ $item->is_active == 1 ? 'badge-success' : 'badge-secondary' }}">
-                                                {{ $item->is_active == 1 ? 'Active' : 'Inactive' }}
-                                            </span>
-                                        </td>
-                                        <td class="text-center">
-                                            <a href="javascript:void(0)" class="btn btn-sm btn-primary btn-edit-category"
-                                                data-id="{{ $item->id }}" data-name="{{ $item->name }}"
-                                                data-description="{{ e($item->description ?? '') }}"
-                                                data-active="{{ $item->is_active == 1 ? 1 : 0 }}">
+                                            <a href="/announcement/{{ $item->id }}/edit" class="btn btn-sm btn-primary">
                                                 <i class="fa fa-eye"></i>
-                                            </a>
-                                            <a href="javascript:void(0)" class="btn btn-sm btn-danger btn-delete-category"
-                                                data-id="{{ $item->id }}">
-                                                <i class="fa fa-trash"></i>
                                             </a>
                                         </td>
                                     </tr>
@@ -122,19 +110,13 @@
                 pagingType: 'simple',
                 dom: `<"row"<"col-sm-6 d-flex align-items-center"lB><"col-sm-6"f>>tip`,
                 buttons: [{
-                    text: 'Add Category <i class="fa fa-plus-circle"></i>',
+                    text: 'Add Announcement <i class="fa fa-plus-circle"></i>',
                     attr: {
-                        id: 'btn-category'
+                        id: 'btn-announcement'
                     },
                     className: 'btn btn-success font-weight-bold mx-1',
                     action: function() {
-                        $('#categoryModalLabel').text('Add Category');
-                        $('#categoryForm')[0].reset();
-                        $('#id').val('');
-                        $('#form-method').html('');
-                        $('#categoryForm').attr('action', '/announcement/category');
-                        $('#category_is_active').prop('checked', true);
-                        $('#categoryModal').modal('show');
+                        window.location.href = '/announcement/create';
                     }
                 }],
                 language: {
@@ -143,30 +125,6 @@
                     search: "",
                     searchPlaceholder: "Search.."
                 },
-            });
-
-            $(document).on('click', '.btn-edit-category', function() {
-                $('#categoryModalLabel').text('Edit Category');
-                $('#id').val($(this).data('id'));
-                $('#category_name').val($(this).data('name'));
-                $('#category_description').val($(this).data('description'));
-                $('#category_is_active').prop('checked', $(this).data('active') == 1 ? true : false);
-                $('#form-method').html('<input type="hidden" name="_method" value="PUT">');
-                let id = $(this).data('id');
-                $('#categoryForm').attr('action', `/announcement/category/${id}`);
-                $('#categoryModal').modal('show');
-            });
-
-            $(document).on('click', '.btn-delete-category', function() {
-                let id = $(this).data('id');
-                let isConfirmed = confirm('Are you sure you want to delete this category?');
-
-                if (!isConfirmed) {
-                    return;
-                }
-
-                $('#deleteCategoryForm').attr('action', `/announcement/category/${id}`);
-                $('#deleteCategoryForm').submit();
             });
         })
     </script>

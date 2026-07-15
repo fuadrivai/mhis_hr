@@ -13,7 +13,7 @@ class CreateAnnoucementBranchesTable extends Migration
      */
     public function up()
     {
-        Schema::create('annoucement_branches', function (Blueprint $table) {
+        Schema::create('announcement_branches', function (Blueprint $table) {
             $table->id();
              $table->foreignId('announcement_id')
         ->constrained()

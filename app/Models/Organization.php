@@ -13,6 +13,6 @@ class Organization extends Model
 
     public function announcements()
     {
-        return $this->belongsToMany(Announcement::class, 'annoucement_branches')->withTimestamps();
+        return $this->belongsToMany(Announcement::class, 'announcement_organizations')->withTimestamps();
     }
 }

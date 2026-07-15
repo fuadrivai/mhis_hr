@@ -17,6 +17,7 @@ class CreateAnnouncementCategoriesTable extends Migration
             $table->id();
             $table->string('name');
             $table->string('description')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

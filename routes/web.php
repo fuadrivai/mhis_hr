@@ -67,9 +67,11 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             ]);
         });
 
-        Route::group(['prefix' => 'announcement'], function () {
+        Route::group(['prefix' => 'announcement', 'as' => 'announcement.'], function () {
             Route::resource('category', AnnouncementCategoryController::class);
-            Route::resource('/', AnnouncementController::class);
+            Route::get('/', [AnnouncementController::class, 'index'])->name('index');
+            Route::get('/create', [AnnouncementController::class, 'create'])->name('create');
+            Route::post('/', [AnnouncementController::class, 'store'])->name('store');
         });
         Route::group(['prefix' => 'employee'], function () {
             Route::post('import', [EmployeeController::class, 'import_excel']);
