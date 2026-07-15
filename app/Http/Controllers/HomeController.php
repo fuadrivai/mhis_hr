@@ -21,7 +21,7 @@ class HomeController extends Controller
 
         // Active Employees right now
         $now = \Carbon\Carbon::now();
-        $employees = \App\Models\Employee::whereHas('employment')->with('employment')->get();
+        $employees = \App\Models\Employee::where('is_active', 1)->whereHas('employment')->with('employment')->get();
         $activeEmployees = $employees->filter(function($emp) use ($now) {
             return $emp->employment && ($emp->employment->resign_date === null || \Carbon\Carbon::parse($emp->employment->resign_date)->isAfter($now));
         });
