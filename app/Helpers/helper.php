@@ -350,7 +350,9 @@ function prepareAttendance($employee,$user,$clockTime) {
         }
         $imageName = sprintf('attendance_%s_%s.%s',$employee->id,time(),$extension);
         $photoPath = 'attendance_photos/' . $imageName;
-        file_put_contents(storage_path('app/public/' . $photoPath),base64_decode(str_replace(' ', '+', $rawPhoto)));
+        $fullPath = storage_path('app/public/' . $photoPath);
+        file_put_contents($fullPath,base64_decode(str_replace(' ', '+', $rawPhoto)));
+        @chmod($fullPath, 0777);
         return $photoPath;
     }
 
