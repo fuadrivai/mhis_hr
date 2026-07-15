@@ -2,6 +2,7 @@
 
 @section('content-class')
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
 @endsection
 
 @section('content-child')
@@ -142,6 +143,17 @@
             </div>
         </div>
 
+        <div class="row" style="margin-top: 20px;">
+            <div class="col-md-12">
+                <div class="panel" style="padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); background: #fff;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 style="margin: 0; font-size: 14px; font-weight: bold;">Company Schedule <i class="fa fa-calendar text-muted"></i></h5>
+                    </div>
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+
 @section('content-script')
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
@@ -243,6 +255,48 @@
         
         $(window).resize(function(){
             drawCharts();
+        });
+    </script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                events: function(fetchInfo, successCallback, failureCallback) {
+                    $.ajax({
+                        url: 'https://calendar.mutiaraharapan.sch.id/api/schedule?branch=1,2,3&category=internal,leadership',
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(response) {
+                            var events = response.data || response;
+                            if (!Array.isArray(events)) {
+                                events = [];
+                            }
+                            var parsedEvents = events.map(function(evt) {
+                                return {
+                                    title: evt.subject || evt.title || evt.name || evt.event_name || 'Scheduled Event',
+                                    start: evt.starttime || evt.start_date || evt.start || evt.date || evt.start_time,
+                                    end: evt.endtime || evt.end_date || evt.end || evt.end_time,
+                                    color: evt.color || '#00aadd',
+                                    description: evt.description || '',
+                                    allDay: evt.is_all_day !== undefined ? evt.is_all_day : (evt.all_day !== undefined ? evt.all_day : true)
+                                };
+                            });
+                            successCallback(parsedEvents);
+                        },
+                        error: function() {
+                            failureCallback();
+                        }
+                    });
+                }
+            });
+            calendar.render();
         });
     </script>
 @endsection
