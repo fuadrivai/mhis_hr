@@ -19,136 +19,128 @@ class HomeController extends Controller
             return redirect('/internal-document/create');
         }
 
-        // Active Employees right now
-        $now = \Carbon\Carbon::now();
-        $employees = \App\Models\Employee::where('is_active', 1)->whereHas('employment')->with('employment')->get();
-        $activeEmployees = $employees->filter(function($emp) use ($now) {
-            return $emp->employment && ($emp->employment->resign_date === null || \Carbon\Carbon::parse($emp->employment->resign_date)->isAfter($now));
-        });
+        if ($user->hasRole('administrator')) {
+            // Active Employees right now
+            $now = \Carbon\Carbon::now();
+            $employees = \App\Models\Employee::where('is_active', 1)->whereHas('employment')->with('employment')->get();
+            $activeEmployees = $employees->filter(function($emp) use ($now) {
+                return $emp->employment && ($emp->employment->resign_date === null || \Carbon\Carbon::parse($emp->employment->resign_date)->isAfter($now));
+            });
 
-        // Employment Status
-        $empStatusDataRaw = [];
-        $totalActive = $activeEmployees->count();
-        
-        foreach ($activeEmployees as $emp) {
-            $status = $emp->employment->employment_status ? ucfirst($emp->employment->employment_status) : 'Unknown';
-            if (!isset($empStatusDataRaw[$status])) {
-                $empStatusDataRaw[$status] = 0;
-            }
-            $empStatusDataRaw[$status]++;
-        }
-        
-        $empStatusData = [];
-        foreach($empStatusDataRaw as $k => $v) {
-            $empStatusData[] = [
-                'name' => $k,
-                'count' => $v,
-                'percentage' => $totalActive > 0 ? round(($v / $totalActive) * 100, 1) : 0
-            ];
-        }
-
-        // Length of Service
-        $lengthOfService = [
-            '< 1 yr' => 0,
-            '1-3 yr' => 0,
-            '3-5 yr' => 0,
-            '5-10 yr' => 0,
-            '> 10 yr' => 0,
-        ];
-
-        foreach ($activeEmployees as $emp) {
-            if (!$emp->employment || !$emp->employment->join_date) continue;
-            $joinDate = \Carbon\Carbon::parse($emp->employment->join_date);
-            $diffDays = $joinDate->diffInDays($now);
-            $diffYears = $diffDays / 365.25;
-
-            if ($diffYears < 1) {
-                $lengthOfService['< 1 yr']++;
-            } elseif ($diffYears < 3) {
-                $lengthOfService['1-3 yr']++;
-            } elseif ($diffYears < 5) {
-                $lengthOfService['3-5 yr']++;
-            } elseif ($diffYears <= 10) {
-                $lengthOfService['5-10 yr']++;
-            } else {
-                $lengthOfService['> 10 yr']++;
-            }
-        }
-        $losData = [];
-        foreach($lengthOfService as $key => $val) {
-            $losData[] = [$key, $val];
-        }
-
-        // Job Level
-        $jobLevelDataRaw = [];
-        foreach ($activeEmployees as $emp) {
-            $level = $emp->employment->job_level ? $emp->employment->job_level->name : 'Unknown';
-            if (!isset($jobLevelDataRaw[$level])) {
-                $jobLevelDataRaw[$level] = 0;
-            }
-            $jobLevelDataRaw[$level]++;
-        }
-        $jobLevelData = [];
-        foreach($jobLevelDataRaw as $k => $v) {
-            $jobLevelData[] = [
-                'name' => $k,
-                'count' => $v,
-                'percentage' => $totalActive > 0 ? round(($v / $totalActive) * 100, 1) : 0
-            ];
-        }
-
-        // Gender Diversity
-        $activeEmployeesWithPersonal = \App\Models\Employee::whereIn('id', $activeEmployees->pluck('id'))
-            ->whereHas('personal')
-            ->with('personal')
-            ->get();
+            // Employment Status
+            $empStatusDataRaw = [];
+            $totalActive = $activeEmployees->count();
             
-        $genderDataRaw = [
-            'Female' => 0,
-            'Male' => 0
-        ];
-        
-        foreach($activeEmployeesWithPersonal as $emp) {
-            $g = $emp->personal->gendre;
-            if ($g == 1 || strtolower($g) == 'male') {
-                $genderDataRaw['Male']++;
-            } elseif ($g == 2 || strtolower($g) == 'female') {
-                $genderDataRaw['Female']++;
+            foreach ($activeEmployees as $emp) {
+                $status = $emp->employment->employment_status ? ucfirst($emp->employment->employment_status) : 'Unknown';
+                if (!isset($empStatusDataRaw[$status])) {
+                    $empStatusDataRaw[$status] = 0;
+                }
+                $empStatusDataRaw[$status]++;
             }
-        }
-        $genderData = [];
-        foreach($genderDataRaw as $k => $v) {
-            $genderData[] = [
-                'name' => $k,
-                'count' => $v,
-                'percentage' => $totalActive > 0 ? round(($v / $totalActive) * 100, 1) : 0
+            
+            $empStatusData = [];
+            foreach($empStatusDataRaw as $k => $v) {
+                $empStatusData[] = [
+                    'name' => $k,
+                    'count' => $v,
+                    'percentage' => $totalActive > 0 ? round(($v / $totalActive) * 100, 1) : 0
+                ];
+            }
+
+            // Length of Service
+            $lengthOfService = [
+                '< 1 yr' => 0,
+                '1-3 yr' => 0,
+                '3-5 yr' => 0,
+                '5-10 yr' => 0,
+                '> 10 yr' => 0
             ];
+            
+            foreach ($activeEmployees as $emp) {
+                $joinDate = \Carbon\Carbon::parse($emp->employment->join_date);
+                $diffInYears = $joinDate->diffInYears($now);
+                
+                if ($diffInYears < 1) $lengthOfService['< 1 yr']++;
+                elseif ($diffInYears <= 3) $lengthOfService['1-3 yr']++;
+                elseif ($diffInYears <= 5) $lengthOfService['3-5 yr']++;
+                elseif ($diffInYears <= 10) $lengthOfService['5-10 yr']++;
+                else $lengthOfService['> 10 yr']++;
+            }
+            $losData = [];
+            foreach($lengthOfService as $k => $v) {
+                $losData[] = [$k, $v];
+            }
+
+            // Job Level
+            $jobLevelDataRaw = [];
+            foreach ($activeEmployees as $emp) {
+                $level = $emp->employment->job_level ? $emp->employment->job_level->name : 'Unknown';
+                if (!isset($jobLevelDataRaw[$level])) {
+                    $jobLevelDataRaw[$level] = 0;
+                }
+                $jobLevelDataRaw[$level]++;
+            }
+            $jobLevelData = [];
+            foreach($jobLevelDataRaw as $k => $v) {
+                $jobLevelData[] = [
+                    'name' => $k,
+                    'count' => $v,
+                    'percentage' => $totalActive > 0 ? round(($v / $totalActive) * 100, 1) : 0
+                ];
+            }
+
+            // Gender Diversity
+            $activeEmployeesWithPersonal = $activeEmployees->filter(function($emp) {
+                return $emp->personal !== null;
+            });
+            $genderDataRaw = ['Male' => 0, 'Female' => 0];
+            foreach($activeEmployeesWithPersonal as $emp) {
+                $g = $emp->personal->gendre;
+                if ($g == 1 || strtolower($g) == 'male') {
+                    $genderDataRaw['Male']++;
+                } elseif ($g == 2 || strtolower($g) == 'female') {
+                    $genderDataRaw['Female']++;
+                }
+            }
+            $genderData = [];
+            foreach($genderDataRaw as $k => $v) {
+                $genderData[] = [
+                    'name' => $k,
+                    'count' => $v,
+                    'percentage' => $totalActive > 0 ? round(($v / $totalActive) * 100, 1) : 0
+                ];
+            }
+
+            // KPI Data
+            $newThisMonth = \App\Models\Employee::whereHas('employment', function($q) use ($now) {
+                $q->whereMonth('join_date', $now->month)->whereYear('join_date', $now->year);
+            })->count();
+
+            $presentToday = \App\Models\Attendance::whereDate('date', $now->toDateString())
+                                ->where('status', 'present')
+                                ->count();
+            
+            $presentPercentage = $totalActive > 0 ? round(($presentToday / $totalActive) * 100, 1) : 0;
+
+            $openRequests = \App\Models\ApprovalRequest::where('status', 'pending')->count();
+
+            return view('home.home', [
+                "title" => "Home Page",
+                "totalActive" => $totalActive,
+                "newThisMonth" => $newThisMonth,
+                "presentToday" => $presentToday,
+                "presentPercentage" => $presentPercentage,
+                "openRequests" => $openRequests,
+                "empStatusData" => $empStatusData,
+                "lengthOfService" => $losData,
+                "jobLevelData" => $jobLevelData,
+                "genderData" => $genderData
+            ]);
         }
-
-        // KPI Data
-        $newThisMonth = \App\Models\Employee::whereHas('employment', function($q) use ($now) {
-            $q->whereMonth('join_date', $now->month)->whereYear('join_date', $now->year);
-        })->count();
-
-        $presentToday = \App\Models\Attendance::whereDate('date', $now->toDateString())
-                            ->where('status', 'present')
-                            ->count();
-        
-        $presentPercentage = $totalActive > 0 ? round(($presentToday / $totalActive) * 100, 1) : 0;
-
-        $openRequests = \App\Models\ApprovalRequest::where('status', 'pending')->count();
 
         return view('home.home', [
-            "title" => "Home Page",
-            "totalActive" => $totalActive,
-            "newThisMonth" => $newThisMonth,
-            "presentToday" => $presentToday,
-            "presentPercentage" => $presentPercentage,
-            "openRequests" => $openRequests,
-            "empStatusData" => $empStatusData,
-            "lengthOfService" => $losData,
-            "jobLevelData" => $jobLevelData,
-            "genderData" => $genderData
+            "title" => "Home Page"
         ]);
     }
 
