@@ -57,12 +57,60 @@
                                     <td class="align-middle"><strong>{{ $detail['employee_name'] }}</strong></td>
                                     <td class="align-middle"><span class="badge bg-blue">{{ $detail['class_name'] }}</span></td>
                                     <td class="align-middle">
-                                        <div class="progress progress-striped active" style="margin-bottom: 5px; height: 20px;">
-                                            <div class="progress-bar {{ $detail['progress'] == 100 ? 'progress-bar-success' : 'progress-bar-info' }}" style="width: {{ $detail['progress'] }}%;"></div>
+                                        <div class="progress" style="margin-bottom: 10px;">
+                                            <div class="progress-bar bg-success" style="width: {{ $detail['progress_approved'] }}%" title="Approved">
+                                                @if($detail['progress_approved'] > 0)
+                                                    {{ $detail['approved_count'] }}
+                                                @endif
+                                            </div>
+                                            <div class="progress-bar bg-warning" style="width: {{ $detail['progress_revision'] }}%" title="Need Revision">
+                                                @if($detail['progress_revision'] > 0)
+                                                    {{ $detail['revision_count'] }}
+                                                @endif
+                                            </div>
+                                            <div class="progress-bar bg-primary" style="width: {{ $detail['progress_submitted'] }}%" title="Submitted">
+                                                @if($detail['progress_submitted'] > 0)
+                                                    {{ $detail['submitted_count'] }}
+                                                @endif
+                                            </div>
                                         </div>
-                                        <div class="text-center">
-                                            <strong>{{ $detail['approved_count'] }} / {{ $detail['expected_count'] }}</strong> Approved ({{ $detail['progress'] }}%)
+                                        <div class="text-center" style="font-size: 11px; margin-bottom: 10px; color: #555;">
+                                            Approved: <strong>{{ $detail['approved_count'] }}</strong> | Revision: <strong>{{ $detail['revision_count'] }}</strong> | Submitted: <strong>{{ $detail['submitted_count'] }}</strong> | Expected: <strong>{{ $detail['expected_count'] }}</strong>
                                         </div>
+                                        
+                                        @if(count($detail['submissions']) > 0)
+                                            <div style="font-size: 12px; margin-top: 15px;">
+                                                <strong>Submissions Details:</strong>
+                                                <table class="table table-bordered table-condensed" style="background-color: #fff; margin-top: 5px; font-size: 11px;">
+                                                    <thead>
+                                                        <tr style="background-color: #f9f9f9;">
+                                                            <th style="width: 25%;">Document</th>
+                                                            <th style="width: 25%;">Status</th>
+                                                            <th style="width: 50%;">Approver</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($detail['submissions'] as $sub)
+                                                            <tr>
+                                                                <td class="align-middle">
+                                                                    <a href="{{ $sub->file_link }}" target="_blank"><i class="fa fa-file-pdf-o"></i> Week {{ $sub->week_number }}</a>
+                                                                </td>
+                                                                <td class="align-middle">
+                                                                    <span class="label {{ $sub->status == 'approved' ? 'label-success' : ($sub->status == 'need_revision' ? 'label-warning' : 'label-primary') }}">{{ ucfirst(str_replace('_', ' ', $sub->status)) }}</span>
+                                                                </td>
+                                                                <td class="align-middle">
+                                                                    @if($sub->approvals->isNotEmpty())
+                                                                        {{ $sub->approvals->last()->approverEmployee->user->name ?? 'Unknown' }}
+                                                                    @else
+                                                                        <span class="text-muted"><em>Pending</em></span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
