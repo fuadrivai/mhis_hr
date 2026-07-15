@@ -138,8 +138,12 @@ function diffTime(start, end) {
 }
 
 function resetForm(form) {
-    form.find("input").val("");
+    // Keep Laravel CSRF token intact; clearing it causes 419 on modal submit.
+    form.find("input")
+        .not("[type='checkbox'], [type='radio'], [name='_token']")
+        .val("");
     form.find("input[type='checkbox']").prop("checked", false);
+    form.find("input[type='hidden']").not("[name='_token']").val("");
     form.find("textarea").val("");
     form.find("select").prop("selectedIndex", 0).trigger("change");
     form.find(".error").removeClass("error");

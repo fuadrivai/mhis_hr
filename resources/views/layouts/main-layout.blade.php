@@ -298,7 +298,7 @@
     <script src="/plugins/select2/dist/js/select2.full.min.js"></script>
     <script src="/plugins/bootstrap-notify/bootstrap-notify.min.js"></script>
     <script src="/plugins/jquery.blockUI/jquery.blockUI.js"></script>
-    <script src="/js/script.js?v=1.1.6"></script>
+    <script src="/js/script.js?v=1.1.7"></script>
 
     <div class="modal fade" id="profileImagePreviewModal" tabindex="-1" role="dialog"
         aria-labelledby="profileImagePreviewLabel" aria-hidden="true">

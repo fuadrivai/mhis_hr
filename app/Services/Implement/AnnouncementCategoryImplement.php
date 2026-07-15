@@ -42,13 +42,14 @@ class AnnouncementCategoryImplement implements AnnouncementCategoryService
     }
     function put($request) {
         try {
-            $category = AnnouncementCategory::find($request['id']);
+            $categoryId = $request['id'] ?? null;
+            $category = AnnouncementCategory::find($categoryId);
             if (!$category) {
                 return response()->json(["message" => "Category not found"], 404);
             }
             $category->name = $request['name'];
             $category->description = $request['description'];
-            $category->is_active = $request['is_active'] ==true ? 1 : 0;
+            $category->is_active = isset($request['is_active']) ? 1 : 0;
             $category->save();
             return $category;
         } catch (\Throwable $th) {

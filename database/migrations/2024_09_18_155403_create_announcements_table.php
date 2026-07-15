@@ -15,13 +15,17 @@ class CreateAnnouncementsTable extends Migration
     {
         Schema::create('announcements', function (Blueprint $table) {
             $table->id();
-            $table->string('subject');
+            $table->string('title');
             $table->text('content');
             $table->string('link')->nullable();
             $table->foreignId('category_id')->nullable();
-            $table->foreignId('user_id')->nullable();
-            $table->date('date');
+            $table->dateTime('publish_at');
             $table->boolean('all_employees')->default(true);
+            $table->boolean('send_email')->default(false);
+            $table->boolean('send_push_notification')->default(true);
+            $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('updated_by')->nullable()->constrained('users');
+            $table->string('status')->default('draft');
             $table->timestamps();
         });
     }

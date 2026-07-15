@@ -78,9 +78,12 @@ class AnnouncementCategoryController extends Controller
      * @param  \App\Models\AnnouncementCategory  $announcementCategory
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, AnnouncementCategory $announcementCategory)
+    public function update(Request $request, AnnouncementCategory $category)
     {
-        //
+        $this->announcementCategoryService->put(array_merge($request->all(), [
+            'id' => $category->id,
+        ]));
+        return redirect()->back()->with('success', 'Category updated successfully.');
     }
 
     /**
@@ -89,8 +92,9 @@ class AnnouncementCategoryController extends Controller
      * @param  \App\Models\AnnouncementCategory  $announcementCategory
      * @return \Illuminate\Http\Response
      */
-    public function destroy(AnnouncementCategory $announcementCategory)
+    public function destroy(AnnouncementCategory $category)
     {
-        //
+        $this->announcementCategoryService->delete($category->id);
+        return redirect()->back()->with('success', 'Category deleted successfully.');
     }
 }

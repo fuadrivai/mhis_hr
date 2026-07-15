@@ -68,8 +68,8 @@
                                     <th>No</th>
                                     <th>Category</th>
                                     <th>Description</th>
-                                    <th>Status</th>
-                                    <th>#</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">#</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -78,17 +78,22 @@
                                         <td>{{ $loop->iteration }}</td>
                                         <td>{{ $item->name }}</td>
                                         <td>{{ $item->description ?? 'N/A' }}</td>
-                                        <td>{{ $item->status == 1 ? 'Active' : 'Inactive' }}</td>
-                                        <td>
+                                        <td class="text-center">
+                                            <span
+                                                class="badge {{ $item->is_active == 1 ? 'badge-success' : 'badge-secondary' }}">
+                                                {{ $item->is_active == 1 ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
                                             <a href="javascript:void(0)" class="btn btn-sm btn-primary btn-edit-category"
                                                 data-id="{{ $item->id }}" data-name="{{ $item->name }}"
                                                 data-description="{{ e($item->description ?? '') }}"
-                                                data-active="{{ $item->status == 1 ? 1 : 0 }}">
-                                                <i class="fa fa-eye"></i> Edit
+                                                data-active="{{ $item->is_active == 1 ? 1 : 0 }}">
+                                                <i class="fa fa-eye"></i>
                                             </a>
                                             <a href="javascript:void(0)" class="btn btn-sm btn-danger btn-delete-category"
                                                 data-id="{{ $item->id }}">
-                                                <i class="fa fa-trash"></i> Delete
+                                                <i class="fa fa-trash"></i>
                                             </a>
                                         </td>
                                     </tr>
@@ -148,6 +153,11 @@
             </div>
         </div>
     </div>
+
+    <form id="deleteCategoryForm" action="" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
 @endsection
 
 @section('content-script')
@@ -172,7 +182,10 @@
                     action: function() {
                         $('#categoryModalLabel').text('Add Category');
                         $('#categoryForm')[0].reset();
-                        $('#category_id').val('');
+                        $('#id').val('');
+                        $('#form-method').html('');
+                        $('#categoryForm').attr('action', '/announcement/category');
+                        $('#category_is_active').prop('checked', true);
                         $('#categoryModal').modal('show');
                     }
                 }],
@@ -189,16 +202,23 @@
                 $('#id').val($(this).data('id'));
                 $('#category_name').val($(this).data('name'));
                 $('#category_description').val($(this).data('description'));
-                $('#category_is_active').prop('checked', $(this).data('active') == 1);
-                $('#form-method').append(`@method('put')`);
-                $('#form-data').attr('action', `/announcements/category/${id}`)
+                $('#category_is_active').prop('checked', $(this).data('active') == 1 ? true : false);
+                $('#form-method').html('<input type="hidden" name="_method" value="PUT">');
+                let id = $(this).data('id');
+                $('#categoryForm').attr('action', `/announcement/category/${id}`);
                 $('#categoryModal').modal('show');
             });
 
+            $(document).on('click', '.btn-delete-category', function() {
+                let id = $(this).data('id');
+                let isConfirmed = confirm('Are you sure you want to delete this category?');
 
-            $('#btn-category').on('click', function() {
-                $('#form-method').append(`@method('post')`);
-                $('#form-data').attr('action', "/announcements/category")
+                if (!isConfirmed) {
+                    return;
+                }
+
+                $('#deleteCategoryForm').attr('action', `/announcement/category/${id}`);
+                $('#deleteCategoryForm').submit();
             });
         })
     </script>

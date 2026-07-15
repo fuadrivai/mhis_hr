@@ -14,9 +14,14 @@ class Announcement extends Model
         'all_employees' => 'boolean',
     ];
 
-    public function user()
+     public function creator()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
     public function category()
     {
@@ -37,5 +42,9 @@ class Announcement extends Model
     public function levels()
     {
         return $this->belongsToMany(JobLevel::class, 'announcement_job_levels')->withTimestamps();
+    }
+    public function reads()
+    {
+        return $this->hasMany(AnnouncementRead::class);
     }
 }

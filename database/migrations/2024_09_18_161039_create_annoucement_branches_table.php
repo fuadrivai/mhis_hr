@@ -15,8 +15,12 @@ class CreateAnnoucementBranchesTable extends Migration
     {
         Schema::create('annoucement_branches', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('announcement_id')->constrained();
-            $table->foreignId('branch_id')->constrained();
+             $table->foreignId('announcement_id')
+        ->constrained()
+        ->cascadeOnDelete();
+
+    $table->foreignId('branch_id')
+        ->constrained();
             $table->timestamps();
         });
     }
