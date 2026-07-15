@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\Session;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -52,10 +53,22 @@ class AuthController extends Controller
                 session(['Authorization' => $session->token]);
                 
                 $authUser = auth()->user();
+                $roles = $authUser->roles;
+
+                if ($roles->isEmpty()) {
+                    $role = Role::where('name', 'user')->first();
+                    if ($role) {
+                        $authUser->roles()->attach($role->id);
+                    }
+                }
+                $employee = $authUser->employee;
                 $isUser = $authUser->hasRole('user');
 
+                session(['avatar' => $employee->personal->avatar ?? '']);
+                session(['empId' => $employee->id ?? '']);
+
                 if ($isUser) {
-                    return redirect('/internal-document');
+                    return redirect('/profile/personal/' . $employee->id);
                 }
 
                 return redirect('/');
