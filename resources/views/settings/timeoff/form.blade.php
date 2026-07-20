@@ -37,6 +37,31 @@
                             </div>
                         </div>
 
+                        <!-- Time Off Flags -->
+                        <div class="form-group row">
+                            <label class="col-sm-3 col-form-label">Flags</label>
+                            <div class="col-sm-9">
+                                <input type="hidden" name="is_global" value="false">
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" id="is_global" name="is_global"
+                                        value="true"
+                                        {{ old('is_global', isset($timeOff) ? $timeOff->is_global : true) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="is_global">Is Global</label>
+                                </div>
+                                <small class="form-text text-muted mb-3">Enable this time off for all employees.</small>
+
+                                <input type="hidden" name="deduct_leave_balance" value="false">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="deduct_leave_balance"
+                                        name="deduct_leave_balance" value="true"
+                                        {{ old('deduct_leave_balance', isset($timeOff) ? $timeOff->deduct_leave_balance : false) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="deduct_leave_balance">Deduct Leave Balance</label>
+                                </div>
+                                <small class="form-text text-muted">Deduct this time off from employee leave
+                                    balance.</small>
+                            </div>
+                        </div>
+
                         <!-- Schema Builder -->
                         <div class="form-group row">
                             <label class="col-sm-3 col-form-label">Schema Builder</label>
@@ -153,6 +178,9 @@
                 const data = JSON.parse(copiedData);
                 $('#code').val(data.code);
                 $('#name').val(data.name);
+                $('#is_global').prop('checked', data.is_global !== undefined ? !!data.is_global : true);
+                $('#deduct_leave_balance').prop('checked', data.deduct_leave_balance !== undefined ? !!data
+                    .deduct_leave_balance : false);
                 if (data.schema && Array.isArray(data.schema)) {
                     fields = data.schema;
                     renderFields();

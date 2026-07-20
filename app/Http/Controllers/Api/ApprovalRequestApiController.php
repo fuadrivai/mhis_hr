@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Approval;
 use App\Services\ApprovalRequestService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 
 class ApprovalRequestApiController extends Controller
 {
@@ -92,5 +94,29 @@ class ApprovalRequestApiController extends Controller
         $request['request_id'] = $id;
         $requests = $this->approvalRequestService->cancel($request);
         return response()->json($requests);
+    }
+
+    public function nonAuthAction(Request $request)
+    {
+        if (!URL::hasValidSignature($request)) {
+            return response()->json(['message' => 'Invalid or expired approval link.'], 403);
+        }
+
+        $validated = $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+            'request_id' => 'required|integer|exists:approval_requests,id',
+            'action' => 'required|in:approved,rejected',
+            'note' => 'nullable|string',
+        ]);
+
+        $request->merge([
+            'user' => ['id' => $validated['user_id']],
+            'request_id' => $validated['request_id'],
+            'action' => $validated['action'],
+            'note' => $validated['note'] ?? null,
+        ]);
+
+        $this->approvalRequestService->action($request);
+        return redirect('/timeoff/action');
     }
 }

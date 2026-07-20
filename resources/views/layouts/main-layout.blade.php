@@ -87,14 +87,11 @@
                                             style="display: {{ Request::is('employee*') ? 'block' : 'none' }}">
                                             <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
                                                     href="/employee">Employee</a></li>
-                                            @if ($isAdmin)
-                                                <li
-                                                    class={{ Request::is('employee/reprimand*') ? 'current-page' : '' }}>
-                                                    <a href="/employee/reprimand">Reprimand</a>
-                                                </li>
-                                                <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
-                                                        href="/scheduler">Scheduler</a></li>
-                                            @endif
+                                            <li class={{ Request::is('employee/reprimand*') ? 'current-page' : '' }}>
+                                                <a href="/employee/reprimand">Reprimand</a>
+                                            </li>
+                                            <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
+                                                    href="/scheduler">Scheduler</a></li>
                                         </ul>
                                     </li>
                                 @endif

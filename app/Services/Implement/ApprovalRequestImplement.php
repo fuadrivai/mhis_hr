@@ -2,6 +2,7 @@
 
 namespace App\Services\Implement;
 
+use App\Mail\TimeoffMail;
 use App\Models\Approval;
 use App\Models\ApprovalHistory;
 use App\Models\ApprovalRequest;
@@ -13,6 +14,8 @@ use App\Models\TimeOff;
 use App\Services\ApprovalEngine;
 use App\Services\ApprovalRequestService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 
 use function App\Helpers\sendMessage;
 
@@ -105,10 +108,13 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 ->first();
 
             $approver = $approval->approver->load('user');
+            $employee = $employee->load('personal');
+            $personal = $employee->personal;
             $this->_sendNotification($approver->user->id, [
                     'title' => 'Approval Request Pending',
-                    'body'  => 'You have a new time off request to approve.',
+                    'body'  => 'You have a new time off request to approve for ' . $personal->fullname,
                 ]);
+            $this->_sendEmail($approvalRequest);
             
             DB::commit();
             return $approvalRequest;
@@ -320,6 +326,10 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 "title" => "Approval Request Rejected",
                 "body" => "Your time off request has been rejected.",
             ]);
+            $request['status'] = 'rejected';
+            $request['approver_name'] = $approval->approver->personal->fullname ?? null;
+            $request['approver_note'] = $approval->note ?? null;
+            $this->_sendEmailToRequester($request);
         } else if ($approval->status === 'cancelled') {
             $request->status = 'cancelled';
             $request->show_cancel = 0;
@@ -344,13 +354,19 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                     "title" => "Approval Request Approved",
                     "body" => "Your time off request has been approved.",
                 ]);
+                $request['status'] = 'approved';
+                $request['approver_name'] = $approval->approver->personal->fullname ?? null;
+                $request['approver_note'] = $approval->note ?? null;
+                $this->_sendEmailToRequester($request);
             } else {
                 $nextApproval->show_action = 1;
                 $nextApproval->save();
-                $this->_sendNotification($nextApproval->approver->user_id, [
-                    "title" => "Approval Request Pending",
-                    "body" => "You have a new time off request to approve.",
-                ]);
+                // $this->_sendNotification($nextApproval->approver->user_id, [
+                //     "title" => "Approval Request Pending",
+                //     "body" => "You have a new time off request to approve.",
+                // ]);
+                // $request['status'] = 'pending';
+                // $this->_sendEmailToRequester($request);
             }
         }
 
@@ -424,9 +440,116 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 'device_token' => $session->device_id,
                 'result'       => $result,
             ]);
-            if (!$result['success']) {
-                dd($result);
+        }
+    }
+
+    private function _sendEmail($approvalRequest)
+    {
+        try {
+            $requester = $approvalRequest->requester->load('personal');
+            $timeoff = $approvalRequest->type;
+            $requestData = $approvalRequest->data;
+            $startDate = data_get($requestData, 'payload.start_date');
+            $formattedStartDate = null;
+            if (!empty($startDate)) {
+                try {
+                    $formattedStartDate = \Carbon\Carbon::parse($startDate)->format('D, M d, Y');
+                } catch (\Throwable $th) {
+                    $formattedStartDate = $startDate;
+                }
             }
+
+            $pendingApproval = $approvalRequest->approvals()
+                ->where('status', 'pending')
+                ->orderBy('step_order')
+                ->first();
+
+            if (!$pendingApproval) {
+                return;
+            }
+
+            $approval = $pendingApproval->load('approver.personal');
+            $email = $approval->approver->personal->email ?? null;
+            if (!$email) {
+                logger()->warning('Approver email not found', [
+                    'approval_request_id' => $approvalRequest->id,
+                    'approver_id' => $approval->approver->id ?? null,
+                ]);
+                return;
+            }
+
+            $expiresAt = now()->addDays(7);
+            $data = [
+                'approver_name' => $approval->approver->personal->fullname ?? null,
+                'requester_name' => $requester->personal->fullname ?? null,
+                'timeoff_name' => $timeoff->name ?? null,
+                'timeoff_date'=> $formattedStartDate,
+                'reason' => $approvalRequest->note?? null,
+                'approve_url' => URL::temporarySignedRoute('api.time.request.email-action', $expiresAt, [
+                    'user_id' => $approval->approver->user_id,
+                    'request_id' => $approvalRequest->id,
+                    'action' => 'approved',
+                    'note' => null,
+                ]),
+                'reject_url' => URL::temporarySignedRoute('api.time.request.email-action', $expiresAt, [
+                    'user_id' => $approval->approver->user_id,
+                    'request_id' => $approvalRequest->id,
+                    'action' => 'rejected',
+                    'note' => null,
+                ]),
+                'subject'=>'Approval Request Pending',
+                'template'=>'email-template.timeoff-request',
+            ];
+            Mail::mailer('smtp')->to($email)->send(new TimeoffMail($data));
+        } catch (\Exception $e) {
+            logger()->error('Failed to send email notification', [
+                'approval_request_id' => $approvalRequest->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function _sendEmailToRequester($approvalRequest)
+    {
+        try {
+            $requester = $approvalRequest->requester->load('personal');
+            $timeoff = $approvalRequest->type;
+            $requestData = $approvalRequest->data;
+            $startDate = data_get($requestData, 'payload.start_date');
+            $formattedStartDate = null;
+            if (!empty($startDate)) {
+                try {
+                    $formattedStartDate = \Carbon\Carbon::parse($startDate)->format('D, M d, Y');
+                } catch (\Throwable $th) {
+                    $formattedStartDate = $startDate;
+                }
+            }
+
+            $email = $requester->personal->email ?? null;
+            if (!$email) {
+                logger()->warning('Requester email not found', [
+                    'approval_request_id' => $approvalRequest->id,
+                    'requester_id' => $requester->id ?? null,
+                ]);
+                return;
+            }
+
+            $data = [
+                'requester_name' => $requester->personal->fullname ?? null,
+                'approver_name' => $approvalRequest['approver_name'] ?? null,
+                'reason' => $approvalRequest['approver_note'] ?? null,
+                'timeoff_name' => $timeoff->name ?? null,
+                'timeoff_date'=> $formattedStartDate,
+                'subject'=>'Approval Request ' . $approvalRequest->status,
+                'template'=>'email-template.timeoff-approved-rejected',
+                'status'=> $approvalRequest->status,
+            ];
+            Mail::mailer('smtp')->to($email)->send(new TimeoffMail($data));
+        } catch (\Exception $e) {
+            logger()->error('Failed to send email notification to requester', [
+                'approval_request_id' => $approvalRequest->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }
