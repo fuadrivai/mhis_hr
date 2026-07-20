@@ -34,13 +34,15 @@
             </div>
         @endif
 
-        <form id="announcementForm" action="/announcement" method="POST" enctype="multipart/form-data" novalidate>
+        <form id="announcementForm" action="/announcement/{{ $announcement->id }}" method="POST"
+            enctype="multipart/form-data" novalidate>
             @csrf
-            @include('announcement.form')
+            @method('PUT')
+            @include('announcement.form', ['announcement' => $announcement])
 
             <div class="d-flex justify-content-end gap-2 mt-4">
                 <a href="/announcement" class="btn btn-light">Cancel</a>
-                <button type="submit" class="btn btn-primary">Save Announcement</button>
+                <button type="submit" class="btn btn-primary">Update Announcement</button>
             </div>
         </form>
     </div>

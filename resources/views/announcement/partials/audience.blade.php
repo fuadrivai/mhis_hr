@@ -5,7 +5,8 @@
             class="form-select select2-multiple @error('branches') is-invalid @enderror" multiple="multiple"
             style="width: 100%">
             @foreach ($branches as $branch)
-                <option value="{{ $branch->id }}">
+                <option value="{{ $branch->id }}"
+                    {{ in_array((string) $branch->id, $selectedBranches ?? [], true) ? 'selected' : '' }}>
                     {{ $branch->name }}
                 </option>
             @endforeach
@@ -21,7 +22,8 @@
             class="form-select select2-multiple @error('organizations') is-invalid @enderror" multiple="multiple"
             style="width: 100%">
             @foreach ($organizations as $organization)
-                <option value="{{ $organization->id }}">
+                <option value="{{ $organization->id }}"
+                    {{ in_array((string) $organization->id, $selectedOrganizations ?? [], true) ? 'selected' : '' }}>
                     {{ $organization->name }}
                 </option>
             @endforeach
@@ -37,7 +39,8 @@
             class="form-select select2-multiple @error('job_levels') is-invalid @enderror" multiple="multiple"
             style="width: 100%">
             @foreach ($jobLevels as $jobLevel)
-                <option value="{{ $jobLevel->id }}">
+                <option value="{{ $jobLevel->id }}"
+                    {{ in_array((string) $jobLevel->id, $selectedJobLevels ?? [], true) ? 'selected' : '' }}>
                     {{ $jobLevel->name }}
                 </option>
             @endforeach
@@ -53,7 +56,8 @@
             class="form-select select2-multiple @error('positions') is-invalid @enderror" multiple="multiple"
             style="width: 100%">
             @foreach ($positions as $position)
-                <option value="{{ $position->id }}">
+                <option value="{{ $position->id }}"
+                    {{ in_array((string) $position->id, $selectedPositions ?? [], true) ? 'selected' : '' }}>
                     {{ $position->name }}
                 </option>
             @endforeach

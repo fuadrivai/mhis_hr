@@ -43,7 +43,31 @@
             $('#customAudienceCard').removeClass('is-hidden');
         }
 
+        function toggleAttachmentPreview(file) {
+            const $previewWrapper = $('#attachmentPreviewWrapper');
+            const $previewImage = $('#attachmentPreview');
+
+            if (!file) {
+                $previewImage.attr('src', '');
+                $previewWrapper.addClass('d-none');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                $previewImage.attr('src', event.target.result);
+                $previewWrapper.removeClass('d-none');
+            };
+
+            reader.readAsDataURL(file);
+        }
+
         $(document).on('change', '.audience-option', toggleAudienceCard);
+
+        $('#attachment').on('change', function() {
+            const file = this.files && this.files[0] ? this.files[0] : null;
+            toggleAttachmentPreview(file);
+        });
 
         toggleAudienceCard();
 

@@ -23,8 +23,8 @@ class AnnouncementApiController extends Controller
     public function index()
     {
         $request = request();
-        return $this->announcementService->get($request);
-        //
+        $announcements = $this->announcementService->get($request);
+        return response()->json($announcements);
     }
 
     /**

@@ -73,6 +73,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('/', [AnnouncementController::class, 'index'])->name('index');
             Route::get('/create', [AnnouncementController::class, 'create'])->name('create');
             Route::post('/', [AnnouncementController::class, 'store'])->name('store');
+            Route::get('/{id}/edit', [AnnouncementController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [AnnouncementController::class, 'update'])->name('update');
         });
         Route::group(['prefix' => 'employee'], function () {
             Route::post('import', [EmployeeController::class, 'import_excel']);

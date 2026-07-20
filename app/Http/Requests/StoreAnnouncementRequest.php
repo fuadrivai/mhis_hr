@@ -38,8 +38,8 @@ class StoreAnnouncementRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:announcement_categories,id'],
-            'publish_at' => ['required', 'date'],
             'link' => ['nullable', 'url'],
+            'attachment' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:10240'],
             'content' => ['required', 'string'],
             'all_employees' => ['required', 'boolean'],
             'send_email' => ['sometimes', 'boolean'],

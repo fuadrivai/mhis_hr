@@ -22,14 +22,52 @@
                             </thead>
                             <tbody>
                                 @foreach ($announcements as $item)
+                                    @php
+                                        $audience = $item->all_employees
+                                            ? 'All Employees'
+                                            : collect([
+                                                $item->branches->pluck('name')->filter()->values()->all(),
+                                                $item->organizations->pluck('name')->filter()->values()->all(),
+                                                $item->jobLevels->pluck('name')->filter()->values()->all(),
+                                                $item->positions->pluck('name')->filter()->values()->all(),
+                                            ])
+                                                ->map(function ($values, $index) {
+                                                    $labels = ['Branches', 'Organizations', 'Job Levels', 'Positions'];
+
+                                                    if (empty($values)) {
+                                                        return null;
+                                                    }
+
+                                                    return $labels[$index] . ': ' . implode(', ', $values);
+                                                })
+                                                ->filter()
+                                                ->implode(' | ');
+
+                                        $announcementPayload = [
+                                            'title' => $item->title,
+                                            'category' => $item->category->name ?? 'N/A',
+                                            'creator' => $item->creator->name ?? 'N/A',
+                                            'content' => $item->content,
+                                            'audience' => $audience ?: 'Custom Audience',
+                                            'attachment' => $item->attachment
+                                                ? asset('storage/' . $item->attachment)
+                                                : null,
+                                            'publish_at' => optional($item->publish_at)->format('d M Y H:i') ?: 'N/A',
+                                        ];
+                                    @endphp
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td>{{ $item->title }}</td>
                                         <td>{{ $item->category->name ?? 'N/A' }}</td>
                                         <td>{{ $item->creator->name ?? 'N/A' }}</td>
                                         <td class="text-center">
-                                            <a href="/announcement/{{ $item->id }}/edit" class="btn btn-sm btn-primary">
+                                            <button type="button" class="btn btn-sm btn-info btn-view-announcement"
+                                                title="View" data-announcement='@json($announcementPayload)'>
                                                 <i class="fa fa-eye"></i>
+                                            </button>
+                                            <a title="Edit" href="/announcement/{{ $item->id }}/edit"
+                                                class="btn btn-sm btn-success">
+                                                <i class="fa fa-pencil"></i>
                                             </a>
                                         </td>
                                     </tr>
@@ -37,6 +75,47 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="announcementViewModal" class="modal fade" tabindex="-1" role="dialog"
+        aria-labelledby="announcementViewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="announcementViewModalLabel">Announcement Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h4 id="modalAnnouncementTitle" class="mb-1"></h4>
+                        <div class="text-muted" id="modalAnnouncementMeta"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Audience</strong>
+                        <div id="modalAnnouncementAudience" class="mt-1"></div>
+                    </div>
+
+                    <div id="modalAnnouncementAttachmentWrapper" class="mb-3 d-none">
+                        <strong>Attachment</strong>
+                        <div class="mt-2">
+                            <img id="modalAnnouncementAttachment" src="" alt="Announcement attachment"
+                                class="img-fluid rounded border" style="max-height: 320px; object-fit: contain;">
+                        </div>
+                    </div>
+
+                    <div>
+                        <strong>Content</strong>
+                        <div id="modalAnnouncementContent" class="mt-2"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -125,6 +204,27 @@
                     search: "",
                     searchPlaceholder: "Search.."
                 },
+            });
+
+            $(document).on('click', '.btn-view-announcement', function() {
+                const announcement = $(this).data('announcement');
+
+                $('#modalAnnouncementTitle').text(announcement.title || 'Announcement');
+                $('#modalAnnouncementMeta').text(
+                    `Category: ${announcement.category || 'N/A'} | Creator: ${announcement.creator || 'N/A'} | Publish At: ${announcement.publish_at || 'N/A'}`
+                );
+                $('#modalAnnouncementAudience').text(announcement.audience || 'All Employees');
+                $('#modalAnnouncementContent').html(announcement.content || '<em>No content</em>');
+
+                if (announcement.attachment) {
+                    $('#modalAnnouncementAttachment').attr('src', announcement.attachment);
+                    $('#modalAnnouncementAttachmentWrapper').removeClass('d-none');
+                } else {
+                    $('#modalAnnouncementAttachment').attr('src', '');
+                    $('#modalAnnouncementAttachmentWrapper').addClass('d-none');
+                }
+
+                $('#announcementViewModal').modal('show');
             });
         })
     </script>

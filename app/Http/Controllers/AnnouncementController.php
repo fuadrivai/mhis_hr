@@ -38,7 +38,10 @@ class AnnouncementController extends Controller
     {
         $this->authorizeAnnouncementManagement();
 
-        $this->announcementService->storeAnnouncement($request->validated(), $request->user()->id);
+        $payload = $request->validated();
+        $payload['attachment'] = $request->file('attachment');
+
+        $this->announcementService->storeAnnouncement($payload, $request->user()->id);
 
         return redirect()->back()->with('success', 'Announcement created successfully.');
     }
@@ -64,5 +67,30 @@ class AnnouncementController extends Controller
             ),
             403
         );
+    }
+
+    public function edit($id)
+    {
+        $this->authorizeAnnouncementManagement();
+
+        $announcement = $this->announcementService->show($id);
+
+        return view('announcement.edit', array_merge([
+            'title' => 'Edit Announcement',
+            'announcement' => $announcement,
+        ], $this->announcementService->getCreateFormData()));
+    }
+
+    public function update(StoreAnnouncementRequest $request, $id)
+    {
+        $this->authorizeAnnouncementManagement();
+
+        $payload = $request->validated();
+        $payload['id'] = $id;
+        $payload['attachment'] = $request->file('attachment');
+
+        $this->announcementService->put($payload);
+
+        return redirect('/announcement')->with('success', 'Announcement updated successfully.');
     }
 }

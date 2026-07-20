@@ -7,7 +7,7 @@ use App\Models\Announcement;
 interface AnnouncementService
 
 {
-    function get();
+    function get($request = null);
     function show($id);
     function post($request);
     function put($request);
