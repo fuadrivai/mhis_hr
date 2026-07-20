@@ -46,7 +46,9 @@
                                         $announcementPayload = [
                                             'title' => $item->title,
                                             'category' => $item->category->name ?? 'N/A',
-                                            'creator' => $item->creator->name ?? 'N/A',
+                                            'creator' =>
+                                                $item->creator->personal->fullname ??
+                                                ($item->creator->user->name ?? 'N/A'),
                                             'content' => $item->content,
                                             'audience' => $audience ?: 'Custom Audience',
                                             'attachment' => $item->attachment
@@ -59,7 +61,8 @@
                                         <td>{{ $loop->iteration }}</td>
                                         <td>{{ $item->title }}</td>
                                         <td>{{ $item->category->name ?? 'N/A' }}</td>
-                                        <td>{{ $item->creator->name ?? 'N/A' }}</td>
+                                        <td>{{ $item->creator->personal->fullname ?? ($item->creator->user->name ?? 'N/A') }}
+                                        </td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-sm btn-info btn-view-announcement"
                                                 title="View" data-announcement='@json($announcementPayload)'>

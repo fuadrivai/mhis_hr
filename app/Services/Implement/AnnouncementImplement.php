@@ -22,7 +22,8 @@ class AnnouncementImplement implements AnnouncementService
     function get($request = null)
     {
         try {
-            $query = Announcement::with(['branches', 'jobLevels', 'organizations', 'positions', 'category', 'creator', 'updater']);
+            $query = Announcement::with(['branches', 'jobLevels', 'organizations', 'positions', 'category', 'creator.personal', 'updater']);
+            $limit = null;
 
             if ($request !== null) {
                 $user = null;
@@ -41,62 +42,87 @@ class AnnouncementImplement implements AnnouncementService
                     $user = auth()->user();
                 }
 
-                $employment = optional(optional($user)->employee)->employment;
+                $isAdmin = false;
+                if ($user) {
+                    $roles = collect(data_get($user, 'roles', []));
+                    $isAdmin = $roles->contains(function ($role) {
+                        return (int) data_get($role, 'id') === 1 || strtolower((string) data_get($role, 'name')) === 'admin';
+                    });
+                }
 
-                $query->where(function ($announcementQuery) use ($employment) {
-                    $announcementQuery->where('all_employees', true);
-
-                    if (!$employment) {
-                        return;
+                if (is_array($request)) {
+                    $limit = data_get($request, 'limit', data_get($request, 'per_page', data_get($request, 'take')));
+                } elseif (is_object($request)) {
+                    if (method_exists($request, 'input')) {
+                        $limit = $request->input('limit', $request->input('per_page', $request->input('take')));
+                    } else {
+                        $limit = data_get($request, 'limit', data_get($request, 'per_page', data_get($request, 'take')));
                     }
+                }
 
-                    $announcementQuery->orWhere(function ($audienceQuery) use ($employment) {
-                        $audienceQuery->where('all_employees', false);
+                if (!$isAdmin) {
+                    $employment = optional(optional($user)->employee)->employment;
 
-                        $audienceQuery->where(function ($branchScope) use ($employment) {
-                            $branchScope->doesntHave('branches');
+                    $query->where(function ($announcementQuery) use ($employment) {
+                        $announcementQuery->where('all_employees', true);
 
-                            if (!empty($employment->branch_id)) {
-                                $branchScope->orWhereHas('branches', function ($branchQuery) use ($employment) {
-                                    $branchQuery->where('branches.id', $employment->branch_id);
-                                });
-                            }
-                        });
+                        if (!$employment) {
+                            return;
+                        }
 
-                        $audienceQuery->where(function ($organizationScope) use ($employment) {
-                            $organizationScope->doesntHave('organizations');
+                        $announcementQuery->orWhere(function ($audienceQuery) use ($employment) {
+                            $audienceQuery->where('all_employees', false);
 
-                            if (!empty($employment->organization_id)) {
-                                $organizationScope->orWhereHas('organizations', function ($organizationQuery) use ($employment) {
-                                    $organizationQuery->where('organizations.id', $employment->organization_id);
-                                });
-                            }
-                        });
+                            $audienceQuery->where(function ($branchScope) use ($employment) {
+                                $branchScope->doesntHave('branches');
 
-                        $audienceQuery->where(function ($jobLevelScope) use ($employment) {
-                            $jobLevelScope->doesntHave('jobLevels');
+                                if (!empty($employment->branch_id)) {
+                                    $branchScope->orWhereHas('branches', function ($branchQuery) use ($employment) {
+                                        $branchQuery->where('branches.id', $employment->branch_id);
+                                    });
+                                }
+                            });
 
-                            if (!empty($employment->job_level_id)) {
-                                $jobLevelScope->orWhereHas('jobLevels', function ($jobLevelQuery) use ($employment) {
-                                    $jobLevelQuery->where('job_levels.id', $employment->job_level_id);
-                                });
-                            }
-                        });
+                            $audienceQuery->where(function ($organizationScope) use ($employment) {
+                                $organizationScope->doesntHave('organizations');
 
-                        $audienceQuery->where(function ($positionScope) use ($employment) {
-                            $positionScope->doesntHave('positions');
+                                if (!empty($employment->organization_id)) {
+                                    $organizationScope->orWhereHas('organizations', function ($organizationQuery) use ($employment) {
+                                        $organizationQuery->where('organizations.id', $employment->organization_id);
+                                    });
+                                }
+                            });
 
-                            if (!empty($employment->job_position_id)) {
-                                $positionScope->orWhereHas('positions', function ($positionQuery) use ($employment) {
-                                    $positionQuery->where('positions.id', $employment->job_position_id);
-                                });
-                            }
+                            $audienceQuery->where(function ($jobLevelScope) use ($employment) {
+                                $jobLevelScope->doesntHave('jobLevels');
+
+                                if (!empty($employment->job_level_id)) {
+                                    $jobLevelScope->orWhereHas('jobLevels', function ($jobLevelQuery) use ($employment) {
+                                        $jobLevelQuery->where('job_levels.id', $employment->job_level_id);
+                                    });
+                                }
+                            });
+
+                            $audienceQuery->where(function ($positionScope) use ($employment) {
+                                $positionScope->doesntHave('positions');
+
+                                if (!empty($employment->job_position_id)) {
+                                    $positionScope->orWhereHas('positions', function ($positionQuery) use ($employment) {
+                                        $positionQuery->where('positions.id', $employment->job_position_id);
+                                    });
+                                }
+                            });
                         });
                     });
-                });
 
-                $query->where('publish_at', '<=', Carbon::now())
-                    ->orderByDesc('publish_at');
+                    $query->where('publish_at', '<=', Carbon::now());
+                }
+
+                $query->orderByDesc('publish_at');
+            }
+
+            if (is_numeric($limit) && (int) $limit > 0) {
+                $query->limit((int) $limit);
             }
 
             $announcements = $query->get();
@@ -122,6 +148,7 @@ class AnnouncementImplement implements AnnouncementService
     public function storeAnnouncement(array $data, int $createdBy): Announcement
     {
         return DB::transaction(function () use ($data, $createdBy) {
+            $creator = Employee::where('user_id', $createdBy)->first();
             $attachmentPath = null;
             if (!empty($data['attachment']) && $data['attachment']->isValid()) {
                 $attachmentPath = $data['attachment']->store('announcements', 'public');
@@ -137,7 +164,7 @@ class AnnouncementImplement implements AnnouncementService
                 'all_employees' => (bool) ($data['all_employees'] ?? true),
                 'send_email' => (bool) ($data['send_email'] ?? false),
                 'send_push_notification' => (bool) ($data['send_push_notification'] ?? true),
-                'created_by' => $createdBy,
+                'created_by' => $creator ? $creator->id : null,
                 'status' => $data['status'] ?? 'draft',
             ]);
 

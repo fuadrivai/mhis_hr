@@ -18,14 +18,15 @@ class CreateAnnouncementsTable extends Migration
             $table->string('title');
             $table->text('content');
             $table->string('link')->nullable();
+            $table->string('attachment')->nullable();
             $table->foreignId('category_id')->nullable();
-            $table->dateTime('publish_at');
+            $table->dateTime('publish_at')->default(now());
             $table->boolean('all_employees')->default(true);
             $table->boolean('send_email')->default(false);
             $table->boolean('send_push_notification')->default(true);
-            $table->foreignId('created_by')->constrained('users');
-            $table->foreignId('updated_by')->nullable()->constrained('users');
-            $table->string('status')->default('draft');
+            $table->foreignId('created_by')->constrained('employees');
+            $table->foreignId('updated_by')->nullable()->constrained('employees');
+            $table->string('status')->default('published');
             $table->timestamps();
         });
     }

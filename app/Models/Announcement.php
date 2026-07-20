@@ -11,7 +11,7 @@ class Announcement extends Model
 
     protected $guarded = ['id'];
 
-    protected $hidden = ['pivot'];
+    protected $hidden = ['pivot','category_id','created_by','updated_by', 'created_at','updated_at'];
 
     protected $casts = [
         'publish_at' => 'datetime',
@@ -22,12 +22,12 @@ class Announcement extends Model
 
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(Employee::class, 'created_by', 'id');
     }
 
     public function updater()
     {
-        return $this->belongsTo(User::class, 'updated_by');
+        return $this->belongsTo(Employee::class, 'updated_by', 'id');
     }
 
     public function category()
