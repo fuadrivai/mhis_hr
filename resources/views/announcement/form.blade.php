@@ -70,7 +70,7 @@
 
             <div class="col-12">
                 <div class="d-flex flex-column flex-md-row gap-4">
-                    <div class="form-check">
+                    <div class="form-check mr-3">
                         <input type="hidden" name="send_email" value="0">
                         <input class="form-check-input" type="checkbox" value="1" id="send_email" name="send_email"
                             @checked(old('send_email', false))>

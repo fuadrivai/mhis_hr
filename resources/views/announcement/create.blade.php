@@ -29,7 +29,7 @@
             </div>
         @endif
 
-        <form id="announcementForm" action="{{ route('announcement.store') }}" method="POST" novalidate>
+        <form id="announcementForm" action="/announcement" method="POST" novalidate>
             @csrf
             @include('announcement.form')
 
