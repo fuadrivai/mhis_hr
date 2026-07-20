@@ -46,19 +46,26 @@
                                         <td class="align-middle"><span class="label label-info">{{ $data['category_name'] }}</span></td>
                                         <td class="align-middle"><strong>{{ $data['subject_name'] }}</strong></td>
                                         <td class="align-middle">
-                                            <div class="progress progress-striped active">
-                                                <div class="progress-bar progress-bar-success" role="progressbar" 
-                                                     style="width: {{ $data['progress'] }}%">
-                                                    @if($data['progress'] > 0)
-                                                        {{ $data['progress'] }}% ({{ $data['total_approved'] }}/{{ $data['total_expected'] }})
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" style="width: {{ $data['progress_approved'] }}%" title="Approved">
+                                                    @if($data['progress_approved'] > 0)
+                                                        {{ $data['total_approved'] }}
+                                                    @endif
+                                                </div>
+                                                <div class="progress-bar bg-warning" style="width: {{ $data['progress_revision'] }}%" title="Need Revision">
+                                                    @if($data['progress_revision'] > 0)
+                                                        {{ $data['total_revision'] }}
+                                                    @endif
+                                                </div>
+                                                <div class="progress-bar bg-primary" style="width: {{ $data['progress_submitted'] }}%" title="Submitted">
+                                                    @if($data['progress_submitted'] > 0)
+                                                        {{ $data['total_submitted'] }}
                                                     @endif
                                                 </div>
                                             </div>
-                                            @if($data['progress'] == 0)
-                                                <div class="text-center" style="font-size: 12px; margin-top: -20px; font-weight: bold;">
-                                                    0% (0/{{ $data['total_expected'] }})
-                                                </div>
-                                            @endif
+                                            <div class="text-center" style="font-size: 11px; margin-top: 5px; color: #555;">
+                                                Approved: <strong>{{ $data['total_approved'] }}</strong> | Revision: <strong>{{ $data['total_revision'] }}</strong> | Submitted: <strong>{{ $data['total_submitted'] }}</strong> | Expected: <strong>{{ $data['total_expected'] }}</strong>
+                                            </div>
                                         </td>
                                         <td class="align-middle text-center">
                                             <a href="{{ route('employee.lesson-plan.monitoring.subject', ['id' => $target->id, 'subject_id' => $subjectId]) }}" class="btn btn-info btn-sm"><i class="fa fa-eye"></i> View Details</a>

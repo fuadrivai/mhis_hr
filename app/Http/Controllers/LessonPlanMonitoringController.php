@@ -78,20 +78,29 @@ class LessonPlanMonitoringController extends Controller
                     'category_name' => $catName,
                     'subject_name' => $subName,
                     'total_approved' => 0,
+                    'total_submitted' => 0,
+                    'total_revision' => 0,
                     'total_expected' => 0,
                     'details' => []
                 ];
             }
 
             $approvedCount = $submissions->where('employee_subject_id', $es->id)->where('status', 'approved')->count();
+            $submittedCount = $submissions->where('employee_subject_id', $es->id)->where('status', 'submitted')->count();
+            $revisionCount = $submissions->where('employee_subject_id', $es->id)->where('status', 'need_revision')->count();
             
             $groupedData[$subjectId]['total_approved'] += $approvedCount;
+            $groupedData[$subjectId]['total_submitted'] += $submittedCount;
+            $groupedData[$subjectId]['total_revision'] += $revisionCount;
             $groupedData[$subjectId]['total_expected'] += $expectedSubmissionsPerES;
         }
 
         // Calculate overall progress for each subject
         foreach ($groupedData as &$data) {
-            $data['progress'] = $data['total_expected'] > 0 ? round(($data['total_approved'] / $data['total_expected']) * 100) : 0;
+            $data['progress_approved'] = $data['total_expected'] > 0 ? round(($data['total_approved'] / $data['total_expected']) * 100) : 0;
+            $data['progress_submitted'] = $data['total_expected'] > 0 ? round(($data['total_submitted'] / $data['total_expected']) * 100) : 0;
+            $data['progress_revision'] = $data['total_expected'] > 0 ? round(($data['total_revision'] / $data['total_expected']) * 100) : 0;
+            $data['progress'] = $data['progress_approved']; // For backward compatibility if needed
         }
 
         return view('employee.lesson_plan.monitoring.show', compact('title', 'target', 'groupedData'));
@@ -121,7 +130,8 @@ class LessonPlanMonitoringController extends Controller
             ->where('subject_id', $subject_id)
             ->get();
 
-        $submissions = LessonPlanSubmission::whereHas('lessonPlanTargetMonth', function($q) use ($id) {
+        $submissions = LessonPlanSubmission::with(['approvals.approverEmployee.user', 'lessonPlanTargetMonth'])
+            ->whereHas('lessonPlanTargetMonth', function($q) use ($id) {
                 $q->where('lesson_plan_target_id', $id);
             })
             ->whereIn('employee_subject_id', $employeeSubjects->pluck('id'))
@@ -132,14 +142,24 @@ class LessonPlanMonitoringController extends Controller
 
         $details = [];
         foreach ($employeeSubjects as $es) {
-            $approvedCount = $submissions->where('employee_subject_id', $es->id)->where('status', 'approved')->count();
+            $esSubmissions = $submissions->where('employee_subject_id', $es->id);
+            
+            $approvedCount = $esSubmissions->where('status', 'approved')->count();
+            $submittedCount = $esSubmissions->where('status', 'submitted')->count();
+            $revisionCount = $esSubmissions->where('status', 'need_revision')->count();
             
             $details[] = [
                 'employee_name' => $es->employee->user->name ?? 'Unknown User',
                 'class_name' => $es->schoolClass->name ?? '',
                 'approved_count' => $approvedCount,
+                'submitted_count' => $submittedCount,
+                'revision_count' => $revisionCount,
                 'expected_count' => $expectedSubmissionsPerES,
+                'progress_approved' => $expectedSubmissionsPerES > 0 ? round(($approvedCount / $expectedSubmissionsPerES) * 100) : 0,
+                'progress_submitted' => $expectedSubmissionsPerES > 0 ? round(($submittedCount / $expectedSubmissionsPerES) * 100) : 0,
+                'progress_revision' => $expectedSubmissionsPerES > 0 ? round(($revisionCount / $expectedSubmissionsPerES) * 100) : 0,
                 'progress' => $expectedSubmissionsPerES > 0 ? round(($approvedCount / $expectedSubmissionsPerES) * 100) : 0,
+                'submissions' => $esSubmissions
             ];
         }
 
