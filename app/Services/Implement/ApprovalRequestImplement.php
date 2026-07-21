@@ -73,12 +73,18 @@ class ApprovalRequestImplement implements ApprovalRequestService{
             ]);
 
             foreach ($request['attachments'] as $file) {
-                $path = $file->store('approval-request-attachments');
+                $fileName = $file->hashName();
+
+                $file->move(
+                    storage_path('app/public/approval-request-attachments'),
+                    $fileName
+                );
+
                 ApprovalRequestAttachment::create([
                     'approval_request_id' => $approvalRequest->id,
                     'field_name' => 'attachments',
                     'file_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
+                    'file_path' => 'approval-request-attachments/' . $fileName,
                     'mime_type' => $file->getClientMimeType(),
                     'file_size' => $file->getSize(),
                 ]);
