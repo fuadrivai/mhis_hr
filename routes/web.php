@@ -136,8 +136,9 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             
             Route::get('lesson-plan-target', [\App\Http\Controllers\LessonPlanTargetController::class, 'index'])->name('lesson-plan-target.index');
             Route::post('lesson-plan-target', [\App\Http\Controllers\LessonPlanTargetController::class, 'store'])->name('lesson-plan-target.store');
+            Route::get('lesson-plan-target/{id}/edit', [\App\Http\Controllers\LessonPlanTargetController::class, 'edit'])->name('lesson-plan-target.edit');
+            Route::put('lesson-plan-target/{id}', [\App\Http\Controllers\LessonPlanTargetController::class, 'update'])->name('lesson-plan-target.update');
             Route::delete('lesson-plan-target/{id}', [\App\Http\Controllers\LessonPlanTargetController::class, 'destroy'])->name('lesson-plan-target.destroy');
-            // Assessment Settings
             Route::get('assessment', [\App\Http\Controllers\AssessmentSettingController::class, 'index'])->name('assessment-setting.index');
             Route::post('assessment/approver', [\App\Http\Controllers\AssessmentSettingController::class, 'storeApprover'])->name('assessment-setting.approver.store');
             Route::delete('assessment/approver/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyApprover'])->name('assessment-setting.approver.destroy');

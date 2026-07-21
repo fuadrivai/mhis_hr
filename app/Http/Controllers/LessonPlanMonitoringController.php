@@ -63,8 +63,9 @@ class LessonPlanMonitoringController extends Controller
             ->whereIn('employee_subject_id', $employeeSubjects->pluck('id'))
             ->get();
 
-        $totalMonths = $target->months->count();
-        $expectedSubmissionsPerES = $totalMonths * 4; // 4 weeks per month
+        $expectedSubmissionsPerES = $target->months->sum(function($month) {
+            return $month->has_5_weeks ? 5 : 4;
+        });
 
         $groupedData = [];
 
@@ -137,8 +138,9 @@ class LessonPlanMonitoringController extends Controller
             ->whereIn('employee_subject_id', $employeeSubjects->pluck('id'))
             ->get();
 
-        $totalMonths = $target->months->count();
-        $expectedSubmissionsPerES = $totalMonths * 4;
+        $expectedSubmissionsPerES = $target->months->sum(function($month) {
+            return $month->has_5_weeks ? 5 : 4;
+        });
 
         $details = [];
         foreach ($employeeSubjects as $es) {

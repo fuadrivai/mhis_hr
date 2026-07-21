@@ -37,7 +37,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @for($w = 1; $w <= 4; $w++)
+                                    @for($w = 1; $w <= ($month->has_5_weeks ? 5 : 4); $w++)
                                         @php
                                             $sub = isset($submissions[$month->id]) ? $submissions[$month->id]->where('week_number', $w)->first() : null;
                                         @endphp
