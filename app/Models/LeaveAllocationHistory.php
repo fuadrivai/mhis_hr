@@ -5,22 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class AcademicYear extends Model
+class LeaveAllocationHistory extends Model
 {
     use HasFactory;
 
     protected $guarded = ['id'];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'is_active' => 'boolean',
+        'days' => 'integer',
     ];
 
-    public function leaveAllocations()
+    public function allocation()
     {
-        return $this->hasMany(
-            LeaveAllocation::class
+        return $this->belongsTo(
+            LeaveAllocation::class,
+            'leave_allocation_id'
         );
     }
 }

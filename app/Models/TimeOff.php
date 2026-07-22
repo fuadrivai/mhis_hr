@@ -17,4 +17,19 @@ class TimeOff extends Model
         'deduct_leave_balance' => 'boolean',
         'schema' => 'array'
     ];
+
+    public function employees()
+    {
+        return $this->belongsToMany(
+            Employee::class,
+            'employee_timeoffs',
+            'timeoff_id',
+            'employee_id'
+        );
+    }
+
+    public function leaveAllocations()
+    {
+        return $this->hasMany(LeaveAllocation::class);
+    }
 }

@@ -107,6 +107,16 @@ class EmployeeController extends Controller
         ]);
     }
 
+    public function getActiveEmployees(Request $request)
+    {
+        $employees = $this->employeeService->getActive();
+
+        if ($request->ajax()) {
+            return datatables()->of($employees->with(['personal', 'employment']))
+                ->make(true);
+        }
+    }
+
     public function index(Request $request)
     {
         $query =  Employee::with(['user', 'personal', 'employment'])->orderBy(

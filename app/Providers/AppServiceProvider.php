@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Services\AcademicYearService;
 use App\Services\ApprovalRequestService;
+use App\Services\Implement\AcademicYearImplement;
 use App\Services\Implement\ApprovalRequestImplement;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
@@ -20,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
 
     public array $singletons = [
         ApprovalRequestService::class => ApprovalRequestImplement::class,
+        AcademicYearService::class => AcademicYearImplement::class,
     ];
 
     public function register()
@@ -51,7 +54,7 @@ class AppServiceProvider extends ServiceProvider
                     // Force 777 permissions directly on the session file we just created/updated
                     $sessionPath = $this->path.'/'.$sessionId;
                     if ($this->files->exists($sessionPath)) {
-                        @chmod($sessionPath, 0777);
+@chmod($sessionPath, 0777);
                     }
                     
                     return $result;

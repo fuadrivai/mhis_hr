@@ -46,4 +46,19 @@ class Employment extends Model
         $age = Carbon::parse($this->join_date)->diff(Carbon::now());
         return "$age->y years $age->m months";
     }
+
+    public function timeoffs()
+    {
+        return $this->belongsToMany(
+            TimeOff::class,
+            'employee_timeoffs',
+            'employee_id',
+            'timeoff_id'
+        );
+    }
+
+    public function leaveAllocations()
+    {
+        return $this->hasMany(LeaveAllocation::class);
+    }
 }

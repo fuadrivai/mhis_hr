@@ -81,6 +81,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('filter', [EmployeeController::class, 'filterLocation']);
             Route::POST('{employeeId}/document/upload', [EmployeeController::class, 'documentUpload']);
             Route::post('deactivate', [EmployeeController::class, 'deactivate']);
+            Route::get('active', [EmployeeController::class, 'getActiveEmployees']);
             Route::post('face/register', [EmployeeController::class, 'registerFace'])->name('registerFace');
             Route::resource('reprimand', ReprimandController::class);
             Route::resource('/', EmployeeController::class);
@@ -100,6 +101,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
             Route::get('timeoff/datatable', [TimeOffController::class, 'dataTable']);
             Route::get('timeoff/preview', [TimeOffController::class, 'preview']);
+            Route::get('timeoff/assignment/{timeoffId}', [TimeOffController::class, 'assignment'])->name('timeoff.assignment');
             Route::resource('timeoff', TimeOffController::class);
 
             Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);

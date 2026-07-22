@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TimeOff;
 use App\Http\Requests\UpdateTimeOffRequest;
+use App\Services\AcademicYearService;
 use App\Services\TimeOffService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
@@ -17,10 +18,12 @@ class TimeOffController extends Controller
      */
 
     private TimeOffService $timeOffService;
+    private AcademicYearService $academicYearService;
 
-    public function __construct(TimeOffService $timeOffService)
+    public function __construct(TimeOffService $timeOffService, AcademicYearService $academicYearService)
     {
         $this->timeOffService = $timeOffService;
+        $this->academicYearService = $academicYearService;
     }
     public function index()
     {
@@ -31,9 +34,14 @@ class TimeOffController extends Controller
 
     public function dataTable(UtilitiesRequest $request)
     {
-        $timeOffs = TimeOff::query();
+        $timeOffs = TimeOff::query()->withCount('employees');
+
         if ($request->ajax()) {
-            return datatables()->of($timeOffs)->make(true);
+            return datatables()->of($timeOffs)
+                ->addColumn('employees_length', function (TimeOff $timeOff) {
+                    return $timeOff->employees_count;
+                })
+                ->make(true);
         }
     }
 
@@ -77,10 +85,23 @@ class TimeOffController extends Controller
 
         $request->validate([
             'code' => 'required|string|max:255|unique:timeoffs,code',
-            'name' => 'required|string|max:255'
+            'name' => 'required|string|max:255',
+            'is_global' => 'required|boolean',
+            'deduct_leave_balance' => 'required|boolean',
         ]);
         $this->timeOffService->post($request);
         return redirect()->route('timeoff.index')->with('success', 'TimeOff created successfully');
+    }
+    public function assignment($timeoffId)
+    {
+        $timeoffs = $this->timeOffService->get();
+        $academicYears = $this->academicYearService->get();
+        return view('settings.timeoff.assignment', [
+            "title" => "Time Off Assignment",
+            "timeoff" => $timeoffs,
+            "academicYears" => $academicYears,
+            'id'=>$timeoffId
+        ]);
     }
 
     /**

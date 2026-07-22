@@ -14,6 +14,9 @@
                             <tr>
                                 <th>Code</th>
                                 <th>Name</th>
+                                <th>All Employee</th>
+                                <th>Deduct from Leave</th>
+                                <th>Employee Assignment</th>
                                 <th>Active</th>
                                 <th>#</th>
                             </tr>
@@ -70,6 +73,30 @@
                         defaultContent: "--",
                     },
                     {
+                        data: "is_global",
+                        defaultContent: "--",
+                        className: "text-center",
+                        mRender: function(data, type, full) {
+                            return `<span class="badge badge-${data ? 'success' : 'secondary'}"> ${data ? 'Yes' : 'No'}</span>`
+                        }
+                    },
+                    {
+                        data: "deduct_leave_balance",
+                        defaultContent: "--",
+                        className: "text-center",
+                        mRender: function(data, type, full) {
+                            return `<span class="badge badge-${data ? 'success' : 'secondary'}"> ${data ? 'Yes' : 'No'}</span>`
+                        }
+                    },
+                    {
+                        data: "employees_length",
+                        defaultContent: "--",
+                        className: "text-center",
+                        mRender: function(data, type, full) {
+                            return `${data ?? 0} Employees`
+                        }
+                    },
+                    {
                         data: "is_active",
                         defaultContent: "--",
                         className: "text-center",
@@ -84,6 +111,9 @@
                             return `
                                 <a href="/setting/timeoff/${data}/edit" class="btn btn-sm btn-primary btn-edit" title="Edit Time Off">
                                     <i class="fa fa-edit"></i>
+                                </a>
+                                <a href="/setting/timeoff/assignment/${data}" class="btn btn-sm btn-success btn-edit" title="Assign Time Off">
+                                    <i class="fa fa-user"></i>
                                 </a>
                                 <button type="button" class="btn btn-sm btn-warning btn-copy" data-id="${data}" title="Copy Time Off">
                                     <i class="fa fa-copy text-white"></i>
