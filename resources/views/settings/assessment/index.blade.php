@@ -5,6 +5,7 @@
         .custom-tab-content {
             padding-top: 20px;
         }
+
         .form-section {
             background: #f9f9f9;
             padding: 15px;
@@ -23,15 +24,17 @@
                 <div class="clearfix"></div>
             </div>
             <div class="x_content">
-                @if(session('success'))
+                @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade in" role="alert">
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span
+                                aria-hidden="true">×</span></button>
                         {{ session('success') }}
                     </div>
                 @endif
-                @if($errors->any())
+                @if ($errors->any())
                     <div class="alert alert-danger alert-dismissible fade in" role="alert">
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span
+                                aria-hidden="true">×</span></button>
                         {{ $errors->first() }}
                     </div>
                 @endif
@@ -39,57 +42,77 @@
                 <div class="" role="tabpanel" data-example-id="togglable-tabs">
                     <ul id="myTab" class="nav nav-tabs bar_tabs" role="tablist">
                         <li role="presentation" class="active">
-                            <a href="#tab_approvers" id="approvers-tab" role="tab" data-toggle="tab" aria-expanded="true"><i class="fa fa-users"></i> Approvers</a>
+                            <a href="#tab_approvers" id="approvers-tab" role="tab" data-toggle="tab"
+                                aria-expanded="true"><i class="fa fa-users"></i> Approvers</a>
                         </li>
                         <li role="presentation">
-                            <a href="#tab_assignments" id="assignments-tab" role="tab" data-toggle="tab" aria-expanded="false"><i class="fa fa-check-square-o"></i> Employee Assignments</a>
+                            <a href="#tab_assignments" id="assignments-tab" role="tab" data-toggle="tab"
+                                aria-expanded="false"><i class="fa fa-check-square-o"></i> Employee Assignments</a>
                         </li>
                     </ul>
                     <div id="myTabContent" class="tab-content custom-tab-content">
                         <!-- Approvers -->
-                        <div role="tabpanel" class="tab-pane fade active in" id="tab_approvers" aria-labelledby="approvers-tab">
+                        <div role="tabpanel" class="tab-pane fade active in" id="tab_approvers"
+                            aria-labelledby="approvers-tab">
                             <div class="form-section">
-                                <form action="{{ route('assessment-setting.approver.store') }}" method="POST" class="row">
+                                <form action="{{ route('assessment-setting.approver.store') }}" method="POST"
+                                    class="row">
                                     @csrf
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="subject_category_id" class="form-control" required>
+                                        <select name="subject_category_id" class="form-control select2" style="width: 100%;"
+                                            required>
                                             <option value="">-- Select Category --</option>
-                                            @foreach($categories as $cat)
+                                            @foreach ($categories as $cat)
                                                 <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-md-4 col-sm-4 col-xs-12 form-group">
-                                        <select name="employee_id" class="form-control" required>
+                                        <select name="employee_id" class="form-control select2" style="width: 100%;"
+                                            required>
                                             <option value="">-- Select Approver (Employee) --</option>
-                                            @foreach($employees as $emp)
-                                                <option value="{{ $emp->id }}">{{ $emp->user->name ?? 'Unknown User' }}</option>
+                                            @foreach ($employees as $emp)
+                                                <option value="{{ $emp->id }}">{{ $emp->user->name ?? 'Unknown User' }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <input type="number" name="level" class="form-control" placeholder="Level (1, 2...)" min="1" required>
+                                        <input type="number" name="level" class="form-control"
+                                            placeholder="Level (1, 2...)" min="1" required>
                                     </div>
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-plus"></i> Add Approver</button>
+                                        <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-plus"></i>
+                                            Add Approver</button>
                                     </div>
                                 </form>
                             </div>
                             <table class="table table-striped table-bordered datatable" style="width: 100%">
-                                <thead><tr><th>Category</th><th>Approver</th><th>Level</th><th style="width: 15%;">Action</th></tr></thead>
-                                <tbody>
-                                    @foreach($approvers as $a)
+                                <thead>
                                     <tr>
-                                        <td><span class="label label-info">{{ $a->subjectCategory->name ?? '' }}</span></td>
-                                        <td><strong>{{ $a->employee->user->name ?? 'Unknown User' }}</strong></td>
-                                        <td><span class="badge bg-green">Level {{ $a->level }}</span></td>
-                                        <td>
-                                            <form action="{{ route('assessment-setting.approver.destroy', $a->id) }}" method="POST">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this approver?')"><i class="fa fa-trash"></i> Delete</button>
-                                            </form>
-                                        </td>
+                                        <th>Category</th>
+                                        <th>Approver</th>
+                                        <th>Level</th>
+                                        <th style="width: 15%;">Action</th>
                                     </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($approvers as $a)
+                                        <tr>
+                                            <td><span class="label label-info">{{ $a->subjectCategory->name ?? '' }}</span>
+                                            </td>
+                                            <td><strong>{{ $a->employee->user->name ?? 'Unknown User' }}</strong></td>
+                                            <td><span class="badge bg-green">Level {{ $a->level }}</span></td>
+                                            <td>
+                                                <form action="{{ route('assessment-setting.approver.destroy', $a->id) }}"
+                                                    method="POST">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="btn btn-danger btn-sm"
+                                                        onclick="return confirm('Delete this approver?')"><i
+                                                            class="fa fa-trash"></i> Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
                                     @endforeach
                                 </tbody>
                             </table>
@@ -98,52 +121,73 @@
                         <!-- Employee Assignments -->
                         <div role="tabpanel" class="tab-pane fade" id="tab_assignments" aria-labelledby="assignments-tab">
                             <div class="form-section">
-                                <form action="{{ route('assessment-setting.assignment.store') }}" method="POST" class="row">
+                                <form action="{{ route('assessment-setting.assignment.store') }}" method="POST"
+                                    class="row">
                                     @csrf
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="employee_id" class="form-control" required>
+                                        <select name="employee_id" class="form-control select2" style="width: 100%;"
+                                            required>
                                             <option value="">-- Select Employee --</option>
-                                            @foreach($employees as $emp)
-                                                <option value="{{ $emp->id }}">{{ $emp->user->name ?? 'Unknown User' }}</option>
+                                            @foreach ($employees as $emp)
+                                                <option value="{{ $emp->id }}">
+                                                    {{ $emp->user->name ?? 'Unknown User' }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="subject_id" class="form-control" required>
+                                        <select name="subject_id" class="form-control select2" style="width: 100%;"
+                                            required>
                                             <option value="">-- Select Subject --</option>
-                                            @foreach($subjects as $s)
-                                                <option value="{{ $s->id }}">{{ $s->name }} ({{ $s->subjectCategory->name ?? '' }})</option>
+                                            @foreach ($subjects as $s)
+                                                <option value="{{ $s->id }}">{{ $s->name }}
+                                                    ({{ $s->subjectCategory->name ?? '' }})
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="school_class_id" class="form-control" required>
+                                        <select name="school_class_id" class="form-control select2" style="width: 100%;"
+                                            required>
                                             <option value="">-- Select Class --</option>
-                                            @foreach($classes as $c)
+                                            @foreach ($classes as $c)
                                                 <option value="{{ $c->id }}">{{ $c->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-link"></i> Assign Subject</button>
+                                        <button type="submit" class="btn btn-primary btn-block"><i
+                                                class="fa fa-link"></i> Assign Subject</button>
                                     </div>
                                 </form>
                             </div>
                             <table class="table table-striped table-bordered datatable" style="width: 100%">
-                                <thead><tr><th>Employee</th><th>Subject</th><th>Class</th><th style="width: 15%;">Action</th></tr></thead>
-                                <tbody>
-                                    @foreach($employeeSubjects as $es)
+                                <thead>
                                     <tr>
-                                        <td><strong>{{ $es->employee->user->name ?? 'Unknown User' }}</strong></td>
-                                        <td>{{ $es->subject->name ?? '' }} <span class="label label-default">{{ $es->subject->subjectCategory->name ?? '' }}</span></td>
-                                        <td><span class="badge bg-blue">{{ $es->schoolClass->name ?? '' }}</span></td>
-                                        <td>
-                                            <form action="{{ route('assessment-setting.assignment.destroy', $es->id) }}" method="POST">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this assignment?')"><i class="fa fa-trash"></i> Delete</button>
-                                            </form>
-                                        </td>
+                                        <th>Employee</th>
+                                        <th>Subject</th>
+                                        <th>Class</th>
+                                        <th style="width: 15%;">Action</th>
                                     </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($employeeSubjects as $es)
+                                        <tr>
+                                            <td><strong>{{ $es->employee->user->name ?? 'Unknown User' }}</strong></td>
+                                            <td>{{ $es->subject->name ?? '' }} <span
+                                                    class="label label-default">{{ $es->subject->subjectCategory->name ?? '' }}</span>
+                                            </td>
+                                            <td><span class="badge bg-blue">{{ $es->schoolClass->name ?? '' }}</span></td>
+                                            <td>
+                                                <form
+                                                    action="{{ route('assessment-setting.assignment.destroy', $es->id) }}"
+                                                    method="POST">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="btn btn-danger btn-sm"
+                                                        onclick="return confirm('Delete this assignment?')"><i
+                                                            class="fa fa-trash"></i> Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
                                     @endforeach
                                 </tbody>
                             </table>
@@ -166,7 +210,7 @@
             });
 
             // Remember active tab on reload
-            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
                 localStorage.setItem('activeTab', $(e.target).attr('href'));
             });
 

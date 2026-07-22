@@ -157,7 +157,8 @@
                                     class="row">
                                     @csrf
                                     <div class="col-md-4 col-sm-4 col-xs-12 form-group">
-                                        <select name="subject_category_id" class="form-control" required>
+                                        <select name="subject_category_id" class="form-control select2"
+                                            style="width: 100%;" required>
                                             <option value="">-- Select Category --</option>
                                             @foreach ($categories as $cat)
                                                 <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -211,7 +212,8 @@
                                     class="row">
                                     @csrf
                                     <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <select id="approver_category_id" class="form-control" required>
+                                        <select id="approver_category_id" class="form-control select2"
+                                            style="width: 100%;" required>
                                             <option value="">-- Select Category --</option>
                                             @foreach ($categories as $cat)
                                                 <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -219,7 +221,8 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <select name="subject_id" id="approver_subject_id" class="form-control" required>
+                                        <select name="subject_id" id="approver_subject_id" class="form-control select2"
+                                            style="width: 100%;" required>
                                             <option value="">-- Select Subject --</option>
                                             @foreach ($subjects as $sub)
                                                 <option value="{{ $sub->id }}"
@@ -229,7 +232,8 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <select name="school_class_id" class="form-control" required>
+                                        <select name="school_class_id" class="form-control select2" style="width: 100%;"
+                                            required>
                                             <option value="">-- Select Class --</option>
                                             @foreach ($classes as $c)
                                                 <option value="{{ $c->id }}">{{ $c->name }}</option>
@@ -295,7 +299,8 @@
                                     class="row">
                                     @csrf
                                     <div class="col-md-4 col-sm-4 col-xs-12 form-group">
-                                        <select name="subject_category_id" class="form-control" required>
+                                        <select name="subject_category_id" class="form-control select2"
+                                            style="width: 100%;" required>
                                             <option value="">-- Select Category --</option>
                                             @foreach ($categories as $cat)
                                                 <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -366,7 +371,8 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <select id="assignment_category_id" class="form-control" required>
+                                        <select id="assignment_category_id" class="form-control select2"
+                                            style="width: 100%;" required>
                                             <option value="">-- Select Category --</option>
                                             @foreach ($categories as $cat)
                                                 <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -374,8 +380,8 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="subject_id" id="assignment_subject_id" class="form-control"
-                                            required>
+                                        <select name="subject_id" id="assignment_subject_id" class="form-control select2"
+                                            style="width: 100%;" required>
                                             <option value="">-- Select Subject --</option>
                                             @foreach ($subjects as $s)
                                                 <option value="{{ $s->id }}"
@@ -385,7 +391,8 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="school_class_id" class="form-control" required>
+                                        <select name="school_class_id" class="form-control select2" style="width: 100%;"
+                                            required>
                                             <option value="">-- Select Class --</option>
                                             @foreach ($classes as $c)
                                                 <option value="{{ $c->id }}">{{ $c->name }}</option>
