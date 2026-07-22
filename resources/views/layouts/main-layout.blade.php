@@ -161,7 +161,6 @@
                                                         <li><a href="/setting/level">Job Level</a></li>
                                                         <li><a href="/setting/religion">Religion</a></li>
                                                         <li><a href="/setting/reprimand-type">Reprimand Type</a></li>
-                                                        <li><a href="/setting/academic-year">Academic Year</a></li>
                                                     @endif
                                                     <li><a href="/setting/kpi-template">KPI Template</a></li>
                                                     @if ($isAdmin)
@@ -189,6 +188,7 @@
                                                         <li><a href="/setting/location">Live Attendance</a></li>
                                                     </ul>
                                                 </li>
+                                                <li><a href="/setting/academic-year">Academic Year</a></li>
                                                 <li><a href="/setting/approval">Approval</a></li>
                                                 <li><a href="/setting/bank">Bank</a></li>
                                             @endif
