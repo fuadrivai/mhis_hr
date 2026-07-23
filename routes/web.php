@@ -31,6 +31,7 @@ use App\Http\Controllers\AnnouncementCategoryController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ReprimandController;
 use App\Http\Controllers\ReprimandTypeController;
+use App\Http\Controllers\RoleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -63,6 +64,10 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
         Route::prefix('user')->name('user.')->group(function () {
             Route::put('/reset', [UserController::class, 'resetPassword']);
+            Route::post('/invite/{employeeId}', [UserController::class, 'inviteByEmployeeId'])->name('inviteByEmployeeId');
+            Route::get('/i', [RoleController::class, 'get'])->name('getRoles');
+            Route::get('/role', [RoleController::class, 'get'])->name('getRoles');
+            Route::put('/role', [RoleController::class, 'changeUserRole'])->name('changeUserRole');
             Route::resource('/', UserController::class)->parameters([
                 '' => 'user'
             ]);

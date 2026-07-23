@@ -19,7 +19,7 @@ class UserController extends Controller
     {
         $users = User::query();
         if ($request->ajax()) {
-            return datatables()->of($users->with('sessions'))->make(true);
+            return datatables()->of($users->with(['sessions','roles']))->make(true);
         }
         return view('user.user', [
             "title" => "Management User"
@@ -116,5 +116,22 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         //
+    }
+
+    public function inviteByEmployeeId($employeeId)
+    {
+
+        $employee = \App\Models\Employee::with('personal')->where('id', $employeeId)->first();
+        
+        $user = User::create([
+            'name' => $employee->personal->fullname,
+            'email' => $employee->personal->email,
+            'password' => Hash::make('mutiaraharapan'),
+        ]);
+
+        $employee->user_id = $user->id;
+        $employee->save();
+        session()->flash('message', 'User invited successfully');
+        return Redirect::to('employee');
     }
 }
