@@ -39,12 +39,12 @@ class AuthImplement implements AuthService
 
             //checking user id talenta
             $user = Auth::guard('api')->user();
-            if (!isset($user->user_id_talenta)) {
-                $talentaUser =  getUserTalentaByEmail($user->email);
-                $localUser = User::where('id', $user->id)->first();
-                $localUser->user_id_talenta = $talentaUser->user_id;
-                $localUser->save();
-            }
+            // if (!isset($user->user_id_talenta)) {
+            //     $talentaUser =  getUserTalentaByEmail($user->email);
+            //     $localUser = User::where('id', $user->id)->first();
+            //     $localUser->user_id_talenta = $talentaUser->user_id;
+            //     $localUser->save();
+            // }
 
             //insert token to Session table
             $sessions = Session::where('user_id', $user->id)->where('device', '!=', 'web')->get();
