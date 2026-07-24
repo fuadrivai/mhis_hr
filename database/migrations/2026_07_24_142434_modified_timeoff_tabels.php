@@ -17,6 +17,7 @@ class ModifiedTimeoffTabels extends Migration
             $table->string('eligibility_type')->default('all')->comment('all, rule_bases, assigned')->after('is_global');
             $table->json('eligibility_rules')->after('eligibility_type')->nullable();
             $table->string('usage_type')->default('multiple')->after('eligibility_rules')->comment('once_only, once_per_year, multiple');
+            $table->decimal('max_days', 5, 2)->nullable();
         });
     }
 
@@ -31,6 +32,7 @@ class ModifiedTimeoffTabels extends Migration
             $table->dropColumn('eligibility_type');
             $table->dropColumn('eligibility_rules');
             $table->dropColumn('usage_type');
+            $table->dropColumn('max_days');
         });
     }
 }
