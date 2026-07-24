@@ -103,6 +103,11 @@ class TimeOffController extends Controller
             'id'=>$timeoffId
         ]);
     }
+    public function employeeAssignment(Request $request)
+    {
+        $this->timeOffService->employeeAssignment($request);
+        
+    }
 
     /**
      * Display the specified resource.

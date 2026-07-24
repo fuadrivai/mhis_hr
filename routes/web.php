@@ -106,6 +106,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
             Route::get('timeoff/datatable', [TimeOffController::class, 'dataTable']);
             Route::get('timeoff/preview', [TimeOffController::class, 'preview']);
+            Route::post('timeoff/assignment', [TimeOffController::class, 'employeeAssignment'])->name('timeoff.employeeAssignment');
             Route::get('timeoff/assignment/{timeoffId}', [TimeOffController::class, 'assignment'])->name('timeoff.assignment');
             Route::resource('timeoff', TimeOffController::class);
 

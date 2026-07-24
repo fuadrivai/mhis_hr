@@ -10,7 +10,7 @@
     <div class="x_panel">
         <div class="x_content">
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label for="timeoff_type_id">Time Off Type</label>
                         <select disabled name="timeoff_type_id" id="timeoff_type_id" class="form-control select2">
@@ -22,7 +22,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label for="academic_year_id">Academic Year</label>
                         <select required name="academic_year_id" id="academic_year_id" class="form-control select2">
@@ -31,6 +31,12 @@
                                 <option value="{{ $year->id }}">{{ $year->name }}</option>
                             @endforeach
                         </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="timeoff_type_id">Leave balance</label>
+                        <input required type="number" class="form-control" id="leave_balance" name="leave_balance">
                     </div>
                 </div>
             </div>
@@ -66,6 +72,12 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="col-md-12 d-flex justify-content-center">
+        <button type="button" class="btn btn-primary" id="btn-submit">
+            <i class="fa fa-save"></i> Save
+        </button>
     </div>
 
     <div class="modal modal-right fade" id="right-modal-user" tabindex="-1" role="dialog"
@@ -116,6 +128,7 @@
         let objLeaveAllocation = {
             timeoff_id: {{ $id }},
             academic_year_id: null,
+            leave_balance: null,
             employees: []
         };
         $(document).ready(function() {
@@ -149,6 +162,7 @@
                     },
                     {
                         data: null,
+                        className: "text-center",
                         render: function(data, type, row) {
                             return `<button class="btn btn-danger btn-sm btn-delete-employee" data-id="${data.id}"><i class="fa fa-trash"></i></button>`;
                         }
@@ -265,6 +279,38 @@
                 objLeaveAllocation.employees.splice(data, 1);
                 reloadJsonDataTable(tblSelectedEmployees, objLeaveAllocation.employees);
             })
+
+            $('#btn-submit').on('click', function() {
+                objLeaveAllocation.academic_year_id = $('#academic_year_id').val();
+                objLeaveAllocation.leave_balance = $('#leave_balance').val();
+                if (!objLeaveAllocation.academic_year_id) {
+                    sweetAlert("Error", "Please select an academic year.", "error");
+                    return;
+                }
+                if (objLeaveAllocation.employees.length === 0) {
+                    sweetAlert("Error", "Please add at least one employee.", "error");
+                    return;
+                }
+                blockUI();
+                let fixObject = {
+                    timeoff_id: objLeaveAllocation.timeoff_id,
+                    academic_year_id: objLeaveAllocation.academic_year_id,
+                    leave_balance: objLeaveAllocation.leave_balance,
+                    employees: objLeaveAllocation.employees.map(emp => emp.id)
+                }
+                ajax(
+                    fixObject,
+                    "/setting/timeoff/assignment",
+                    "POST",
+                    function(json) {
+                        sweetAlert("Success", "Employee assignment saved successfully.", "success");
+                        setTimeout(() => window.location.href = "/setting/timeoff", 1000);
+                    },
+                    function(json) {
+                        sweetAlert("Failed", json, "error");
+                    }
+                );
+            });
         });
     </script>
 @endsection

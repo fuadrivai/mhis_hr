@@ -2,6 +2,9 @@
 
 namespace App\Services\Implement;
 
+use App\Models\AcademicYear;
+use App\Models\LeaveAllocation;
+use App\Models\LeaveAllocationHistory;
 use App\Models\TimeOff;
 use App\Services\TimeOffService;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +47,62 @@ class TimeOffImplement implements TimeOffService
             DB::rollBack();
             return response()->json(["message" => $th->getMessage()], $th->getCode() ?: 500);
         }
+    }
+    function employeeAssignment($request)
+    {
+        return DB::transaction(function () use ($request) {
+
+            $timeoff = TimeOff::findOrFail($request->timeoff_id);
+
+            $academicYear = AcademicYear::findOrFail(
+                $request->academic_year_id
+            );
+
+            $employeeIds = collect($request->employees)
+                ->unique()
+                ->values()
+                ->toArray();
+
+            $leaveBalance = (int) $request->leave_balance;
+
+            // 1. Mapping Employee ke Timeoff
+            $timeoff->employees()->sync($employeeIds);
+
+            // 2. Jika tidak menggunakan saldo cuti
+            if (!$timeoff->deduct_leave_balance) {
+                return true;
+            }
+            
+            // 3. Hanya buat allocation untuk employee baru
+            foreach ($employeeIds as $employeeId) {
+
+                $allocation = LeaveAllocation::firstOrCreate(
+                    [
+                        'employee_id' => $employeeId,
+                        'timeoff_id' => $timeoff->id,
+                        'academic_year_id' => $academicYear->id,
+                    ],
+                    [
+                        'total' => $leaveBalance,
+                        'used' => 0,
+                        'remaining' => $leaveBalance,
+                    ]
+                );
+
+                // 4. History hanya dibuat saat allocation baru
+                if ($allocation->wasRecentlyCreated) {
+
+                    LeaveAllocationHistory::create([
+                        'leave_allocation_id' => $allocation->id,
+                        'type' => 'allocated',
+                        'days' => $leaveBalance,
+                        'remark' => 'Initial leave allocation',
+                    ]);
+                }
+            }
+
+            return true;
+        });
     }
 
     function put($request)
