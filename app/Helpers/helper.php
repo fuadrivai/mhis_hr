@@ -13,7 +13,6 @@ use GuzzleHttp\Psr7;
 use GuzzleHttp\Exception\ClientException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Intervention\Image\ImageManagerStatic as Image;
 
 function talentaSandboxHeader($method, $pathWithQueryParam)
 {
@@ -352,7 +351,7 @@ function prepareAttendance($employee,$user,$clockTime) {
         $photoPath = 'attendance_photos/' . $imageName;
         $fullPath = storage_path('app/public/' . $photoPath);
         file_put_contents($fullPath,base64_decode(str_replace(' ', '+', $rawPhoto)));
-        @chmod($fullPath, 0777);
+@chmod($fullPath, 0777);
         return $photoPath;
     }
 
@@ -477,4 +476,18 @@ function prepareAttendance($employee,$user,$clockTime) {
                 'check_in_radius' => $data['radius'] ?? null,
             ]);
         }
+    }
+
+    function getCalendarFilter(?string $branchCode, ?string $organization): array
+    {
+        $branch = config("school_calendar.branches.$branchCode");
+
+        if (!$branch) {
+            return ['1,2,3', ''];
+        }
+
+        return [
+            $branch['id'],
+            $branch['divisions'][$organization] ?? $branch['default'],
+        ];
     }

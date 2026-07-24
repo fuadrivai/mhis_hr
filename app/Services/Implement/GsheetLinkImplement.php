@@ -5,31 +5,68 @@ namespace App\Services\Implement;
 use App\Models\Employee;
 use App\Services\GsheetLinkService;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+
+use function App\Helpers\getCalendarFilter;
 
 class GsheetLinkImplement implements GsheetLinkService
 {
-    function getSchoolCalendar()
+    public function getSchoolCalendar()
     {
         try {
-            $url = "https://script.google.com";
-            $client =  new Client([
-                'base_uri' => $url
-            ]);
-            $method     = 'GET';
-            $path = "/a/macros/mutiaraharapan.sch.id/s/AKfycby3GpZVOQ9QBzpZm9jg27JXTntGCj5p8JhUPUdCvqiqb6MmbmXjiOrsadkKEhLNWxJP/exec";
-            $queryParam = "?level=Preschool,Primary,Secondary";
-            $response = $client->request(
-                $method,
-                $path . $queryParam,
-                [
-                    'headers'   => [
-                        "Content-Type" => "application/json"
-                    ]
-                ]
+            $user = Auth::guard('api')->user();
+
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            $employee = Employee::with([
+                'employment.branch',
+                'employment.organization'
+            ])->where('user_id', $user->id)->first();
+
+            if (!$employee->employment) {
+                return response()->json([
+                    'message' => 'Employee employment data not found'
+                ], 404);
+            }
+
+            $branchCode = $employee->employment->branch->code;
+            $organization = $employee->employment->organization->name;
+
+            // Panggil helper
+            [$branch, $division] = getCalendarFilter(
+                $branchCode,
+                $organization
             );
-            return json_decode($response->getBody());
+
+            $category = $user->hasRole('admin') ||
+                        $user->hasRole('Management')
+                ? 'Internal, Leadership'
+                : 'Internal';
+
+            $response = Http::acceptJson()
+                ->get(
+                    'https://calendar.mutiaraharapan.sch.id/api/schedule',
+                    [
+                        'branch' => $branch,
+                        'division' => $division,
+                        'category' => $category,
+                    ]
+                );
+
+            return response()->json(
+                $response->json(),
+                $response->status()
+            );
+
         } catch (\Throwable $th) {
-            return response()->json($th->getMessage(), $th->getCode());
+            return response()->json([
+                'message' => $th->getMessage()
+            ], 500);
         }
     }
     function getNewsletter()

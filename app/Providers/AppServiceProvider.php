@@ -6,6 +6,8 @@ use App\Services\AcademicYearService;
 use App\Services\ApprovalRequestService;
 use App\Services\Implement\AcademicYearImplement;
 use App\Services\Implement\ApprovalRequestImplement;
+use App\Services\Implement\RoleImplement;
+use App\Services\RoleService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Session;
@@ -23,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
     public array $singletons = [
         ApprovalRequestService::class => ApprovalRequestImplement::class,
         AcademicYearService::class => AcademicYearImplement::class,
+        RoleService::class => RoleImplement::class,
     ];
 
     public function register()
