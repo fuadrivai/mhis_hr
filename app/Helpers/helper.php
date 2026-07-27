@@ -335,7 +335,7 @@ function prepareAttendance($employee,$user,$clockTime) {
         }
         // upload photo
         $photoPath = storeAttendancePhoto($employee,$photo);
-        verifyFaceRecognition($employee,$photoPath);
+        // verifyFaceRecognition($employee,$photoPath);
         return $photoPath;
     }
 
