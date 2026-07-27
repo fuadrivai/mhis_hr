@@ -40,10 +40,13 @@ class ApprovalRequest extends Model
         return $this->hasMany(Approval::class);
     }
 
-    public function type()
-    {
-        return $this->belongsTo(TimeOff::class, 'timeoff_id');
-    }
+    public function timeoff()
+{
+    return $this->belongsTo(
+        TimeOff::class,
+        'timeoff_id'
+    );
+}
 
     public function histories()
     {

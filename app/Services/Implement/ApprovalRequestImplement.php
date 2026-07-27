@@ -453,7 +453,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     {
         try {
             $requester = $approvalRequest->requester->load('personal');
-            $timeoff = $approvalRequest->type;
+            $timeoff = $approvalRequest->timeoff;
             $requestData = $approvalRequest->data;
             $startDate = data_get($requestData, 'payload.start_date');
             $formattedStartDate = null;
@@ -519,7 +519,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     {
         try {
             $requester = $approvalRequest->requester->load('personal');
-            $timeoff = $approvalRequest->type;
+            $timeoff = $approvalRequest->timeoff;
             $requestData = $approvalRequest->data;
             $startDate = data_get($requestData, 'payload.start_date');
             $formattedStartDate = null;
