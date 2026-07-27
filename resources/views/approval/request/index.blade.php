@@ -151,7 +151,7 @@
                         defaultContent: "--",
                     },
                     {
-                        data: "timeoff",
+                        data: "type",
                         defaultContent: "--",
                         mRender: function(data, type, full) {
                             return data && data.name ? data.name : '--';
@@ -316,24 +316,24 @@
             return `
                 <div class="timeline">
                     ${history.map((item, index) => `
-                                                                <div class="timeline-item ${index === 0 ? 'active' : ''}">
-                                                                    <div class="timeline-marker bg-primary"></div>
-                                                                    <div class="timeline-content">
-                                                                        <div class="d-flex justify-content-between align-items-start">
-                                                                            <div>
-                                                                                <h6 class="mb-1">${item.action || 'Action performed'}</h6>
-                                                                                <p class="mb-1 text-muted">${item.notes || ''}</p>
+                                                                    <div class="timeline-item ${index === 0 ? 'active' : ''}">
+                                                                        <div class="timeline-marker bg-primary"></div>
+                                                                        <div class="timeline-content">
+                                                                            <div class="d-flex justify-content-between align-items-start">
+                                                                                <div>
+                                                                                    <h6 class="mb-1">${item.action || 'Action performed'}</h6>
+                                                                                    <p class="mb-1 text-muted">${item.notes || ''}</p>
+                                                                                    <small class="text-muted">
+                                                                                        By: ${item.user?.personal?.fullname || 'System'}
+                                                                                    </small>
+                                                                                </div>
                                                                                 <small class="text-muted">
-                                                                                    By: ${item.user?.personal?.fullname || 'System'}
+                                                                                    ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
                                                                                 </small>
                                                                             </div>
-                                                                            <small class="text-muted">
-                                                                                ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
-                                                                            </small>
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                            `).join('')}
+                                                                `).join('')}
                 </div>
             `;
         }

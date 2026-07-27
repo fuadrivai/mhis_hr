@@ -48,7 +48,7 @@ class ApprovalRequestApiController extends Controller
     public function show($id)
     {
         $request = $this->approvalRequestService->show($id)->load(
-            'timeoff',
+            'type',
             'data',
             'approval_rule',
             'approval_rule.steps',
@@ -81,14 +81,14 @@ class ApprovalRequestApiController extends Controller
     public function getRequestByUser(Request $request)
     {
         $request['user']= $request['user'];
-        $requests = $this->approvalRequestService->getRequestByUser($request)->load('timeoff','data');
+        $requests = $this->approvalRequestService->getRequestByUser($request)->load('type','data');
         return response()->json($requests);
     }
     public function getApprovalByUser(Request $request)
     {
         $request['user']= $request['user'];
         $requests = $this->approvalRequestService->getApprovalByUser($request)->load(
-            'approvalRequest.timeoff',
+            'approvalRequest.type',
             'approvalRequest.data',
             'approvalRequest.requester.personal',
             'approvalRequest.requester.employment',
@@ -112,10 +112,6 @@ class ApprovalRequestApiController extends Controller
 
     public function nonAuthAction(Request $request)
     {
-        if (!URL::hasValidSignature($request)) {
-            return response()->json(['message' => 'Invalid or expired approval link.'], 403);
-        }
-
         $validated = $request->validate([
             'user_id' => 'required|integer|exists:users,id',
             'request_id' => 'required|integer|exists:approval_requests,id',

@@ -50,16 +50,11 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     DB::beginTransaction();
 
     try {
-        $employee = Employee::findOrFail(
-            $request['requester_employee_id']
-        );
+        $employee = Employee::findOrFail($request['requester_employee_id']);
 
-        $timeoff = TimeOff::findOrFail(
-            $request['timeoff_id']
-        );
+        $timeoff = TimeOff::findOrFail($request['timeoff_id']);
 
-        $approvalRule = $this->approvalEngine
-            ->resolveApprovalRule($employee);
+        $approvalRule = $this->approvalEngine->resolveApprovalRule($employee);
 
         if (!$approvalRule) {
             throw new \Exception(
@@ -360,98 +355,219 @@ class ApprovalRequestImplement implements ApprovalRequestService{
 
     public function action($data)
     {
-        $payload = is_array($data) ? $data : $data->all();
-        $userId = data_get($payload, 'user.id') ?? auth()->id();
-        if (!$userId) {
-            throw new \Exception('User ID is required');
-        }
-        $employee = Employee::where('user_id', $userId)->first();
-        if (!$employee) {
-            throw new \Exception('Employee not found for the given user ID');
-        }
+        DB::beginTransaction();
 
-        $requestId = data_get($payload, 'request_id');
-        $request = ApprovalRequest::findOrFail($requestId);
-        $approval = $request->approvals()->where('approver_employee_id', $employee->id)->firstOrFail()->load('approver.personal');
-        $action = data_get($payload, 'action');
-        $note = data_get($payload, 'note');
-        if (!in_array($action, ['approved', 'rejected','cancelled'])) {
-            throw new \Exception('Invalid action. Allowed values are: approved, rejected, cancelled');
-        }
+        try {
+            $payload = is_array($data)? $data : $data->all();
 
-        $approval->status = $action ;
-        $approval->note = $note;
-        $approval->actioned_date = now();
-        $approval->show_action = 0;
-        $approval->save();
+            $userId = data_get($payload, 'user.id')?? auth()->id();
 
-        if ($approval->status === 'rejected') {
-            $request->status = 'rejected';
-            $request->show_cancel = 0;
-            $request->save();
-            
+            if (!$userId) {
+                throw new \Exception('User ID is required');
+            }
 
-            Approval::where('approval_request_id', $request->id)
-                ->where('id', '!=', $approval->id)
+            $employee = Employee::where('user_id',$userId)->first();
+
+            if (!$employee) {
+                throw new \Exception(
+                    'Employee not found for the given user ID'
+                );
+            }
+
+            $requestId = data_get($payload,'request_id');
+
+            $request = ApprovalRequest::findOrFail($requestId);
+
+            $action = data_get($payload,'action');
+
+            $note = data_get($payload,'note');
+
+            if (!in_array($action, ['approved','rejected','cancelled'])) {
+                throw new \Exception(
+                    'Invalid action.'
+                );
+            }
+
+            $approval = $request->approvals()
+                ->where('approver_employee_id', $employee->id)
                 ->where('status', 'pending')
-                ->update(['status' => 'skipped', 'show_action' => 0]);
-            $this->_sendNotification($request->requester->user_id, [
-                "title" => "Approval Request Rejected",
-                "body" => "Your time off request has been rejected.",
-            ]);
-            $request['status'] = 'rejected';
-            $request['approver_name'] = $approval->approver->personal->fullname ?? null;
-            $request['approver_note'] = $approval->note ?? null;
-            $this->_sendEmailToRequester($request);
-        } else if ($approval->status === 'cancelled') {
-            $request->status = 'cancelled';
-            $request->show_cancel = 0;
-            $request->save();
+                ->where('show_action', 1)
+                ->firstOrFail()
+                ->load('approver.personal');
 
-            Approval::where('approval_request_id', $request->id)
-                ->where('id', '!=', $approval->id)
-                ->whereIn('status', ['pending'])
-                ->update(['status' => 'skipped', 'show_action' => 0]);
-        }else{
-            $nextApproval = Approval::where('approval_request_id', $request->id)
-                ->where('status', 'pending')
-                ->orderBy('step_order')
-                ->first();
+            /*
+            |--------------------------------------------------------------------------
+            | Update approval
+            |--------------------------------------------------------------------------
+            */
 
-            if (!$nextApproval) {
-                $request->status = 'approved';
+            $approval->status = $action;
+            $approval->note = $note;
+            $approval->actioned_date = now();
+            $approval->show_action = 0;
+            $approval->save();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Process status
+            |--------------------------------------------------------------------------
+            */
+
+            if ($action === 'rejected') {
+
+                $request->status = 'rejected';
                 $request->show_cancel = 0;
                 $request->save();
-                
-                $this->_sendNotification($request->requester->user_id, [
-                    "title" => "Approval Request Approved",
-                    "body" => "Your time off request has been approved.",
-                ]);
-                $request['status'] = 'approved';
-                $request['approver_name'] = $approval->approver->personal->fullname ?? null;
-                $request['approver_note'] = $approval->note ?? null;
-                $this->_sendEmailToRequester($request);
-            } else {
-                $nextApproval->show_action = 1;
-                $nextApproval->save();
-                // $this->_sendNotification($nextApproval->approver->user_id, [
-                //     "title" => "Approval Request Pending",
-                //     "body" => "You have a new time off request to approve.",
-                // ]);
-                // $request['status'] = 'pending';
-                // $this->_sendEmailToRequester($request);
+
+                Approval::where('approval_request_id', $request->id)
+                    ->where('id','!=',$approval->id)
+                    ->where('status', 'pending')
+                    ->update([
+                        'status' => 'skipped',
+                        'show_action' => 0,
+                    ]);
+
+                $this->_sendNotification($request->requester->user_id,
+                    [
+                        'title' =>
+                            'Approval Request Rejected',
+
+                        'body' =>
+                            'Your time off request has been rejected.',
+                    ]
+                );
+
+                $request['status'] ='rejected';
+
+                $request['approver_name'] =$approval
+                        ->approver
+                        ->personal
+                        ->fullname
+                        ?? null;
+
+                $request['approver_note'] =
+                    $approval->note
+                    ?? null;
+
+                $this->_sendEmailToRequester(
+                    $request
+                );
             }
+
+            elseif ($action === 'cancelled') {
+                $request->status ='cancelled';
+
+                $request->show_cancel =
+                    0;
+
+                $request->save();
+
+                Approval::where('approval_request_id',$request->id)
+                    ->where('id','!=',$approval->id)
+                    ->where('status','pending')
+                    ->update([
+                        'status' => 'skipped',
+                        'show_action' => 0,
+                    ]);
+            }
+
+            else {
+
+                $nextApproval = Approval::where(
+                    'approval_request_id',
+                    $request->id
+                )
+                    ->where(
+                        'status',
+                        'pending'
+                    )
+                    ->orderBy(
+                        'step_order'
+                    )
+                    ->first();
+
+                if (!$nextApproval) {
+
+                    $request->status =
+                        'approved';
+
+                    $request->show_cancel =
+                        0;
+
+                    $request->save();
+
+                    $this->_sendNotification(
+                        $request->requester->user_id,
+                        [
+                            'title' =>
+                                'Approval Request Approved',
+
+                            'body' =>
+                                'Your time off request has been approved.',
+                        ]
+                    );
+
+                    $request['status'] =
+                        'approved';
+
+                    $request['approver_name'] =
+                        $approval
+                            ->approver
+                            ->personal
+                            ->fullname
+                            ?? null;
+
+                    $request['approver_note'] =
+                        $approval->note
+                        ?? null;
+
+                    $this->_sendEmailToRequester(
+                        $request
+                    );
+
+                } else {
+
+                    $nextApproval->show_action =
+                        1;
+
+                    $nextApproval->save();
+
+                    // Kirim notifikasi/email ke next approver
+                }
+            }
+
+            ApprovalHistory::create([
+                'approval_request_id' =>
+                    $request->id,
+
+                'action' =>
+                    $action,
+
+                'step_order' =>
+                    $approval->step_order,
+
+                'approver_employee_id' =>
+                    $employee->id,
+
+                'note' =>
+                    "Time off request has been {$action}"
+                    . (
+                        $note
+                            ? " with note: {$note}"
+                            : ''
+                    ),
+            ]);
+
+            DB::commit();
+
+            return $approval;
+
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            throw $e;
         }
-
-        ApprovalHistory::create([
-            'approval_request_id' => $request->id,
-            'action' => $action,
-            'step_order' => $approval->step_order,
-            'approver_employee_id' => $employee->id,
-            'note' => "Time off request has been {$action}" . ($note ? " with note: {$note}" : ''),
-        ]);
-
-        return $approval;
     }
 
     public function cancel($data){
@@ -520,7 +636,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     {
         try {
             $requester = $approvalRequest->requester->load('personal');
-            $timeoff = $approvalRequest->timeoff;
+            $timeoff = $approvalRequest->type;
             $requestData = $approvalRequest->data;
             $startDate = data_get($requestData, 'payload.start_date');
             $formattedStartDate = null;
@@ -586,7 +702,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     {
         try {
             $requester = $approvalRequest->requester->load('personal');
-            $timeoff = $approvalRequest->timeoff;
+            $timeoff = $approvalRequest->type;
             $requestData = $approvalRequest->data;
             $startDate = data_get($requestData, 'payload.start_date');
             $formattedStartDate = null;
