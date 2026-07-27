@@ -38,11 +38,23 @@ class ApprovalRequestImplement implements ApprovalRequestService{
 
     public function show($id)
     {
-        try {
-            return ApprovalRequest::find($id);
-        } catch (\Throwable $th) {
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
+        return ApprovalRequest::with([
+            'type',
+            'data',
+            'approval_rule',
+            'approval_rule.steps',
+            'approval_rule.branch',
+            'approval_rule.organization',
+            'approval_rule.level',
+            'approval_rule.position',
+            'requester.personal',
+            'requester.employment',
+            'approvals.approver.personal',
+            'approvals.approver.employment',
+            'approvals.approvalRequestData',
+            'attachments',
+            'histories.approver.personal',
+        ])->findOrFail($id);
     }
 
     public function post($request)

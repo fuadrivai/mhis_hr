@@ -47,23 +47,7 @@ class ApprovalRequestApiController extends Controller
 
     public function show($id)
     {
-        $request = $this->approvalRequestService->show($id)->load(
-            'type',
-            'data',
-            'approval_rule',
-            'approval_rule.steps',
-            'approval_rule.branch',
-            'approval_rule.organization',
-            'approval_rule.level',
-            'approval_rule.position',
-            'requester.personal', 
-            'requester.employment', 
-            'approvals.approver.personal',
-            'approvals.approver.employment',
-            'approvals.approvalRequestData',
-            'attachments',
-            'histories.approver.personal',
-            );
+        $request = $this->approvalRequestService->show($id);
         return response()->json($request);
     }
 
