@@ -24,11 +24,25 @@ class ApprovalRequestApiController extends Controller
             'timeoff_id' => 'required|exists:timeoffs,id',
             'note' => 'nullable|string',
             'dynamic_fields' => 'nullable|array',
-            'attachments.*' => 'nullable|file|max:10240'
+            'attachments.*' => 'nullable|file|max:10240',
         ]);
+
         $validated['attachments'] = $request->file('attachments', []);
 
-        return $this->approvalRequestService->post($validated);
+        try {
+            $approvalRequest = $this->approvalRequestService->post($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Approval request submitted successfully.',
+                'data' => $approvalRequest,
+            ], 201);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
     }
 
     public function show($id)
