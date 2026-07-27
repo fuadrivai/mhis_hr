@@ -91,7 +91,11 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 );
             }
 
+            // Ambil semua metadata SEBELUM file dipindahkan
             $fileName = $file->hashName();
+            $originalName = $file->getClientOriginalName();
+            $mimeType = $file->getClientMimeType();
+            $fileSize = $file->getSize();
 
             $file->move(
                 storage_path(
@@ -101,13 +105,23 @@ class ApprovalRequestImplement implements ApprovalRequestService{
             );
 
             ApprovalRequestAttachment::create([
-                'approval_request_id' => $approvalRequest->id,
-                'field_name' => 'attachments',
-                'file_name' => $file->getClientOriginalName(),
+                'approval_request_id' =>
+                    $approvalRequest->id,
+
+                'field_name' =>
+                    'attachments',
+
+                'file_name' =>
+                    $originalName,
+
                 'file_path' =>
                     'approval-request-attachments/' . $fileName,
-                'mime_type' => $file->getClientMimeType(),
-                'file_size' => $file->getSize(),
+
+                'mime_type' =>
+                    $mimeType,
+
+                'file_size' =>
+                    $fileSize,
             ]);
         }
 
