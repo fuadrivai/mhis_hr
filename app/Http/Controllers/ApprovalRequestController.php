@@ -38,7 +38,7 @@ class ApprovalRequestController extends Controller
     public function dataTable(UtilitiesRequest $request)
     {
         $approvalRequests = ApprovalRequest::with([
-            'type',
+            'timeoff',
             'data',
             'approvals.approver',
             'approvals.approver.personal',
@@ -122,7 +122,7 @@ class ApprovalRequestController extends Controller
     {
         $appRequest =  $this->approvalRequestService->show($id);
         $appRequest->load([
-            'type',
+            'timeoff',
             'data',
             'approvals.approver',
             'approvals.approver.personal',

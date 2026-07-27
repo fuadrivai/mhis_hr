@@ -34,7 +34,7 @@ class ApprovalRequestApiController extends Controller
     public function show($id)
     {
         $request = $this->approvalRequestService->show($id)->load(
-            'type',
+            'timeoff',
             'data',
             'approval_rule',
             'approval_rule.steps',
@@ -67,14 +67,14 @@ class ApprovalRequestApiController extends Controller
     public function getRequestByUser(Request $request)
     {
         $request['user']= $request['user'];
-        $requests = $this->approvalRequestService->getRequestByUser($request)->load('type','data');
+        $requests = $this->approvalRequestService->getRequestByUser($request)->load('timeoff','data');
         return response()->json($requests);
     }
     public function getApprovalByUser(Request $request)
     {
         $request['user']= $request['user'];
         $requests = $this->approvalRequestService->getApprovalByUser($request)->load(
-            'approvalRequest.type',
+            'approvalRequest.timeoff',
             'approvalRequest.data',
             'approvalRequest.requester.personal',
             'approvalRequest.requester.employment',
