@@ -48,85 +48,131 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     public function post($request)
     {
         DB::beginTransaction();
+
         try {
-            $employee = Employee::findOrFail($request['requester_employee_id']);
-            $timeoff = TimeOff::findOrFail($request['timeoff_id']);
+            $employee = Employee::findOrFail($request->input('requester_employee_id'));
+
+            $timeoff = TimeOff::findOrFail($request->input('timeoff_id'));
+
             $approvalRule = $this->approvalEngine->resolveApprovalRule($employee);
 
             if (!$approvalRule) {
-                return back()->withErrors(['requester_employee_id' => 'No matching approval rule found for this employee.']);
+                DB::rollBack();
+
+                return back()->withErrors([
+                    'requester_employee_id' =>
+                        'No matching approval rule found for this employee.'
+                ]);
             }
 
             $approvalRequest = ApprovalRequest::create([
                 'approval_rule_id' => $approvalRule->id,
                 'requester_employee_id' => $employee->id,
                 'timeoff_id' => $timeoff->id,
-                'note' => $request['note'] ?? null,
+                'note' => $request->input('note'),
                 'current_step' => 1,
                 'status' => 'pending',
-                'show_cancel' => 1,
+                'show_cancel' => true,
             ]);
 
             ApprovalRequestData::create([
                 'approval_request_id' => $approvalRequest->id,
-                'payload' => $request['dynamic_fields'] ?? [],
+                'payload' => $request->input('dynamic_fields', []),
             ]);
 
-            foreach ($request['attachments'] as $file) {
-                $fileName = $file->hashName();
+            if ($request->hasFile('attachments')) {
 
-                $file->move(
-                    storage_path('app/public/approval-request-attachments'),
-                    $fileName
-                );
+                $directory = storage_path('app/public/approval-request-attachments');
 
-                ApprovalRequestAttachment::create([
-                    'approval_request_id' => $approvalRequest->id,
-                    'field_name' => 'attachments',
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_path' => 'approval-request-attachments/' . $fileName,
-                    'mime_type' => $file->getClientMimeType(),
-                    'file_size' => $file->getSize(),
-                ]);
+                if (!is_dir($directory)) {
+                    mkdir($directory, 0755, true);
+                }
+
+                foreach ($request->file('attachments') as $file) {
+
+                    if (!$file->isValid()) {
+                        throw new \Exception('Invalid attachment: '. $file->getErrorMessage());
+                    }
+
+                    $fileName = $file->hashName();
+
+                    $file->move($directory,$fileName);
+
+                    ApprovalRequestAttachment::create([
+                        'approval_request_id' =>$approvalRequest->id,
+                        'field_name' =>'attachments',
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' =>'approval-request-attachments/'. $fileName,
+                        'mime_type' => $file->getClientMimeType(),
+                        'file_size' => $file->getSize(),
+                    ]);
+                }
             }
-
             foreach ($approvalRule->steps as $step) {
+
                 Approval::create([
                     'approval_request_id' => $approvalRequest->id,
                     'step_order' => $step->step_order,
                     'approver_employee_id' => $step->approver_employee_id,
                     'approval_mode' => $step->approval_mode,
                     'status' => 'pending',
-                    'show_action' => 1,
+                    'show_action' => true,
                 ]);
             }
 
             ApprovalHistory::create([
-                'approval_request_id' => $approvalRequest->id,
+                'approval_request_id' =>  $approvalRequest->id,
                 'action' => 'submitted',
                 'step_order' => 1,
             ]);
 
             $approval = Approval::with('approver')
-                ->where('approval_request_id', $approvalRequest->id)
+                ->where( 'approval_request_id', $approvalRequest->id)
                 ->where('status', 'pending')
                 ->orderBy('step_order')
                 ->first();
 
+            if (!$approval || !$approval->approver) {
+                throw new \Exception(
+                    'No pending approver found.'
+                );
+            }
+
             $approver = $approval->approver->load('user');
-            $employee = $employee->load('personal');
-            $personal = $employee->personal;
-            $this->_sendNotification($approver->user->id, [
+
+            $employee->load('personal');
+
+            $this->_sendNotification(
+                $approver->user->id,
+                [
                     'title' => 'Approval Request Pending',
-                    'body'  => 'You have a new time off request to approve for ' . $personal->fullname,
-                ]);
+                    'body' => 'You have a new time off request to approve for ' . $employee->personal->fullname,
+                ]
+            );
+
             $this->_sendEmail($approvalRequest);
-            
+
             DB::commit();
+
             return $approvalRequest;
+
         } catch (\Throwable $th) {
+
             DB::rollBack();
-            return back()->withErrors(['error' => $th->getMessage()]);
+
+            logger()->error(
+                'Approval request failed',
+                [
+                    'error' => $th->getMessage(),
+                    'file' => $th->getFile(),
+                    'line' =>$th->getLine(),
+                    'trace' =>$th->getTraceAsString(),
+                ]
+            );
+
+            return back()->withErrors([
+                'error' => $th->getMessage()
+            ]);
         }
     }
 
