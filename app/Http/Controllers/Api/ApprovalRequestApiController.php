@@ -32,11 +32,7 @@ class ApprovalRequestApiController extends Controller
         try {
             $approvalRequest = $this->approvalRequestService->post($validated);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Approval request submitted successfully.',
-                'data' => $approvalRequest,
-            ], 201);
+            return response()->json($approvalRequest);
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,
