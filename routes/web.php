@@ -67,6 +67,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
         Route::group(['prefix' => 'employee'], function () {
             Route::post('import', [EmployeeController::class, 'import_excel']);
+            Route::get('kpi-monitoring', [EmployeeController::class, 'kpiMonitoring'])->name('employee.kpi-monitoring');
             Route::get('filter', [EmployeeController::class, 'filterLocation']);
             Route::POST('{employeeId}/document/upload', [EmployeeController::class, 'documentUpload']);
             Route::post('deactivate', [EmployeeController::class, 'deactivate']);

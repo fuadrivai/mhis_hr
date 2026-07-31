@@ -456,4 +456,110 @@ class EmployeeController extends Controller
             "branches" => $branches,
         ]);
     }
+
+    public function registerFace(Request $request)
+    {
+        $employee = $this->personalService->registerFace($request);
+        if ($employee && $employee->personal) {
+            session(['avatar' => $employee->personal->avatar ?? '']);
+        }
+
+        return response()->json([
+            'message' => 'Face registered successfully',
+            'avatar' => $employee->personal->avatar ?? null,
+        ]);
+    }
+
+    public function kpiMonitoring(Request $request)
+    {
+        if (!auth()->user()->hasRole('admin')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $activeYear = \App\Models\AcademicYear::where('is_active', true)->first();
+        
+        $query = Employee::select('employees.*')->with(['user', 'personal', 'employment', 'kpis' => function($q) use ($activeYear) {
+            if ($activeYear) {
+                $q->where('academic_year', $activeYear->name);
+            }
+        }])->where('is_active', 1)->orderBy(
+            Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
+            'asc'
+        );
+
+
+
+        if ($request->organization && $request->organization != "all") {
+            $query->whereHas('employment', function ($q) use ($request) {
+                $q->where('organization_id', $request->organization);
+            });
+        }
+
+        if ($request->position && $request->position != "all") {
+            $query->whereHas('employment', function ($q) use ($request) {
+                $q->where('job_position_id', $request->position);
+            });
+        }
+
+        if ($request->level && $request->level != "all") {
+            $query->whereHas('employment', function ($q) use ($request) {
+                $q->where('job_level_id', $request->level);
+            });
+        }
+
+        if ($request->branch && $request->branch != "all") {
+            $query->whereHas('employment', function ($q) use ($request) {
+                $q->where('branch_id', $request->branch);
+            });
+        }
+
+        if ($request->status && $request->status != "all") {
+            $query->whereHas('employment', function ($q) use ($request) {
+                $q->where('employment_status', $request->status);
+            });
+        }
+
+        if ($request->ajax()) {
+            return datatables()->of($query)
+                ->addColumn('employee_id_pk', function($row) {
+                    return $row->id;
+                })
+                ->filterColumn('personal.fullname', function($query, $keyword) {
+                    $query->whereHas('personal', function($q) use ($keyword) {
+                        $q->where('fullname', 'like', "%{$keyword}%")
+                          ->orWhere('email', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('employment.employee_id', function($query, $keyword) {
+                    $query->whereHas('employment', function($q) use ($keyword) {
+                        $q->where('employee_id', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('employment.branch_name', function($query, $keyword) {
+                    $query->whereHas('employment.branch', function($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('employment.organization_name', function($query, $keyword) {
+                    $query->whereHas('employment.organization', function($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('employment.job_position_name', function($query, $keyword) {
+                    $query->whereHas('employment.job_position', function($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->make(true);
+        }
+
+        return view('employee.kpi_monitoring', [
+            "title" => "KPI Monitoring",
+            "activeYear" => $activeYear,
+            "branches" => $this->branchService->get(),
+            "organizations" => $this->organizationService->get(),
+            "positions" => $this->positionService->get(),
+            "levels" => $this->levelService->get(),
+        ]);
+    }
 }
