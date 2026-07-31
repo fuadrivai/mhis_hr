@@ -94,6 +94,9 @@
                                             </li>
                                             <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
                                                     href="/scheduler">Scheduler</a></li>
+                                                    <li class={{ Request::is('employee/kpi-monitoring*') ? 'current-page' : '' }}>
+                                                <a href="{{ route('employee.kpi-monitoring') }}">KPI Monitoring</a>
+                                            </li>
                                         </ul>
                                     </li>
                                 @endif
