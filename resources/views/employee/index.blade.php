@@ -81,7 +81,7 @@
                 processing: true,
                 serverSide: true,
                 ajax: {
-                    url: "{{ route('employee.index') }}",
+                    url: "{{ url('/employee') }}",
                     type: "GET",
                 },
                 columns: [{
