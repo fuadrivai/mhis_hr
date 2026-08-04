@@ -42,7 +42,10 @@ class ApprovalRequest extends Model
 
     public function type()
     {
-        return $this->belongsTo(TimeOff::class, 'timeoff_id');
+        return $this->belongsTo(
+            TimeOff::class,
+            'timeoff_id'
+        );
     }
 
     public function histories()

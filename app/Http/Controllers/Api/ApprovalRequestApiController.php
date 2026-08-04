@@ -24,32 +24,26 @@ class ApprovalRequestApiController extends Controller
             'timeoff_id' => 'required|exists:timeoffs,id',
             'note' => 'nullable|string',
             'dynamic_fields' => 'nullable|array',
-            'attachments.*' => 'nullable|file|max:10240'
+            'attachments.*' => 'nullable|file|max:10240',
         ]);
+
         $validated['attachments'] = $request->file('attachments', []);
 
-        return $this->approvalRequestService->post($validated);
+        try {
+            $approvalRequest = $this->approvalRequestService->post($validated);
+
+            return response()->json($approvalRequest);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => $th->getMessage(),
+            ], 500);
+        }
     }
 
     public function show($id)
     {
-        $request = $this->approvalRequestService->show($id)->load(
-            'type',
-            'data',
-            'approval_rule',
-            'approval_rule.steps',
-            'approval_rule.branch',
-            'approval_rule.organization',
-            'approval_rule.level',
-            'approval_rule.position',
-            'requester.personal', 
-            'requester.employment', 
-            'approvals.approver.personal',
-            'approvals.approver.employment',
-            'approvals.approvalRequestData',
-            'attachments',
-            'histories.approver.personal',
-            );
+        $request = $this->approvalRequestService->show($id);
         return response()->json($request);
     }
 
@@ -98,10 +92,6 @@ class ApprovalRequestApiController extends Controller
 
     public function nonAuthAction(Request $request)
     {
-        if (!URL::hasValidSignature($request)) {
-            return response()->json(['message' => 'Invalid or expired approval link.'], 403);
-        }
-
         $validated = $request->validate([
             'user_id' => 'required|integer|exists:users,id',
             'request_id' => 'required|integer|exists:approval_requests,id',

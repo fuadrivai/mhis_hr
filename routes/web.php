@@ -83,6 +83,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         });
         Route::group(['prefix' => 'employee'], function () {
             Route::post('import', [EmployeeController::class, 'import_excel']);
+            Route::get('export', [EmployeeController::class, 'export'])->name('employee.export');
+            Route::get('kpi-monitoring', [EmployeeController::class, 'kpiMonitoring'])->name('employee.kpi-monitoring');
             Route::get('filter', [EmployeeController::class, 'filterLocation']);
             Route::POST('{employeeId}/document/upload', [EmployeeController::class, 'documentUpload']);
             Route::post('deactivate', [EmployeeController::class, 'deactivate']);
@@ -111,6 +113,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::resource('timeoff', TimeOffController::class);
 
             Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);
+            Route::put('live-attendance/face-recognition', [LocationController::class, 'updateFaceRecognitionSetting']);
             Route::resource('location', LocationController::class);
 
             Route::get('approval/employee/active', [ApprovalRuleController::class, 'getActiveEmployees']);

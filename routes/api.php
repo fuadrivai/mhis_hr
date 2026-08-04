@@ -44,7 +44,7 @@ Route::name('api.')->group(function () {
 
     Route::post('ga/employee/face', [EmployeeApiController::class, 'registerFace']);
 
-    Route::post('action/time/request', [ApprovalRequestApiController::class, 'nonAuthAction'])->name('time.request.email-action');
+    Route::get('action/time/request',[ApprovalRequestApiController::class, 'nonAuthAction'])->middleware('signed')->name('time.request.email-action');
 
     Route::group(['middleware' => 'auth_login'], function () {
         Route::post('refresh', [AuthController::class, 'refresh']);

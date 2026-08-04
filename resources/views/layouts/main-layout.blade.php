@@ -85,13 +85,19 @@
                                             Employee Directory <span class="fa fa-chevron-down"></span></a>
                                         <ul class="nav child_menu"
                                             style="display: {{ Request::is('employee*') ? 'block' : 'none' }}">
-                                            <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
-                                                    href="/employee">Employee</a></li>
+                                            <li
+                                                class={{ Request::is('employee*') && !Request::is('employee/reprimand*') && !Request::is('employee/kpi-monitoring*') ? 'current-page' : '' }}>
+                                                <a href="/employee">Employee</a>
+                                            </li>
                                             <li class={{ Request::is('employee/reprimand*') ? 'current-page' : '' }}>
                                                 <a href="/employee/reprimand">Reprimand</a>
                                             </li>
                                             <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
                                                     href="/scheduler">Scheduler</a></li>
+                                            <li
+                                                class={{ Request::is('employee/kpi-monitoring*') ? 'current-page' : '' }}>
+                                                <a href="{{ route('employee.kpi-monitoring') }}">KPI Monitoring</a>
+                                            </li>
                                         </ul>
                                     </li>
                                 @endif
@@ -104,8 +110,8 @@
                                             style="display: {{ Request::is('time*') ? 'block' : 'none' }}">
                                             <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
                                                     href="/time/attendance">Attendance</a></li>
-                                            <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
-                                                    href="#">Overtime</a></li>
+                                            {{-- <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                    href="#">Overtime</a></li> --}}
                                             <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
                                                     href="/time/request">Time Off</a></li>
                                         </ul>

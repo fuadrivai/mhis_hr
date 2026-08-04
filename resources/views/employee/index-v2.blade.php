@@ -128,9 +128,12 @@
                             </div>
                         </div>
                         <div class="btn-group employee-toolbar-actions" role="group">
-                            <a data-toggle="modal" data-target="#importExcel" href="/employee/create"
+                            <a data-toggle="modal" data-target="#importExcel" href=""
                                 class="btn btn-info text-white btn-add-employee"><i class="fa fa-upload"></i>
                                 Import</a>
+                            <a data-toggle="modal" data-target="#exportExcel" href=""
+                                class="btn btn-primary text-white btn-add-employee"><i class="fa fa-download"></i>
+                                Export</a>
                             <a href="/employee/create" class="btn btn-success text-white btn-add-employee"><i
                                     class="fa fa-plus"></i> Add User</a>
                         </div>
@@ -172,13 +175,99 @@
             </form>
         </div>
     </div>
+
+    <div class="modal fade" id="exportExcel" tabindex="-1" role="dialog" aria-labelledby="exportExcelLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <form id="employee-export-form" method="GET" action="{{ route('employee.export') }}">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exportExcelLabel">Export Employees</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="export-branch">Branch</label>
+                                    <select id="export-branch" name="branch[]" class="form-control export-select2"
+                                        multiple="multiple" style="width: 100%">
+                                        @foreach ($branches as $branch)
+                                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="export-organization">Organization</label>
+                                    <select id="export-organization" name="organization[]"
+                                        class="form-control export-select2" multiple="multiple" style="width: 100%">
+                                        @foreach ($organizations as $organization)
+                                            <option value="{{ $organization['id'] }}">{{ $organization['name'] }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="export-level">Job Level</label>
+                                    <select id="export-level" name="level[]" class="form-control export-select2"
+                                        multiple="multiple" style="width: 100%">
+                                        @foreach ($levels as $level)
+                                            <option value="{{ $level['id'] }}">{{ $level['name'] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="export-position">Job Position</label>
+                                    <select id="export-position" name="position[]" class="form-control export-select2"
+                                        multiple="multiple" style="width: 100%">
+                                        @foreach ($positions as $position)
+                                            <option value="{{ $position['id'] }}">{{ $position['name'] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="export-is-active">Active Status</label>
+                                    <select id="export-is-active" name="is_active" class="form-control">
+                                        <option value="all">All</option>
+                                        <option value="1">Active</option>
+                                        <option value="0">Not Active</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Export</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 @endsection
 @section('content-script')
     <script>
         let typingTimer;
         let empIds = [];
         $(document).ready(function() {
-            $('#filterFormCollapse').collapse('hide');
+            // $('#filterFormCollapse').collapse('hide');
+            $('#exportExcel').on('shown.bs.modal', function() {
+                $('.export-select2').select2({
+                    dropdownParent: $('#exportExcel'),
+                    placeholder: 'Select one or more options'
+                });
+            });
+
             $('#filterFormCollapse').on('shown.bs.collapse', function() {
                 $('#filterCollapseIcon').removeClass('fa-chevron-down').addClass('fa-chevron-up');
                 $('#filterCollapseLabel').text('Hide Filter');

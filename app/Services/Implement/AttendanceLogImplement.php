@@ -4,6 +4,7 @@ namespace App\Services\Implement;
 
 use App\Models\AttendanceLog;
 use App\Models\Employee;
+use App\Models\LiveAttendanceSetting;
 use App\Services\AttendanceLogService;
 use Illuminate\Support\Facades\DB;
 
@@ -52,7 +53,7 @@ class AttendanceLogImplement implements AttendanceLogService
                 throw new \Exception('Attendance not found', 404);
             }
             $photoPath = null;
-            $photoPath = handlePhotoAndFaceRecognition($employee,$data['photo'] ?? null); // it's to validate face recognation of the employee.
+            $photoPath = handlePhotoAndFaceRecognition($employee, $data['photo'] ?? null, $this->needsFaceRecognition());
             $log = createAttendanceLog($employee,$attendance,$attendanceDate,$photoPath,$data);
             updateAttendanceCheckIn($attendance,$photoPath,$data);
             $log->photo = !empty($data['photo']) ? asset('storage/' . $photoPath) : null;
@@ -70,7 +71,7 @@ class AttendanceLogImplement implements AttendanceLogService
             if (!$attendance) {
                 throw new \Exception('Attendance not found', 404);
             }
-            $photoPath = handlePhotoAndFaceRecognition($employee,$data['photo'] ?? null);
+            $photoPath = handlePhotoAndFaceRecognition($employee, $data['photo'] ?? null, $this->needsFaceRecognition());
             $log = createAttendanceLog($employee,$attendance,$attendanceDate,$photoPath,$data,'check_out');
             $attendance->update([
                 'check_out' => $log->clock_datetime,
@@ -95,5 +96,12 @@ class AttendanceLogImplement implements AttendanceLogService
     public function delete($id)
     {
         // TODO: Implement delete() method.
+    }
+
+    private function needsFaceRecognition(): bool
+    {
+        $setting = LiveAttendanceSetting::find(1);
+
+        return $setting ? $setting->need_face_recognition : true;
     }
 }

@@ -319,7 +319,7 @@ class AttendanceImplement implements AttendanceService
 
                 $attendances->push((object)[
                     'date' => Carbon::createFromFormat('Y-m-d', $date),
-                    'status' => 'absent',
+                    'status' => '-',
                     'employee_id' => $employee->id,
                     'user_id' => $employee->user_id,
                     'fullname' => $employee->personal->fullname ?? null,
@@ -378,7 +378,7 @@ class AttendanceImplement implements AttendanceService
                             $approvalMap[$dateKey] = [];
                         }
                         $approvalMap[$dateKey][] = [
-                            'type' => $approvalRequest->type ? $approvalRequest->type->name : null,
+                            'type' => $approvalRequest->timeoff ? $approvalRequest->timeoff->name : null,
                             'reason' => data_get($approvalData->payload, 'reason'),
                             'status' => $approvalRequest->status,
                         ];

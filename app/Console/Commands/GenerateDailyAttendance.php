@@ -40,7 +40,7 @@ class GenerateDailyAttendance extends Command
                 'employee_id' => $employee->id,
                 'user_id' => $employee->user_id,
                 'date' => $today,
-                'status' => 'absent',
+                'status' => '-',
                 'fullname' => $employee->personal->fullname,
                 'shift_name' => $employee->activeSchedule->schedule_name ?? '-',
                 'holiday' => $shift->holiday ?? 0,

@@ -21,7 +21,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="branch">Branch *</label>
-                                    <select name="branch" id="branch" class="form-control">
+                                    <select name="branch" id="branch" class="form-control select2" width="100%">
                                         <option value="">-- Select Branch --</option>
                                         @foreach ($branches as $branch)
                                             <option value="{{ $branch->id }}">{{ $branch->name }}</option>
@@ -32,7 +32,8 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="organization">Organization *</label>
-                                    <select name="organization" id="organization" class="form-control">
+                                    <select name="organization" id="organization" class="form-control select2"
+                                        width="100%">
                                         <option value="">-- Select Organization --</option>
                                         @foreach ($organizations as $organization)
                                             <option value="{{ $organization->id }}">{{ $organization->name }}</option>
@@ -43,7 +44,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="level">Level *</label>
-                                    <select name="level" id="level" class="form-control">
+                                    <select name="level" id="level" class="form-control select2" width="100%">
                                         <option value="">-- Select Level --</option>
                                         @foreach ($jobLevels as $jobLevel)
                                             <option value="{{ $jobLevel->id }}">{{ $jobLevel->name }}</option>
@@ -54,7 +55,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="position">Position *</label>
-                                    <select name="position" id="position" class="form-control">
+                                    <select name="position" id="position" class="form-control select2" width="100%">
                                         <option value="">-- Select Position --</option>
                                         @foreach ($positions as $position)
                                             <option value="{{ $position->id }}">{{ $position->name }}</option>
