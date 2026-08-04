@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\EmployeeExport;
 use App\Models\Employee;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Imports\EmployeeImport;
@@ -357,6 +358,63 @@ class EmployeeController extends Controller
 
         // alihkan halaman kembali
         return Redirect::to('employee');
+    }
+
+    public function export(Request $request)
+    {
+        $request->validate([
+            'branch' => 'nullable|array',
+            'branch.*' => 'integer',
+            'organization' => 'nullable|array',
+            'organization.*' => 'integer',
+            'level' => 'nullable|array',
+            'level.*' => 'integer',
+            'position' => 'nullable|array',
+            'position.*' => 'integer',
+            'is_active' => 'nullable|in:all,0,1',
+        ]);
+
+        $query = Employee::with(['personal', 'employment'])
+            ->orderBy(
+                Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
+                'asc'
+            );
+
+        $user = auth()->user();
+        if ($user && $user->roles->contains('id', 3)) {
+            if ($user->employee && $user->employee->employment) {
+                $branchId = $user->employee->employment->branch_id;
+                $organizationId = $user->employee->employment->organization_id;
+                $query->whereHas('employment', function ($query) use ($branchId, $organizationId) {
+                    $query->where('branch_id', $branchId)
+                        ->where('organization_id', $organizationId);
+                });
+            } else {
+                $query->where('id', 0);
+            }
+        }
+
+        foreach ([
+            'branch' => 'branch_id',
+            'organization' => 'organization_id',
+            'level' => 'job_level_id',
+            'position' => 'job_position_id',
+        ] as $filter => $column) {
+            if ($request->filled($filter)) {
+                $query->whereHas('employment', function ($query) use ($request, $filter, $column) {
+                    $query->whereIn($column, $request->input($filter));
+                });
+            }
+        }
+
+        if ($request->input('is_active') !== null && $request->input('is_active') !== 'all') {
+            $query->where('is_active', $request->input('is_active'));
+        }
+
+        return Excel::download(
+            new EmployeeExport($query->get()),
+            'employees-' . now()->format('Ymd_His') . '.xlsx'
+        );
     }
 
     public function personal($id)
