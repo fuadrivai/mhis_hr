@@ -26,7 +26,7 @@
                 </ul>
                 <div class="clearfix"></div>
             </div>
-            <div class="x_content" style="display: none">
+            <div class="x_content">
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group">
@@ -167,7 +167,7 @@
                                 </button>
                                 <div class="dropdown-menu">
                                     <a class="dropdown-item" href="#">Edit</a>
-                                    <a class="dropdown-item" href="#">Vie history log</a>
+                                    <a class="dropdown-item" href="#">View history log</a>
                                     <a class="dropdown-item" href="#">Lock attendance</a>
                                     <a class="dropdown-item" href="#">Delete</a>
                                 </div>

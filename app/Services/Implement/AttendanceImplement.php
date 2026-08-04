@@ -319,7 +319,7 @@ class AttendanceImplement implements AttendanceService
 
                 $attendances->push((object)[
                     'date' => Carbon::createFromFormat('Y-m-d', $date),
-                    'status' => 'absent',
+                    'status' => '-',
                     'employee_id' => $employee->id,
                     'user_id' => $employee->user_id,
                     'fullname' => $employee->personal->fullname ?? null,

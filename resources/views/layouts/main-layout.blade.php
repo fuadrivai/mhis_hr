@@ -94,7 +94,8 @@
                                             </li>
                                             <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
                                                     href="/scheduler">Scheduler</a></li>
-                                                    <li class={{ Request::is('employee/kpi-monitoring*') ? 'current-page' : '' }}>
+                                            <li
+                                                class={{ Request::is('employee/kpi-monitoring*') ? 'current-page' : '' }}>
                                                 <a href="{{ route('employee.kpi-monitoring') }}">KPI Monitoring</a>
                                             </li>
                                         </ul>
@@ -109,8 +110,8 @@
                                             style="display: {{ Request::is('time*') ? 'block' : 'none' }}">
                                             <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
                                                     href="/time/attendance">Attendance</a></li>
-                                            <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
-                                                    href="#">Overtime</a></li>
+                                            {{-- <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                    href="#">Overtime</a></li> --}}
                                             <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
                                                     href="/time/request">Time Off</a></li>
                                         </ul>

@@ -48,7 +48,33 @@ class ApprovalRequestController extends Controller
         ])->select('approval_requests.*');
 
         if ($request->ajax()) {
-            return datatables()->of($approvalRequests)->make(true);
+            return datatables()->of($approvalRequests)
+                ->addColumn('fullname', function ($approvalRequest) {
+                    return optional(optional($approvalRequest->requester)->personal)->fullname ?? '--';
+                })
+                ->addColumn('type_name', function ($approvalRequest) {
+                    return optional($approvalRequest->type)->name ?? '--';
+                })
+                ->filter(function ($query) use ($request) {
+                    $keyword = trim((string) $request->input('search.value'));
+
+                    if ($keyword === '') {
+                        return;
+                    }
+
+                    $query->where(function ($searchQuery) use ($keyword) {
+                        $searchQuery
+                            ->whereHas('requester.personal', function ($personalQuery) use ($keyword) {
+                                $personalQuery->where('fullname', 'like', "%{$keyword}%");
+                            })
+                            ->orWhereHas('type', function ($typeQuery) use ($keyword) {
+                                $typeQuery->where('name', 'like', "%{$keyword}%");
+                            })
+                            ->orWhere('status', 'like', "%{$keyword}%")
+                            ->orWhere('current_step', 'like', "%{$keyword}%");
+                    });
+                })
+                ->make(true);
         }
     }
 
