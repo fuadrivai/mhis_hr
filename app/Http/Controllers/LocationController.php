@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Location;
+use App\Models\LiveAttendanceSetting;
 use App\Services\LocationService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
@@ -24,7 +25,30 @@ class LocationController extends Controller
     public function index()
     {
         $locations  = $this->locationService->get();
-        return view('settings.time.location.index', ['locations' => $locations, 'title' => "Live Attendance"]);
+        $liveAttendanceSetting = LiveAttendanceSetting::firstOrCreate(
+            ['id' => 1],
+            ['need_face_recognition' => true]
+        );
+
+        return view('settings.time.location.index', compact('locations', 'liveAttendanceSetting') + ['title' => "Live Attendance"]);
+    }
+
+    public function updateFaceRecognitionSetting(Request $request)
+    {
+        $request->validate([
+            'need_face_recognition' => ['required', 'boolean'],
+        ]);
+
+        $setting = LiveAttendanceSetting::updateOrCreate(
+            ['id' => 1],
+            ['need_face_recognition' => $request->boolean('need_face_recognition')]
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json($setting);
+        }
+
+        return redirect('setting/location');
     }
 
     /**

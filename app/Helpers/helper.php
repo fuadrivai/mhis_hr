@@ -328,14 +328,16 @@ function prepareAttendance($employee,$user,$clockTime) {
     ];
 }
 
-    function handlePhotoAndFaceRecognition($employee,?string $photo): ?string
+    function handlePhotoAndFaceRecognition($employee,?string $photo, bool $requireFaceRecognition = true): ?string
     {
         if (!$photo) {
             return null;
         }
         // upload photo
         $photoPath = storeAttendancePhoto($employee,$photo);
-        verifyFaceRecognition($employee,$photoPath);
+        if ($requireFaceRecognition) {
+            verifyFaceRecognition($employee,$photoPath);
+        }
         return $photoPath;
     }
 

@@ -10,6 +10,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class EmployeeExport implements FromCollection, WithHeadings, WithMapping
 {
     private Collection $employees;
+    private int $number = 0;
 
     public function __construct(Collection $employees)
     {
@@ -24,7 +25,7 @@ class EmployeeExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
-            
+            'No',
             'Full Name',
             'Employee ID',
             'Email',
@@ -47,6 +48,7 @@ class EmployeeExport implements FromCollection, WithHeadings, WithMapping
     public function map($employee): array
     {
         return [
+            ++$this->number,
             optional($employee->personal)->fullname,
             optional($employee->employment)->employee_id,
             optional($employee->personal)->email,

@@ -110,6 +110,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::resource('timeoff', TimeOffController::class);
 
             Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);
+            Route::put('live-attendance/face-recognition', [LocationController::class, 'updateFaceRecognitionSetting']);
             Route::resource('location', LocationController::class);
 
             Route::get('approval/employee/active', [ApprovalRuleController::class, 'getActiveEmployees']);
