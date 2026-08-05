@@ -441,6 +441,8 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                         'show_action' => 0,
                     ]);
 
+                $this->restoreLeaveBalance($request);
+
                 $this->_sendNotification($request->requester->user_id,
                     [
                         'title' =>
@@ -481,6 +483,8 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                         'status' => 'skipped',
                         'show_action' => 0,
                     ]);
+
+                $this->restoreLeaveBalance($request);
             }
 
             else {
@@ -605,6 +609,8 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 ->whereIn('status', ['pending'])
                 ->update(['status' => 'skipped', 'show_action' => 0]);
 
+        $this->restoreLeaveBalance($request);
+
         ApprovalHistory::create([
             'approval_request_id' => $request->id,
             'action' => $request->status,
@@ -646,6 +652,36 @@ class ApprovalRequestImplement implements ApprovalRequestService{
         }
 
         return $start->diffInDays($end) + 1;
+    }
+
+    private function restoreLeaveBalance(ApprovalRequest $approvalRequest): void
+    {
+        if (!$approvalRequest->type->deduct_leave_balance) {
+            return;
+        }
+
+        $activeAcademicYear = $this->academicYearService->getActiveAcademicYear();
+
+        if (!$activeAcademicYear) {
+            throw new \Exception('No active academic year found for leave balance restoration.');
+        }
+
+        $requestedDays = $this->getRequestedLeaveDays($approvalRequest->data->payload ?? []);
+
+        $leaveAllocation = LeaveAllocation::where('employee_id', $approvalRequest->requester_employee_id)
+            ->where('timeoff_id', $approvalRequest->timeoff_id)
+            ->where('academic_year_id', $activeAcademicYear->id)
+            ->firstOrFail();
+
+        $leaveAllocation->increment('remaining', $requestedDays);
+        $leaveAllocation->decrement('used', $requestedDays);
+
+        LeaveAllocationHistory::create([
+            'leave_allocation_id' => $leaveAllocation->id,
+            'type' => 'restoration',
+            'days' => $requestedDays,
+            'remark' => "Leave balance restored after request {$approvalRequest->status}.",
+        ]);
     }
 
     private function _sendNotification($userId, $data)
