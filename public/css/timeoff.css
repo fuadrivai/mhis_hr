@@ -74,6 +74,63 @@
     margin-bottom: 6px;
 }
 
+.approval-attachment-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.approval-attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 150px;
+    color: #315273;
+    font-size: 12px;
+    line-height: 1.3;
+    text-decoration: none;
+}
+
+.approval-attachment-item img,
+.approval-attachment-pdf,
+.approval-attachment-file {
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+}
+
+.approval-attachment-item img {
+    border: 1px solid #d9e5f1;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.approval-attachment-pdf,
+.approval-attachment-file {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d9e5f1;
+    border-radius: 4px;
+    background: #ffffff;
+    font-size: 25px;
+}
+
+.approval-attachment-pdf {
+    color: #c0392b;
+}
+
+.approval-attachment-file {
+    color: #5c95cd;
+}
+
+.approval-attachment-item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .approval-form-actions {
     display: flex;
     gap: 10px;

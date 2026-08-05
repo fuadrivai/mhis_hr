@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TimeOff;
+use App\Models\LeaveAllocation;
 use App\Http\Requests\UpdateTimeOffRequest;
 use App\Services\AcademicYearService;
 use App\Services\TimeOffService;
@@ -96,11 +97,27 @@ class TimeOffController extends Controller
     {
         $timeoffs = $this->timeOffService->get();
         $academicYears = $this->academicYearService->get();
+        $activeAcademicYear = $academicYears->firstWhere('is_active', true);
+        $leaveAllocations = collect();
+
+        if ($activeAcademicYear) {
+            $leaveAllocations = LeaveAllocation::with([
+                'employee.personal',
+                'employee.employment',
+            ])
+                ->where('timeoff_id', $timeoffId)
+                ->where('academic_year_id', $activeAcademicYear->id)
+                ->get();
+        }
+
         return view('settings.timeoff.assignment', [
             "title" => "Time Off Assignment",
             "timeoff" => $timeoffs,
             "academicYears" => $academicYears,
-            'id'=>$timeoffId
+            'id' => $timeoffId,
+            'activeAcademicYear' => $activeAcademicYear,
+            'leaveAllocationEmployees' => $leaveAllocations->pluck('employee')->values(),
+            'leaveBalance' => optional($leaveAllocations->first())->total,
         ]);
     }
     public function employeeAssignment(Request $request)

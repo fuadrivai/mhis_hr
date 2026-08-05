@@ -76,13 +76,35 @@
                         <div class="col-sm-9">
                             <input type="file" class="form-control" id="attachments" name="attachments[]" multiple>
                             <small class="form-text text-muted">Upload related files for this approval request.</small>
+                            @if (isset($approvalRequest) && $approvalRequest->attachments->isNotEmpty())
+                                <div class="approval-attachment-list" aria-label="Existing attachments">
+                                    @foreach ($approvalRequest->attachments as $attachment)
+                                        @php
+                                            $attachmentUrl = asset('storage/' . $attachment->file_path);
+                                            $isImage = str_starts_with((string) $attachment->mime_type, 'image/');
+                                            $isPdf = $attachment->mime_type === 'application/pdf';
+                                        @endphp
+                                        <a class="approval-attachment-item" href="{{ $attachmentUrl }}" target="_blank"
+                                            rel="noopener" title="Open {{ $attachment->file_name }}">
+                                            @if ($isImage)
+                                                <img src="{{ $attachmentUrl }}" alt="{{ $attachment->file_name }}">
+                                            @elseif ($isPdf)
+                                                <i class="fa fa-file-pdf-o approval-attachment-pdf" aria-hidden="true"></i>
+                                            @else
+                                                <i class="fa fa-file-o approval-attachment-file" aria-hidden="true"></i>
+                                            @endif
+                                            <span>{{ $attachment->file_name }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     </div>
 
                     <div class="form-group row">
                         <label for="note" class="col-sm-3 col-form-label">Note</label>
                         <div class="col-sm-9">
-                            <textarea class="form-control" id="note" name="note" rows="3"></textarea>
+                            <textarea class="form-control" id="note" name="note" rows="3">{{ old('note', isset($approvalRequest) ? $approvalRequest->note : '') }}</textarea>
                         </div>
                     </div>
 
@@ -108,6 +130,7 @@
             $timeoffs->mapWithKeys(function ($timeoff) {
                 return [$timeoff->id => $timeoff->schema];
             }));
+        const existingDynamicFields = @json(isset($approvalRequest) ? optional($approvalRequest->data)->payload : []);
 
         $(document).ready(function() {
             $('#timeoff_id').change(function() {
@@ -116,10 +139,9 @@
                 renderDynamicFields(schema);
             });
 
-            $('#dynamic-field-container input, #dynamic-field-container select, #dynamic-field-container textarea')
-                .on('change input', function() {
-                    updateConditionalFields();
-                });
+            $('#dynamic-field-container').on('change input', 'input, select, textarea', function() {
+                updateConditionalFields();
+            });
 
             if ($('#timeoff_id').val()) {
                 $('#timeoff_id').trigger('change');
@@ -192,6 +214,25 @@
 
                 fieldHtml += `</div></div></div>`;
                 container.append(fieldHtml);
+
+                const fieldValue = existingDynamicFields[field.name];
+                if (fieldValue === undefined || fieldValue === null) {
+                    return;
+                }
+
+                const fieldName = `dynamic_fields[${field.name}]`;
+                if (field.type === 'checkbox') {
+                    const selectedValues = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+                    $(`input[name="${fieldName}[]"]`).each(function() {
+                        $(this).prop('checked', selectedValues.map(String).includes(String($(this).val())));
+                    });
+                } else if (field.type === 'radio') {
+                    $(`input[name="${fieldName}"]`).filter(function() {
+                        return String($(this).val()) === String(fieldValue);
+                    }).prop('checked', true);
+                } else {
+                    $(`[name="${fieldName}"]`).val(fieldValue);
+                }
             });
 
             $('#dynamic-fields').show();

@@ -28,7 +28,10 @@
                         <select required name="academic_year_id" id="academic_year_id" class="form-control select2">
                             <option value="">Select Academic Year</option>
                             @foreach ($academicYears as $year)
-                                <option value="{{ $year->id }}">{{ $year->name }}</option>
+                                <option value="{{ $year->id }}"
+                                    {{ optional($activeAcademicYear)->id == $year->id ? 'selected' : '' }}>
+                                    {{ $year->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -36,7 +39,8 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label for="timeoff_type_id">Leave balance</label>
-                        <input required type="number" class="form-control" id="leave_balance" name="leave_balance">
+                        <input required type="number" class="form-control" id="leave_balance" name="leave_balance"
+                            value="{{ $leaveBalance ?? '' }}">
                     </div>
                 </div>
             </div>
@@ -124,12 +128,12 @@
     <script src="/plugins/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
     <script src="/plugins/loadingoverlay/loadingoverlay.min.js"></script>
     <script>
-        let selectedEmployess = [];
+        let selectedEmployess = @json($leaveAllocationEmployees);
         let objLeaveAllocation = {
             timeoff_id: {{ $id }},
-            academic_year_id: null,
-            leave_balance: null,
-            employees: []
+            academic_year_id: {{ optional($activeAcademicYear)->id ?? 'null' }},
+            leave_balance: {{ $leaveBalance ?? 'null' }},
+            employees: @json($leaveAllocationEmployees)
         };
         $(document).ready(function() {
             tblSelectedEmployees = $('#tbl-datatable').DataTable({

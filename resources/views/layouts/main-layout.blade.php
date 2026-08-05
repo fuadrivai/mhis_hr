@@ -257,7 +257,7 @@
             <div class="right_col" role="main">
                 <div class="page-title">
                     <div class="title_left">
-                        <h3>{{ $title }}</h3>
+                        <h3>{!! $title !!}</h3>
                     </div>
                 </div>
 

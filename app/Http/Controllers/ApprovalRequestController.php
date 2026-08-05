@@ -169,16 +169,48 @@ class ApprovalRequestController extends Controller
         $approvals =  $this->approvalRequestService->show($id)->approvals()->with('approver.personal')->get();
         return response()->json($approvals);
     }
+
+    public function processAction(Request $request, ApprovalRequest $approvalRequest)
+    {
+        $validated = $request->validate([
+            'action' => 'required|in:approved,rejected',
+        ]);
+
+        try {
+            $this->approvalRequestService->action([
+                'request_id' => $approvalRequest->id,
+                'action' => $validated['action'],
+                'note' => $request->input('note'),
+            ]);
+
+            return redirect('/time/request/' . $approvalRequest->id . '/edit')
+                ->with('success', 'Request ' . $validated['action'] . ' successfully.');
+        } catch (\Throwable $exception) {
+            return redirect('/time/request/' . $approvalRequest->id . '/edit')
+                ->with('error', $exception->getMessage());
+        }
+    }
+
     public function edit(ApprovalRequest $request)
     {
+        $request->load([
+            'data',
+            'attachments',
+            'type',
+            'requester.personal',
+            'requester.employment',
+            'approvals.approver.personal',
+            'histories.approver.personal',
+        ]);
         $employees = $this->employeeService->getActive()->get()->load('personal');
         $timeoffs = $this->timeOffService->get();
-        return view('approval.request.form', [
-            'title' => 'Edit Approval Request',
+        return view('approval.request.preview', [
+            'title' => '<h1 class="approval-detail-title">' . ucwords(strtolower($request->type->name ?? 'Approval Request')) .  ' - ' . ucwords(strtolower($request->requester->personal->fullname ?? "Unknown Requester")) . '
+                <span class="approval-status ' . $request->status . '">' . ucwords(strtolower($request->status)) . '</span>
+            </h1>',
             'approvalRequest' => $request,
             'employees' => $employees,
             'timeoffs' => $timeoffs,
-
         ]);
     }
 }

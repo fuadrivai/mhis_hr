@@ -11,6 +11,7 @@ use App\Models\ApprovalRequestData;
 use App\Models\Employee;
 use App\Models\Session;
 use App\Models\TimeOff;
+use App\Models\User;
 use App\Services\ApprovalEngine;
 use App\Services\ApprovalRequestService;
 use Illuminate\Support\Facades\DB;
@@ -378,6 +379,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 throw new \Exception('User ID is required');
             }
 
+            $user = User::with('roles')->findOrFail($userId);
             $employee = Employee::where('user_id',$userId)->first();
 
             if (!$employee) {
@@ -400,30 +402,31 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 );
             }
 
-            $approval = $request->approvals()
-                ->where('approver_employee_id', $employee->id)
-                ->where('status', 'pending')
-                ->where('show_action', 1)
-                ->firstOrFail()
-                ->load('approver.personal');
+            $isAdmin = $user->hasRole('admin') || $user->roles->contains('id', 1);
 
-            /*
-            |--------------------------------------------------------------------------
-            | Update approval
-            |--------------------------------------------------------------------------
-            */
+            $approvalQuery = $request->approvals()
+                ->where('status', 'pending')
+                ->where('show_action', 1);
+
+            if (!$isAdmin || !in_array($action, ['approved', 'rejected'], true)) {
+                $approvalQuery->where('approver_employee_id', $employee->id);
+            }
+
+            $approval = $approvalQuery
+                ->orderBy('step_order')
+                ->first();
+
+            if (!$approval) {
+                throw new \Exception('You are not authorized to act on this request, or it no longer has a pending approval.');
+            }
+
+            $approval->load('approver.personal');
 
             $approval->status = $action;
             $approval->note = $note;
             $approval->actioned_date = now();
             $approval->show_action = 0;
             $approval->save();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Process status
-            |--------------------------------------------------------------------------
-            */
 
             if ($action === 'rejected') {
 
@@ -445,17 +448,15 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                             'Approval Request Rejected',
 
                         'body' =>
-                            'Your time off request has been rejected.',
+                            'Your time off request has been rejected by ' . $approval->approver->personal->fullname . '.',
                     ]
                 );
 
                 $request['status'] ='rejected';
 
-                $request['approver_name'] =$approval
-                        ->approver
-                        ->personal
-                        ->fullname
-                        ?? null;
+                $request['approver_name'] =$user->name
+                    ?? $approval->approver->personal->fullname
+                    ?? null;
 
                 $request['approver_note'] =
                     $approval->note
@@ -515,14 +516,15 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                                 'Approval Request Approved',
 
                             'body' =>
-                                'Your time off request has been approved.',
+                                'Your time off request has been approved by ' . $approval->approver->personal->fullname . '.',
                         ]
                     );
 
                     $request['status'] =
                         'approved';
 
-                    $request['approver_name'] =
+                    $request['approver_name'] = $user->name
+                            ??
                         $approval
                             ->approver
                             ->personal
@@ -544,7 +546,6 @@ class ApprovalRequestImplement implements ApprovalRequestService{
 
                     $nextApproval->save();
 
-                    // Kirim notifikasi/email ke next approver
                 }
             }
 

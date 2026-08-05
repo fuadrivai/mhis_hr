@@ -194,6 +194,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('request/datatable', [ApprovalRequestController::class, 'dataTable']);
             Route::get('request/{id}/history', [ApprovalRequestController::class, 'history']);
             Route::get('request/{id}/approver', [ApprovalRequestController::class, 'approver']);
+            Route::post('request/{approvalRequest}/action', [ApprovalRequestController::class, 'processAction'])
+                ->name('time.request.action');
             Route::resource('request', ApprovalRequestController::class);
         });
 
