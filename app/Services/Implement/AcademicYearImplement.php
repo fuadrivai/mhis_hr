@@ -70,4 +70,16 @@ class AcademicYearImplement implements AcademicYearService
             return response()->json(["message" => $th->getMessage()], 500);
         }
     }
+
+    function getActiveAcademicYear() {
+        try {
+            $activeAcademicYear = AcademicYear::where('is_active', 1)->first();
+            if (!$activeAcademicYear) {
+                return response()->json(["message" => "No active academic year found"], 404);
+            }
+            return $activeAcademicYear;
+        } catch (\Throwable $th) {
+            return response()->json(["message" => $th->getMessage()], 500);
+        }
+    }
 }
