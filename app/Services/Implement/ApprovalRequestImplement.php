@@ -9,9 +9,12 @@ use App\Models\ApprovalRequest;
 use App\Models\ApprovalRequestAttachment;
 use App\Models\ApprovalRequestData;
 use App\Models\Employee;
+use App\Models\LeaveAllocation;
+use App\Models\LeaveAllocationHistory;
 use App\Models\Session;
 use App\Models\TimeOff;
 use App\Models\User;
+use App\Services\AcademicYearService;
 use App\Services\ApprovalEngine;
 use App\Services\ApprovalRequestService;
 use Illuminate\Support\Facades\DB;
@@ -22,10 +25,12 @@ use function App\Helpers\sendMessage;
 
 class ApprovalRequestImplement implements ApprovalRequestService{
     private ApprovalEngine $approvalEngine;
+    private AcademicYearService $academicYearService;
 
-    public function __construct(ApprovalEngine $approvalEngine)
+    public function __construct(ApprovalEngine $approvalEngine, AcademicYearService $academicYearService)
     {
         $this->approvalEngine = $approvalEngine;
+        $this->academicYearService = $academicYearService;
     }
 
     public function get($with = [])
@@ -59,151 +64,145 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     }
 
     public function post($request)
-{
-    DB::beginTransaction();
+    {
+        DB::beginTransaction();
 
-    try {
-        $employee = Employee::findOrFail($request['requester_employee_id']);
+        try {
+            $employee = Employee::findOrFail($request['requester_employee_id']);
+            $timeoff = TimeOff::findOrFail($request['timeoff_id']);
+            $approvalRule = $this->approvalEngine->resolveApprovalRule($employee);
+            $activeAcademicYear = $this->academicYearService->getActiveAcademicYear();
 
-        $timeoff = TimeOff::findOrFail($request['timeoff_id']);
-
-        $approvalRule = $this->approvalEngine->resolveApprovalRule($employee);
-
-        if (!$approvalRule) {
-            throw new \Exception(
-                'No matching approval rule found for this employee.'
-            );
-        }
-
-        $approvalRequest = ApprovalRequest::create([
-            'approval_rule_id' => $approvalRule->id,
-            'requester_employee_id' => $employee->id,
-            'timeoff_id' => $timeoff->id,
-            'note' => $request['note'] ?? null,
-            'current_step' => 1,
-            'status' => 'pending',
-            'show_cancel' => 1,
-        ]);
-
-        ApprovalRequestData::create([
-            'approval_request_id' => $approvalRequest->id,
-            'payload' => $request['dynamic_fields'] ?? [],
-        ]);
-
-        foreach ($request['attachments'] ?? [] as $file) {
-
-            if (!$file->isValid()) {
-                throw new \Exception(
-                    'Invalid attachment: '
-                    . $file->getErrorMessage()
-                );
+            if (!$approvalRule) {
+                throw new \Exception('No matching approval rule found for this employee.');
             }
 
-            // Ambil semua metadata SEBELUM file dipindahkan
-            $fileName = $file->hashName();
-            $originalName = $file->getClientOriginalName();
-            $mimeType = $file->getClientMimeType();
-            $fileSize = $file->getSize();
+            if ($timeoff->deduct_leave_balance) {
+                if (!$activeAcademicYear) {
+                    throw new \Exception('No active academic year found for leave balance validation.');
+                }
 
-            $file->move(
-                storage_path(
-                    'app/public/approval-request-attachments'
-                ),
-                $fileName
-            );
+                $requestedDays = $this->getRequestedLeaveDays($request['dynamic_fields'] ?? []);
 
-            ApprovalRequestAttachment::create([
-                'approval_request_id' =>
-                    $approvalRequest->id,
+                $leaveAllocation = LeaveAllocation::where('employee_id', $employee->id)
+                    ->where('timeoff_id', $timeoff->id)
+                    ->where('academic_year_id', $activeAcademicYear->id)
+                    ->whereColumn('total', '>', 'used')
+                    ->where('remaining', '>', 0)
+                    ->first();
 
-                'field_name' =>
-                    'attachments',
+                if (!$leaveAllocation) {
+                    throw new \Exception('No available leave balance found for this timeoff in the active academic year. please contact HR for assistance.');
+                }
 
-                'file_name' =>
-                    $originalName,
+                if ($requestedDays > $leaveAllocation->remaining) {
+                    throw new \Exception("Requested leave days ({$requestedDays}) exceed the remaining leave balance ({$leaveAllocation->remaining}). please contact HR for assistance.");
+                }
 
-                'file_path' =>
-                    'approval-request-attachments/' . $fileName,
+                $leaveAllocation->decrement('remaining', $requestedDays);
+                $leaveAllocation->increment('used', $requestedDays);
 
-                'mime_type' =>
-                    $mimeType,
+                LeaveAllocationHistory::create([
+                    'leave_allocation_id' => $leaveAllocation->id,
+                    'type' => 'deduction',
+                    'days' => $requestedDays,
+                    'remark' => 'Leave balance deducted for approval request submission.',
+                ]);
+            }
 
-                'file_size' =>
-                    $fileSize,
-            ]);
-        }
-
-        foreach ($approvalRule->steps as $step) {
-
-            Approval::create([
-                'approval_request_id' => $approvalRequest->id,
-                'step_order' => $step->step_order,
-                'approver_employee_id' =>
-                    $step->approver_employee_id,
-                'approval_mode' => $step->approval_mode,
+            $approvalRequest = ApprovalRequest::create([
+                'approval_rule_id' => $approvalRule->id,
+                'requester_employee_id' => $employee->id,
+                'timeoff_id' => $timeoff->id,
+                'note' => $request['note'] ?? null,
+                'current_step' => 1,
                 'status' => 'pending',
-                'show_action' => 1,
+                'show_cancel' => 1,
             ]);
-        }
 
-        ApprovalHistory::create([
-            'approval_request_id' => $approvalRequest->id,
-            'action' => 'submitted',
-            'step_order' => 1,
-        ]);
+            ApprovalRequestData::create([
+                'approval_request_id' => $approvalRequest->id,
+                'payload' => $request['dynamic_fields'] ?? [],
+            ]);
 
-        $approval = Approval::with('approver')
-            ->where(
-                'approval_request_id',
-                $approvalRequest->id
-            )
-            ->where('status', 'pending')
-            ->orderBy('step_order')
-            ->first();
+            foreach ($request['attachments'] ?? [] as $file) {
+                if (!$file->isValid()) {
+                    throw new \Exception('Invalid attachment: '. $file->getErrorMessage());
+                }
 
-        if (!$approval || !$approval->approver) {
-            throw new \Exception(
-                'No pending approver found.'
+                $fileName = $file->hashName();
+                $originalName = $file->getClientOriginalName();
+                $mimeType = $file->getClientMimeType();
+                $fileSize = $file->getSize();
+
+                $dir = 'app/public/approval-request-attachments';
+                $file->move(storage_path($dir),$fileName);
+
+                ApprovalRequestAttachment::create([
+                    'approval_request_id' =>$approvalRequest->id,
+                    'field_name' =>'attachments',
+                    'file_name' =>$originalName,
+                    'file_path' => 'approval-request-attachments/' . $fileName,
+                    'mime_type' => $mimeType,
+                    'file_size' => $fileSize,
+                ]);
+            }
+
+            foreach ($approvalRule->steps as $step) {
+                Approval::create([
+                    'approval_request_id' => $approvalRequest->id,
+                    'step_order' => $step->step_order,
+                    'approver_employee_id' => $step->approver_employee_id,
+                    'approval_mode' => $step->approval_mode,
+                    'status' => 'pending',
+                    'show_action' => 1,
+                ]);
+            }
+
+            ApprovalHistory::create([
+                'approval_request_id' => $approvalRequest->id,
+                'action' => 'submitted',
+                'step_order' => 1,
+            ]);
+
+            $approval = Approval::with('approver')
+                ->where('approval_request_id', $approvalRequest->id)
+                ->where('status', 'pending')
+                ->orderBy('step_order')
+                ->first();
+
+            if (!$approval || !$approval->approver) {
+                throw new \Exception('No pending approver found.');
+            }
+
+            $approver = $approval->approver->load('user');
+
+            $employee->load('personal');
+
+            $this->_sendNotification(
+                $approver->user->id,
+                [
+                    'title' => 'Approval Request Pending',
+                    'body' =>'You have a new time off request to approve for '. $employee->personal->fullname,
+                ]
             );
+            $this->_sendEmail($approvalRequest);
+            DB::commit();
+            return $approvalRequest;
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            logger()->error(
+                'Approval request failed',
+                [
+                    'error' => $th->getMessage(),
+                    'file' => $th->getFile(),
+                    'line' => $th->getLine(),
+                    'trace' => $th->getTraceAsString(),
+                ]
+            );
+            throw $th;
         }
-
-        $approver = $approval->approver->load('user');
-
-        $employee->load('personal');
-
-        $this->_sendNotification(
-            $approver->user->id,
-            [
-                'title' => 'Approval Request Pending',
-                'body' =>
-                    'You have a new time off request to approve for '
-                    . $employee->personal->fullname,
-            ]
-        );
-
-        $this->_sendEmail($approvalRequest);
-
-        DB::commit();
-
-        return $approvalRequest;
-
-    } catch (\Throwable $th) {
-
-        DB::rollBack();
-
-        logger()->error(
-            'Approval request failed',
-            [
-                'error' => $th->getMessage(),
-                'file' => $th->getFile(),
-                'line' => $th->getLine(),
-                'trace' => $th->getTraceAsString(),
-            ]
-        );
-
-        throw $th;
     }
-}
 
     public function getRequestByUser($request)
     {
@@ -442,6 +441,8 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                         'show_action' => 0,
                     ]);
 
+                $this->restoreLeaveBalance($request);
+
                 $this->_sendNotification($request->requester->user_id,
                     [
                         'title' =>
@@ -482,6 +483,8 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                         'status' => 'skipped',
                         'show_action' => 0,
                     ]);
+
+                $this->restoreLeaveBalance($request);
             }
 
             else {
@@ -606,6 +609,8 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 ->whereIn('status', ['pending'])
                 ->update(['status' => 'skipped', 'show_action' => 0]);
 
+        $this->restoreLeaveBalance($request);
+
         ApprovalHistory::create([
             'approval_request_id' => $request->id,
             'action' => $request->status,
@@ -624,6 +629,59 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     public function delete($id)
     {
         // TODO: Implement delete() method.
+    }
+
+    private function getRequestedLeaveDays(array $dynamicFields): int
+    {
+        $startDate = data_get($dynamicFields, 'start_date');
+        $endDate = data_get($dynamicFields, 'end_date') ?? $startDate;
+
+        if (!$startDate) {
+            throw new \Exception('A start date is required to validate the leave balance.');
+        }
+
+        try {
+            $start = \Carbon\Carbon::parse($startDate)->startOfDay();
+            $end = \Carbon\Carbon::parse($endDate)->startOfDay();
+        } catch (\Throwable $th) {
+            throw new \Exception('The leave request dates are invalid.');
+        }
+
+        if ($end->lt($start)) {
+            throw new \Exception('The leave end date cannot be before the start date.');
+        }
+
+        return $start->diffInDays($end) + 1;
+    }
+
+    private function restoreLeaveBalance(ApprovalRequest $approvalRequest): void
+    {
+        if (!$approvalRequest->type->deduct_leave_balance) {
+            return;
+        }
+
+        $activeAcademicYear = $this->academicYearService->getActiveAcademicYear();
+
+        if (!$activeAcademicYear) {
+            throw new \Exception('No active academic year found for leave balance restoration.');
+        }
+
+        $requestedDays = $this->getRequestedLeaveDays($approvalRequest->data->payload ?? []);
+
+        $leaveAllocation = LeaveAllocation::where('employee_id', $approvalRequest->requester_employee_id)
+            ->where('timeoff_id', $approvalRequest->timeoff_id)
+            ->where('academic_year_id', $activeAcademicYear->id)
+            ->firstOrFail();
+
+        $leaveAllocation->increment('remaining', $requestedDays);
+        $leaveAllocation->decrement('used', $requestedDays);
+
+        LeaveAllocationHistory::create([
+            'leave_allocation_id' => $leaveAllocation->id,
+            'type' => 'restoration',
+            'days' => $requestedDays,
+            'remark' => "Leave balance restored after request {$approvalRequest->status}.",
+        ]);
     }
 
     private function _sendNotification($userId, $data)

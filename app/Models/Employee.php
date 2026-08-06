@@ -74,4 +74,8 @@ class Employee extends Model
     {
         return $this->hasMany(Reprimand::class);
     }
+    public function leavesBalance()
+    {
+        return $this->belongsTo(LeaveAllocation::class, 'id', 'employee_id');
+    }
 }
