@@ -134,13 +134,9 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('lesson-plan', [\App\Http\Controllers\LessonPlanSettingController::class, 'index'])->name('lesson-plan-setting.index');
             Route::post('lesson-plan/class', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeClass'])->name('lesson-plan-setting.class.store');
             Route::delete('lesson-plan/class/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyClass'])->name('lesson-plan-setting.class.destroy');
-            Route::post('assessment/category', [\App\Http\Controllers\AssessmentSettingController::class, 'storeCategory'])->name('assessment-setting.category.store');
-            Route::delete('assessment/category/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyCategory'])->name('assessment-setting.category.destroy');
-            
-            Route::post('assessment/monitor', [\App\Http\Controllers\AssessmentSettingController::class, 'storeMonitor'])->name('assessment-setting.monitor.store');
-            Route::delete('assessment/monitor/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyMonitor'])->name('assessment-setting.monitor.destroy');
-            
-            Route::post('assessment/subject', [\App\Http\Controllers\AssessmentSettingController::class, 'storeSubject'])->name('assessment-setting.subject.store');
+            Route::post('lesson-plan/category', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeCategory'])->name('lesson-plan-setting.category.store');
+            Route::delete('lesson-plan/category/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyCategory'])->name('lesson-plan-setting.category.destroy');
+            Route::post('lesson-plan/subject', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeSubject'])->name('lesson-plan-setting.subject.store');
             Route::delete('lesson-plan/subject/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroySubject'])->name('lesson-plan-setting.subject.destroy');
             Route::post('lesson-plan/approver', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeApprover'])->name('lesson-plan-setting.approver.store');
             Route::delete('lesson-plan/approver/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyApprover'])->name('lesson-plan-setting.approver.destroy');
@@ -148,6 +144,21 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::delete('lesson-plan/monitor/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyMonitor'])->name('lesson-plan-setting.monitor.destroy');
             Route::post('lesson-plan/assignment', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeAssignment'])->name('lesson-plan-setting.assignment.store');
             Route::delete('lesson-plan/assignment/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyAssignment'])->name('lesson-plan-setting.assignment.destroy');
+            
+            // Assessment Settings
+            Route::get('assessment', [\App\Http\Controllers\AssessmentSettingController::class, 'index'])->name('assessment-setting.index');
+            Route::post('assessment/class', [\App\Http\Controllers\AssessmentSettingController::class, 'storeClass'])->name('assessment-setting.class.store');
+            Route::delete('assessment/class/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyClass'])->name('assessment-setting.class.destroy');
+            Route::post('assessment/category', [\App\Http\Controllers\AssessmentSettingController::class, 'storeCategory'])->name('assessment-setting.category.store');
+            Route::delete('assessment/category/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyCategory'])->name('assessment-setting.category.destroy');
+            Route::post('assessment/subject', [\App\Http\Controllers\AssessmentSettingController::class, 'storeSubject'])->name('assessment-setting.subject.store');
+            Route::delete('assessment/subject/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroySubject'])->name('assessment-setting.subject.destroy');
+            Route::post('assessment/approver', [\App\Http\Controllers\AssessmentSettingController::class, 'storeApprover'])->name('assessment-setting.approver.store');
+            Route::delete('assessment/approver/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyApprover'])->name('assessment-setting.approver.destroy');
+            Route::post('assessment/monitor', [\App\Http\Controllers\AssessmentSettingController::class, 'storeMonitor'])->name('assessment-setting.monitor.store');
+            Route::delete('assessment/monitor/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyMonitor'])->name('assessment-setting.monitor.destroy');
+            Route::post('assessment/assignment', [\App\Http\Controllers\AssessmentSettingController::class, 'storeAssignment'])->name('assessment-setting.assignment.store');
+            Route::delete('assessment/assignment/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyAssignment'])->name('assessment-setting.assignment.destroy');
             
             Route::get('lesson-plan-target', [\App\Http\Controllers\LessonPlanTargetController::class, 'index'])->name('lesson-plan-target.index');
             Route::post('lesson-plan-target', [\App\Http\Controllers\LessonPlanTargetController::class, 'store'])->name('lesson-plan-target.store');
