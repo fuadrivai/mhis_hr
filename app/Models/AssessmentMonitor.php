@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class AssessmentApprover extends Model
+class AssessmentMonitor extends Model
 {
     use HasFactory;
 
@@ -19,10 +19,5 @@ class AssessmentApprover extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class);
-    }
-
-    public function schoolClasses()
-    {
-        return $this->belongsToMany(SchoolClass::class, 'assessment_approver_school_classes');
     }
 }

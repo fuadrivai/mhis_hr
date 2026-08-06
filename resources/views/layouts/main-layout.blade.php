@@ -149,6 +149,13 @@
                                                 href="{{ route('employee.assessment.index') }}">My Assessments</a></li>
                                         <li class={{ Request::is('assessment/approvals*') ? 'current-page' : '' }}><a
                                                 href="{{ route('assessment.approvals.index') }}">Approvals</a></li>
+                                        <?php $isAssessmentMonitor = \App\Models\AssessmentMonitor::where('employee_id', auth()->user()->employee->id ?? 0)->exists(); ?>
+                                        @if ($isAssessmentMonitor)
+                                            <li
+                                                class={{ Request::is('assessment/monitoring*') ? 'current-page' : '' }}>
+                                                <a href="{{ route('employee.assessment.monitoring.index') }}">Monitoring Assessment</a>
+                                            </li>
+                                        @endif
                                     </ul>
                                 </li>
 

@@ -20,13 +20,22 @@ class AssessmentApprovalController extends Controller
         $pendingSubmissions = collect();
 
         foreach ($approverRoles as $role) {
-            $submissions = \App\Models\AssessmentSubmission::with(['assignment.employee.user', 'assignment.subject', 'assignment.schoolClass', 'target'])
+            $classIds = $role->schoolClasses->pluck('id')->toArray();
+            
+            $query = \App\Models\AssessmentSubmission::with(['assignment.employee.user', 'assignment.subject', 'assignment.schoolClass', 'target'])
                 ->where('status', 'submitted')
                 ->where('current_approval_level', $role->level)
                 ->whereHas('assignment.subject', function($q) use ($role) {
                     $q->where('subject_category_id', $role->subject_category_id);
-                })->get();
-            
+                });
+                
+            if (!empty($classIds)) {
+                $query->whereHas('assignment', function($q) use ($classIds) {
+                    $q->whereIn('school_class_id', $classIds);
+                });
+            }
+
+            $submissions = $query->get();
             $pendingSubmissions = $pendingSubmissions->merge($submissions);
         }
 
@@ -64,9 +73,18 @@ class AssessmentApprovalController extends Controller
             $subjectCategoryId = $submission->assignment->subject->subject_category_id;
             $currentLevel = $submission->current_approval_level;
 
+            $schoolClassId = $submission->assignment->school_class_id;
+
             $nextLevelApprover = \App\Models\AssessmentApprover::where('subject_category_id', $subjectCategoryId)
                                     ->where('level', '>', $currentLevel)
+                                    ->where(function($q) use ($schoolClassId) {
+                                        $q->whereHas('schoolClasses', function($sq) use ($schoolClassId) {
+                                            $sq->where('school_classes.id', $schoolClassId);
+                                        })->orWhereDoesntHave('schoolClasses');
+                                    })
+                                    ->withCount('schoolClasses')
                                     ->orderBy('level', 'asc')
+                                    ->orderByDesc('school_classes_count')
                                     ->first();
 
             if ($nextLevelApprover) {

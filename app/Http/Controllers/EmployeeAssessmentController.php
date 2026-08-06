@@ -63,8 +63,18 @@ class EmployeeAssessmentController extends Controller
             ]
         );
 
+        $schoolClassId = $assignment->school_class_id;
         $approver = \App\Models\AssessmentApprover::where('subject_category_id', $assignment->subject->subject_category_id)
-                        ->where('level', 1)->first();
+                        ->where('level', 1)
+                        ->where(function($q) use ($schoolClassId) {
+                            $q->whereHas('schoolClasses', function($sq) use ($schoolClassId) {
+                                $sq->where('school_classes.id', $schoolClassId);
+                            })->orWhereDoesntHave('schoolClasses');
+                        })
+                        ->withCount('schoolClasses')
+                        ->orderByDesc('school_classes_count')
+                        ->first();
+                        
         if ($approver && $approver->employee && $approver->employee->user) {
             $approver->employee->user->notify(new \App\Notifications\AssessmentSubmitted($submission));
         }
