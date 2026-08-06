@@ -29,6 +29,7 @@ use App\Http\Controllers\EmployeeKpiController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AnnouncementCategoryController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\LeaveAllocationController;
 use App\Http\Controllers\ReprimandController;
 use App\Http\Controllers\ReprimandTypeController;
 use App\Http\Controllers\RoleController;
@@ -111,7 +112,9 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('timeoff/assignment', [TimeOffController::class, 'employeeAssignment'])->name('timeoff.employeeAssignment');
             Route::get('timeoff/assignment/{timeoffId}', [TimeOffController::class, 'assignment'])->name('timeoff.assignment');
             Route::resource('timeoff', TimeOffController::class);
-
+            
+            Route::resource('leave/allocation', LeaveAllocationController::class);
+            
             Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);
             Route::put('live-attendance/face-recognition', [LocationController::class, 'updateFaceRecognitionSetting']);
             Route::resource('location', LocationController::class);
