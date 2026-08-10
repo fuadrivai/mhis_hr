@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Employee;
 use App\Services\BranchService;
 use App\Services\JobLevelService;
 use App\Services\OrganizationService;
@@ -74,6 +75,7 @@ class AttendanceController extends Controller
                     $query->where('branch_id', $request->branch);
                 });
             }
+
         }
 
         if ($request->organization && $request->organization != '') {
@@ -117,6 +119,118 @@ class AttendanceController extends Controller
                 "levels"=> $levels,
             ]
         );
+    }
+
+    public function attendanceSummary(Request $request)
+    {
+        $date = $request->filled('date')
+            ? Carbon::parse($request->input('date'))->format('Y-m-d')
+            : Carbon::today()->format('Y-m-d');
+
+        $employees = Employee::query()->where('is_active', 1);
+        $attendances = Attendance::query()->where('date', $date);
+
+        foreach ([
+            'branch' => 'branch_id',
+            'organization' => 'organization_id',
+            'position' => 'job_position_id',
+            'level' => 'job_level_id',
+        ] as $filter => $column) {
+            if ($request->filled($filter) && $request->input($filter) !== 'all') {
+                $employees->whereHas('employment', function ($query) use ($column, $request, $filter) {
+                    $query->where($column, $request->input($filter));
+                });
+                $attendances->whereHas('employee.employment', function ($query) use ($column, $request, $filter) {
+                    $query->where($column, $request->input($filter));
+                });
+            }
+        }
+
+        $present = (clone $attendances)->where('status', 'present')->count();
+
+        return response()->json([
+            'present' => $present,
+            'absent' => max(0, $employees->count() - $present),
+            'late' => (clone $attendances)
+                ->whereNotNull('check_in')
+                ->whereNotNull('schedule_in')
+                ->whereRaw('TIME(check_in) > TIME(schedule_in)')
+                ->count(),
+        ]);
+    }
+
+    public function attendanceSummaryList(Request $request, string $type)
+    {
+        if (!in_array($type, ['present', 'absent', 'late'], true)) {
+            abort(404);
+        }
+
+        $date = $request->filled('date')
+            ? Carbon::parse($request->input('date'))->format('Y-m-d')
+            : Carbon::today()->format('Y-m-d');
+
+        $filters = [
+            'branch' => 'branch_id',
+            'organization' => 'organization_id',
+            'position' => 'job_position_id',
+            'level' => 'job_level_id',
+        ];
+
+        if ($type === 'absent') {
+            $employees = Employee::with(['personal', 'employment.branch', 'employment.organization', 'employment.job_position'])
+                ->where('is_active', 1)
+                ->whereDoesntHave('attendances', function ($query) use ($date) {
+                    $query->where('date', $date)->where('status', 'present');
+                });
+
+            foreach ($filters as $filter => $column) {
+                if ($request->filled($filter) && $request->input($filter) !== 'all') {
+                    $employees->whereHas('employment', function ($query) use ($column, $request, $filter) {
+                        $query->where($column, $request->input($filter));
+                    });
+                }
+            }
+
+            return response()->json($employees->get()->map(function ($employee) {
+                return [
+                    'name' => $employee->personal->fullname ?? '-',
+                    'branch' => $employee->employment->branch->name ?? '-',
+                    'organization' => $employee->employment->organization->name ?? '-',
+                    'position' => $employee->employment->job_position->name ?? '-',
+                    'schedule_in' => '-',
+                    'check_in' => '-',
+                ];
+            }));
+        }
+
+        $attendances = Attendance::with(['employee.personal', 'employee.employment.branch', 'employee.employment.organization', 'employee.employment.job_position'])
+            ->where('date', $date)
+            ->where('status', 'present');
+
+        if ($type === 'late') {
+            $attendances->whereNotNull('check_in')
+                ->whereNotNull('schedule_in')
+                ->whereRaw('TIME(check_in) > TIME(schedule_in)');
+        }
+
+        foreach ($filters as $filter => $column) {
+            if ($request->filled($filter) && $request->input($filter) !== 'all') {
+                $attendances->whereHas('employee.employment', function ($query) use ($column, $request, $filter) {
+                    $query->where($column, $request->input($filter));
+                });
+            }
+        }
+
+        return response()->json($attendances->get()->map(function ($attendance) {
+            return [
+                'name' => $attendance->employee->personal->fullname ?? $attendance->fullname ?? '-',
+                'branch' => $attendance->employee->employment->branch->name ?? '-',
+                'organization' => $attendance->employee->employment->organization->name ?? '-',
+                'position' => $attendance->employee->employment->job_position->name ?? '-',
+                'schedule_in' => $attendance->schedule_in ?? '-',
+                'check_in' => optional($attendance->check_in)->format('H:i') ?? '-',
+            ];
+        }));
     }
 
     public function datatable(){

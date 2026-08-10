@@ -211,6 +211,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('kpi/{kpi_id}/save-score', [EmployeeKpiController::class, 'saveScore'])->name('employee.kpi.save-score');
         });
         Route::group(['prefix' => 'time'], function () {
+            Route::get('attendance/summary', [AttendanceController::class, 'attendanceSummary']);
+            Route::get('attendance/summary/{type}', [AttendanceController::class, 'attendanceSummaryList']);
             Route::get('attendance', [AttendanceController::class, 'attendance']);
             Route::get('request/datatable', [ApprovalRequestController::class, 'dataTable']);
             Route::get('request/{id}/history', [ApprovalRequestController::class, 'history']);
