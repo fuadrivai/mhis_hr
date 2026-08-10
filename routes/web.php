@@ -113,6 +113,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('timeoff/assignment/{timeoffId}', [TimeOffController::class, 'assignment'])->name('timeoff.assignment');
             Route::resource('timeoff', TimeOffController::class);
             
+            Route::get('leave/allocation/{id}/histories', [LeaveAllocationController::class, 'getLeaveAllocationHistories']);
             Route::resource('leave/allocation', LeaveAllocationController::class);
             
             Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);

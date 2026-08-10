@@ -108,7 +108,15 @@
                                         <td>{{ $leaveAllocation->employee->employment->job_position->name ?? 'N/A' }}</td>
                                         <td class="text-center">{{ $leaveAllocation->remaining }}</td>
                                         <td class="text-center">
-                                            <a href="#" class="btn btn-primary btn-sm">Edit</a>
+                                            <button type="button" class="btn btn-info btn-sm btn-allocation-modal"
+                                                data-url="{{ url('setting/leave/allocation/' . $leaveAllocation->id) }}"
+                                                data-employee="{{ $leaveAllocation->employee->personal->fullname ?? 'Employee' }}"
+                                                data-mode="history">History</button>
+                                            <button type="button" class="btn btn-primary btn-sm btn-allocation-modal"
+                                                data-id="{{ $leaveAllocation->id }}"
+                                                data-url="{{ url('setting/leave/allocation/' . $leaveAllocation->id) }}"
+                                                data-employee="{{ $leaveAllocation->employee->personal->fullname ?? 'Employee' }}"
+                                                data-mode="edit">Edit</button>
                                         </td>
                                     </tr>
                                 @empty
@@ -127,5 +135,129 @@
         </div>
     </div>
 
-    @include('settings.modal-general')
+    <div class="modal fade" id="leave-allocation-modal" tabindex="-1" role="dialog"
+        aria-labelledby="leave-allocation-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leave-allocation-modal-title">Leave Allocation</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="leave-allocation-loading" class="text-center">Loading...</div>
+                    <div id="leave-allocation-content" class="d-none">
+                        <div class="row mb-3">
+                            <div class="col-sm-4"><strong>Total:</strong> <span id="allocation-total"></span></div>
+                            <div class="col-sm-4"><strong>Used:</strong> <span id="allocation-used"></span></div>
+                            <div class="col-sm-4"><strong>Remaining:</strong> <span id="allocation-remaining"></span>
+                            </div>
+                        </div>
+                        <form id="leave-allocation-form" class="d-none">
+                            <div class="form-group">
+                                <input type="hidden" id="allocation-id" name="allocation_id">
+                                <label for="allocation-remaining-input">Remaining balance</label>
+                                <input type="number" min="0" step="1" class="form-control"
+                                    id="allocation-remaining-input" name="remaining" required>
+                                <small class="text-danger d-none" id="allocation-error"></small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save balance</button>
+                        </form>
+                        <hr>
+                        <h5>Leave History</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Days</th>
+                                        <th>Remark</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leave-allocation-history"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('content-script')
+    <script>
+        $(document).ready(function() {
+            let allocationUrl = null;
+
+            $('.btn-allocation-modal').on('click', function() {
+                const button = $(this);
+                const isEditMode = button.data('mode') === 'edit';
+                allocationUrl = button.data('url');
+                $('#allocation-id').val(button.data('id'));
+
+                $('#leave-allocation-modal-title').text(isEditMode ? 'Adjust Leave Balance' :
+                    'Leave History');
+                $('#leave-allocation-loading').removeClass('d-none');
+                $('#leave-allocation-content, #leave-allocation-form, #allocation-error').addClass(
+                    'd-none');
+                $('#leave-allocation-modal').modal('show');
+
+                $.get(allocationUrl)
+                    .done(function(allocation) {
+                        $('#allocation-total').text(allocation.total);
+                        $('#allocation-used').text(allocation.used);
+                        $('#allocation-remaining').text(allocation.remaining);
+                        $('#allocation-remaining-input').val(allocation.remaining);
+
+                        const rows = allocation.histories.length ? allocation.histories.map(function(
+                                history) {
+                                const date = new Date(history.created_at).toLocaleString();
+                                const days = history.days > 0 ? '+' + history.days : history.days;
+                                return '<tr><td>' + date + '</td><td>' + history.type +
+                                    '</td><td>' + days +
+                                    '</td><td>' + (history.remark || '-') + '</td></tr>';
+                            }).join('') :
+                            '<tr><td colspan="4" class="text-center">No leave history found.</td></tr>';
+
+                        $('#leave-allocation-history').html(rows);
+                        $('#leave-allocation-loading').addClass('d-none');
+                        $('#leave-allocation-content').removeClass('d-none');
+                        $('#leave-allocation-form').toggleClass('d-none', !isEditMode);
+                    })
+                    .fail(function() {
+                        $('#leave-allocation-loading').text('Unable to load leave allocation details.');
+                    });
+            });
+
+            $('#leave-allocation-form').on('submit', function(event) {
+                event.preventDefault();
+                const submitButton = $(this).find('[type="submit"]');
+
+                submitButton.prop('disabled', true);
+                $('#allocation-error').addClass('d-none');
+
+                $.ajax({
+                    url: allocationUrl,
+                    method: 'PUT',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        _method: 'PUT',
+                        remaining: $('#allocation-remaining-input').val(),
+                        id: $('#allocation-id').val()
+                    }
+                }).done(function() {
+                    window.location.reload();
+                }).fail(function(response) {
+                    const errors = response.responseJSON && response.responseJSON.errors;
+                    const message = errors && errors.remaining ? errors.remaining[0] :
+                        'Unable to update the remaining balance.';
+                    $('#allocation-error').text(message).removeClass('d-none');
+                }).always(function() {
+                    submitButton.prop('disabled', false);
+                });
+            });
+        });
+    </script>
 @endsection

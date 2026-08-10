@@ -111,8 +111,11 @@ public function __construct(AcademicYearService $academicYearService){
      * @param  \App\Models\LeaveAllocation  $leaveAllocation
      * @return \Illuminate\Http\Response
      */
-    public function show(LeaveAllocation $leaveAllocation)
+    public function show($id)
     {
+        $leaveAllocation = LeaveAllocation::with([
+            'employee.personal'
+        ])->findOrFail($id);
         return response()->json(
             $leaveAllocation->load([
                 'histories' => function ($query) {
@@ -140,11 +143,14 @@ public function __construct(AcademicYearService $academicYearService){
      * @param  \App\Models\LeaveAllocation  $leaveAllocation
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, LeaveAllocation $leaveAllocation)
+    public function update(Request $request, $id)
     {
+        
         $validated = $request->validate([
             'remaining' => ['required', 'integer', 'min:0'],
-        ]);
+            'id' => ['required', 'exists:leave_allocations,id'],
+            ]);
+        $leaveAllocation = LeaveAllocation::findOrFail($id);
 
         $previousRemaining = $leaveAllocation->remaining;
         $remaining = $validated['remaining'];
@@ -153,7 +159,7 @@ public function __construct(AcademicYearService $academicYearService){
             $leaveAllocation->update(['remaining' => $remaining]);
 
             LeaveAllocationHistory::create([
-                'leave_allocation_id' => $leaveAllocation->id,
+                'leave_allocation_id' => $validated['id'],
                 'type' => 'adjustment',
                 'days' => $remaining - $previousRemaining,
                 'remark' => 'Remaining balance adjusted manually.',
@@ -172,5 +178,14 @@ public function __construct(AcademicYearService $academicYearService){
     public function destroy(LeaveAllocation $leaveAllocation)
     {
         //
+    }
+
+    public function getLeaveAllocationHistories($leaveAllocationId)
+    {
+        $histories = LeaveAllocationHistory::where('leave_allocation_id', $leaveAllocationId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($histories);
     }
 }
