@@ -213,6 +213,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::group(['prefix' => 'time'], function () {
             Route::get('attendance/summary', [AttendanceController::class, 'attendanceSummary']);
             Route::get('attendance/summary/{type}', [AttendanceController::class, 'attendanceSummaryList']);
+            Route::get('attendance/{attendance}/logs', [AttendanceController::class, 'attendanceLogs']);
             Route::get('attendance', [AttendanceController::class, 'attendance']);
             Route::get('request/datatable', [ApprovalRequestController::class, 'dataTable']);
             Route::get('request/{id}/history', [ApprovalRequestController::class, 'history']);

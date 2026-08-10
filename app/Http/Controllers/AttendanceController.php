@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\AttendanceLog;
 use App\Models\Employee;
 use App\Services\BranchService;
 use App\Services\JobLevelService;
@@ -44,7 +45,6 @@ class AttendanceController extends Controller
     {
         $date = Carbon::now();
         $now = $date->format('F d, Y');
-        // $attendances = $this->attendanceService->getSummaryReport($request);
         return view('layouts.late-layout', [
             "title" => "Master Employee",
             "date" => $now
@@ -62,7 +62,7 @@ class AttendanceController extends Controller
     }
     public function attendance(UtilitiesRequest $request)
     {
-        $attendances = Attendance::with(['employee.employment','employee.personal']);
+        $attendances = Attendance::with(['employee.employment','employee.personal','logs']);
 
         if ($request->date && $request->date != '') {
             $_date = Carbon::parse($request->date)->format('Y-m-d');
@@ -231,6 +231,14 @@ class AttendanceController extends Controller
                 'check_in' => optional($attendance->check_in)->format('H:i') ?? '-',
             ];
         }));
+    }
+
+    public function attendanceLogs(UtilitiesRequest $request, Attendance $attendance)
+    {
+        $logs = AttendanceLog::where('attendance_id', $attendance->id)
+            ->latest('clock_datetime');
+
+        return datatables()->of($logs)->make(true);
     }
 
     public function datatable(){
