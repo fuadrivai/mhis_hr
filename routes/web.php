@@ -117,6 +117,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::resource('leave/allocation', LeaveAllocationController::class);
             
             Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);
+            Route::put('location/cutoff/{cutoff}', [LocationController::class, 'updateCutoff'])->name('location.cutoff.update');
             Route::put('live-attendance/face-recognition', [LocationController::class, 'updateFaceRecognitionSetting']);
             Route::resource('location', LocationController::class);
 
