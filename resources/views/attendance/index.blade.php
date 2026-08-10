@@ -155,7 +155,7 @@
                 <ul class="nav navbar-right panel_toolbox">
                     <li>
                         <div class="form-group">
-                            <input type="text" id="filter-date" class="form-control date-picker">
+                            <input readonly type="text" id="filter-date" class="form-control date-picker">
                         </div>
                     </li>
                     <li>
@@ -242,6 +242,32 @@
                         <h3 class="mb-0 text-danger" id="summary-late">0</h3>
                     </div>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12 col-sm-12">
+        <div class="x_panel">
+            <div class="x_content">
+                <div class="table-responsive" id="attendance-table-container">
+                    <table id="tbl-attendance" class="table table-striped table-bordered table-sm" style="width: 100%">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Date</th>
+                                <th>Shift</th>
+                                <th>Schedule In</th>
+                                <th>Schedule Out</th>
+                                <th>Clock In</th>
+                                <th>Clock Out</th>
+                                <th>Status</th>
+                                <th>#</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -354,30 +380,6 @@
             </div>
         </div>
     </div>
-
-    <div class="col-md-12 col-sm-12">
-        <div class="x_panel">
-            <div class="x_content">
-                <table id="tbl-location" class="table table-striped table-bordered table-sm" style="width: 100%">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Date</th>
-                            <th>Shift</th>
-                            <th>Schedule In</th>
-                            <th>Schedule Out</th>
-                            <th>Clock In</th>
-                            <th>Clock Out</th>
-                            <th>Status</th>
-                            <th>#</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 @endsection
 @section('content-script')
     <script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
@@ -455,7 +457,7 @@
             });
 
             $('#filter-date').val(moment().format('DD MMMM YYYY'))
-            tblAttendance = $("#tbl-location").DataTable({
+            tblAttendance = $("#tbl-attendance").DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: {
@@ -543,7 +545,7 @@
                 ]
             })
 
-            $('#tbl-location').on('click', '.btn-view-attendance-logs', function() {
+            $('#tbl-attendance').on('click', '.btn-view-attendance-logs', function() {
                 const attendanceId = $(this).data('attendance-id');
 
                 if ($.fn.DataTable.isDataTable('#tbl-attendance-log')) {

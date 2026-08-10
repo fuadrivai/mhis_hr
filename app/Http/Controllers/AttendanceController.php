@@ -62,7 +62,22 @@ class AttendanceController extends Controller
     }
     public function attendance(UtilitiesRequest $request)
     {
+        
         $attendances = Attendance::with(['employee.employment','employee.personal','logs']);
+        
+        $user = auth()->user();
+        if ($user && $user->roles->contains('id', 3)) {
+            if ($user->employee && $user->employee->employment) {
+                $branchId = $user->employee->employment->branch_id;
+                $orgId = $user->employee->employment->organization_id;
+                $attendances->whereHas('employee.employment', function ($q) use ($branchId, $orgId) {
+                    $q->where('branch_id', $branchId)
+                      ->where('organization_id', $orgId);
+                });
+            } else {
+                $attendances->where('id', 0);
+            }
+        }
 
         if ($request->date && $request->date != '') {
             $_date = Carbon::parse($request->date)->format('Y-m-d');
@@ -129,6 +144,25 @@ class AttendanceController extends Controller
 
         $employees = Employee::query()->where('is_active', 1);
         $attendances = Attendance::query()->where('date', $date);
+
+        $user = auth()->user();
+        if ($user && $user->roles->contains('id', 3)) {
+            if ($user->employee && $user->employee->employment) {
+                $branchId = $user->employee->employment->branch_id;
+                $orgId = $user->employee->employment->organization_id;
+                $attendances->whereHas('employee.employment', function ($q) use ($branchId, $orgId) {
+                    $q->where('branch_id', $branchId)
+                    ->where('organization_id', $orgId);
+                });
+                $employees->whereHas('employment', function ($q) use ($branchId, $orgId) {
+                    $q->where('branch_id', $branchId)
+                    ->where('organization_id', $orgId);
+                });
+            } else {
+                $employees->where('id', 0);
+                $attendances->where('id', 0);
+            }
+        }
 
         foreach ([
             'branch' => 'branch_id',

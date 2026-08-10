@@ -2,7 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Approval;
 use App\Models\ApprovalRequest;
+use App\Models\Branch;
+use App\Models\Employee;
+use App\Models\JobLevel;
+use App\Models\Organization;
+use App\Models\Position;
 use App\Services\ApprovalRequestService;
 use App\Services\EmployeeService;
 use App\Services\TimeOffService;
@@ -32,6 +38,10 @@ class ApprovalRequestController extends Controller
     {
         return view('approval.request.index', [
             'title' => 'Approval Requests',
+            'branches' => Branch::orderBy('name')->get(),
+            'organizations' => Organization::orderBy('name')->get(),
+            'levels' => JobLevel::orderBy('name')->get(),
+            'positions' => Position::orderBy('name')->get(),
         ]);
     }
 
@@ -47,6 +57,24 @@ class ApprovalRequestController extends Controller
             'approval_rule'
         ])->select('approval_requests.*');
 
+        $status = $request->input('status', 'pending');
+        if ($status !== 'all') {
+            $approvalRequests->where('status', $status);
+        }
+
+        foreach ([
+            'branch' => 'branch_id',
+            'organization' => 'organization_id',
+            'level' => 'job_level_id',
+            'position' => 'job_position_id',
+        ] as $filter => $column) {
+            if ($request->filled($filter) && $request->input($filter) !== 'all') {
+                $approvalRequests->whereHas('approvals.approver.employment', function ($query) use ($request, $filter, $column) {
+                    $query->where($column, $request->input($filter));
+                });
+            }
+        }
+
         if ($request->ajax()) {
             return datatables()->of($approvalRequests)
                 ->addColumn('fullname', function ($approvalRequest) {
@@ -54,6 +82,18 @@ class ApprovalRequestController extends Controller
                 })
                 ->addColumn('type_name', function ($approvalRequest) {
                     return optional($approvalRequest->type)->name ?? '--';
+                })
+                ->addColumn('start_date', function ($approvalRequest) {
+                    return data_get($approvalRequest->data, 'payload.start_date') ?? '--';
+                })
+                ->addColumn('end_date', function ($approvalRequest) {
+                    return data_get($approvalRequest->data, 'payload.end_date') ?? '--';
+                })
+                ->addColumn('start_time', function ($approvalRequest) {
+                    return data_get($approvalRequest->data, 'payload.start_time') ?? '--';
+                })
+                ->addColumn('end_time', function ($approvalRequest) {
+                    return data_get($approvalRequest->data, 'payload.end_time') ?? '--';
                 })
                 ->filter(function ($query) use ($request) {
                     $keyword = trim((string) $request->input('search.value'));
@@ -212,5 +252,87 @@ class ApprovalRequestController extends Controller
             'employees' => $employees,
             'timeoffs' => $timeoffs,
         ]);
+    }
+
+    public function approvalByUser(Request $request)
+    {
+        return view('approval.request.approval', [
+            'title' => 'Approval Requests',
+            'branches' => Branch::orderBy('name')->get(),
+            'organizations' => Organization::orderBy('name')->get(),
+            'levels' => JobLevel::orderBy('name')->get(),
+            'positions' => Position::orderBy('name')->get(),
+        ]);
+    }
+
+    public function approvalDataTable(UtilitiesRequest $request)
+    {
+        $user = auth()->user();
+        $employee = Employee::where('user_id', $user->id)->first();
+        $approvals = Approval::with([
+            'approvalRequest.type',
+            'approvalRequest.data',
+            'approvalRequest.requester.personal',
+            'approvalRequest.requester.employment',
+            'approver.personal',
+        ])->where('approver_employee_id', $employee->id);
+
+        $status = $request->input('status', 'pending');
+        if ($status !== 'all') {
+            $approvals->where('status', $status);
+        }
+
+        foreach ([
+            'branch' => 'branch_id',
+            'organization' => 'organization_id',
+            'level' => 'job_level_id',
+            'position' => 'job_position_id',
+        ] as $filter => $column) {
+            if ($request->filled($filter) && $request->input($filter) !== 'all') {
+                $approvals->whereHas('approvalRequest.requester.employment', function ($query) use ($request, $filter, $column) {
+                    $query->where($column, $request->input($filter));
+                });
+            }
+        }
+
+        if ($request->ajax()) {
+            return datatables()->of($approvals)
+                ->addColumn('fullname', function ($approval) {
+                    return optional(optional($approval->approvalRequest)->requester)->personal->fullname ?? '--';
+                })
+                ->addColumn('type_name', function ($approval) {
+                    return optional(optional($approval->approvalRequest)->type)->name ?? '--';
+                })
+                ->addColumn('start_date', function ($approval) {
+                    return data_get($approval->approvalRequest, 'data.payload.start_date') ?? '--';
+                })
+                ->addColumn('end_date', function ($approval) {
+                    return data_get($approval->approvalRequest, 'data.payload.end_date') ?? '--';
+                })
+                ->addColumn('start_time', function ($approval) {
+                    return data_get($approval->approvalRequest, 'data.payload.start_time') ?? '--';
+                })
+                ->addColumn('end_time', function ($approval) {
+                    return data_get($approval->approvalRequest, 'data.payload.end_time') ?? '--';
+                })
+                ->filter(function ($query) use ($request) {
+                    $keyword = trim((string) $request->input('search.value'));
+
+                    if ($keyword === '') {
+                        return;
+                    }
+
+                    $query->where(function ($searchQuery) use ($keyword) {
+                        $searchQuery->whereHas('approvalRequest.requester.personal', function ($personalQuery) use ($keyword) {
+                            $personalQuery->where('fullname', 'like', "%{$keyword}%");
+                        })->orWhereHas('approvalRequest.type', function ($typeQuery) use ($keyword) {
+                            $typeQuery->where('name', 'like', "%{$keyword}%");
+                        })->orWhereHas('approver.personal', function ($approverQuery) use ($keyword) {
+                            $approverQuery->where('fullname', 'like', "%{$keyword}%");
+                        });
+                    });
+                })
+                ->make(true);
+        }
     }
 }

@@ -78,4 +78,8 @@ class Employee extends Model
     {
         return $this->belongsTo(LeaveAllocation::class, 'id', 'employee_id');
     }
+    public function approvals()
+    {
+        return $this->hasMany(Approval::class, 'approver_employee_id');
+    }
 }
