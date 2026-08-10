@@ -616,8 +616,10 @@
                 $('#log-detail-latitude').text(log.latitude !== null ? log.latitude : '--');
                 $('#log-detail-longitude').text(log.longitude !== null ? log.longitude : '--');
                 $('#log-detail-radius').text(log.radius !== null ? log.radius + ' meters' : '--');
-                $('#log-detail-photo').attr('src', log.photo || '').toggleClass('d-none', !log.photo);
-                $('#log-detail-no-photo').toggleClass('d-none', Boolean(log.photo));
+                const photoUrl = log.photo ? (/^https?:\/\//.test(log.photo) ? log.photo :
+                    '{{ asset('storage') }}/' + String(log.photo).replace(/^\/+/, '')) : '';
+                $('#log-detail-photo').attr('src', photoUrl).toggleClass('d-none', !photoUrl);
+                $('#log-detail-no-photo').toggleClass('d-none', Boolean(photoUrl));
                 $('#attendance-log-detail-modal').modal('show');
             });
 
