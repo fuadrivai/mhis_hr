@@ -47,7 +47,7 @@
     <div class="x_panel">
         <div class="row">
             @if ($data->documents->isEmpty())
-                <div class="col-12">
+                <div class="col-md-12">
                     <p class="text-muted text-center">No documents available for this employee.</p>
                 </div>
             @else
@@ -58,13 +58,13 @@
                                 class="card-img-top" alt="{{ $doc->category->name ?? 'Uncategorized' }}">
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-12 text-center">
+                                    <div class="col-md-12 text-center">
                                         <label for="">{{ $doc->category->name ?? 'Uncategorized' }}</label><br>
                                         <small><i>{{ $doc->latestVersion->file_name }}</i></small>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-12 justify-content-center d-flex">
+                                    <div class="col-md-12 justify-content-center d-flex">
                                         <div class="btn-group" role="group" aria-label="Basic outlined example">
                                             <form action="/profile/document/{{ $doc->id }}" method="POST"
                                                 onsubmit="return confirm('Are you sure you want to delete this document?');">

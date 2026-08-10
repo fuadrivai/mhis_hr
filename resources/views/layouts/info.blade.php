@@ -38,7 +38,7 @@
 @endsection
 
 @section('content-child')
-    <div class="col-12 col-md-2 text-center">
+    <div class="col-md-2 text-center">
         <div class="clearfix">
             <div class="" style="text-align: center;">
                 @if (!isset($data->personal->avatar) || $data->personal->avatar == '')
@@ -128,7 +128,7 @@
             </ul>
         </ul>
     </div>
-    <div class="col-2 col-md-10">
+    <div class="col-md-10">
         @yield('content-employee')
     </div>
 @endsection

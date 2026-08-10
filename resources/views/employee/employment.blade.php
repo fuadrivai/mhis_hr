@@ -7,14 +7,14 @@
 @section('content-employee')
     <?php $isAdmin = auth()->user()->hasRole('admin'); ?>
     <div class="row">
-        <div class="col-12">
+        <div class="col-md-12">
             <div class="x_panel">
                 <div class="x_content">
                     <div class="tab-content" id="myTabContent">
                         <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
                             @if ($isAdmin)
                                 <div class="row">
-                                    <div class="col-12 text-right">
+                                    <div class="col-md-12 text-right">
                                         <button onclick="showForm()" type="button" class="btn btn-info btn-sm btn-edit">
                                             <i class="fa fa-edit"></i> Edit
                                         </button>
@@ -29,33 +29,33 @@
                                         value="{{ $data['employment']['id'] }}">
                                 @endif
                                 <div class="row">
-                                    <div class="col-md-4 col-12">
+                                    <div class="col-md-4">
                                         <h4 style="color: black">Employment data</h4>
                                         <br>
                                         <small>Your data information related to company.</small>
                                     </div>
-                                    <div class="col-md-8 col-12">
+                                    <div class="col-md-8">
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-user text-info"></i> Company name</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p>{{ $data['employment']['company']['name'] ?? '--' }}</p>
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-phone text-info"></i> Employee id</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p>{{ $data['employment']['employee_id'] ?? '-' }}</p>
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-mobile-phone text-info"></i> Organization name</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">
                                                     {{ $data['employment']['organization']['name'] ?? '-' }}
                                                 </p>
@@ -73,10 +73,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-briefcase text-info"></i> Job position</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">
                                                     {{ $data['employment']['job_position']['name'] ?? '-' }}
                                                 </p>
@@ -94,10 +94,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-sitemap text-info"></i> Job level</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['employment']['job_level']['name'] ?? '-' }}
                                                 </p>
                                                 <div class="form-group data-form d-none">
@@ -114,10 +114,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-hourglass-half text-info"></i> Employment status</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['employment']['employment_status'] ?? '-' }}
                                                 </p>
                                                 <div class="form-group data-form d-none">
@@ -140,10 +140,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-hourglass-half text-info"></i> Branch</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['employment']['branch']['name'] ?? '-' }}
                                                 </p>
                                                 <div class="form-group data-form d-none">
@@ -160,10 +160,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-calendar text-info"></i> Join Date</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">
                                                     {{ $data['employment']->joinDate() ?? '-' }} - <span
                                                         class="badge badge-secondary">
@@ -177,10 +177,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-calendar text-info"></i> End employment status date</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">
                                                     {{ $data['employment']->endDate() ?? '-' }}
                                                 </p>
@@ -192,10 +192,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-hourglass-half text-info"></i> Approval line</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">
                                                     {{ $data['employment']['approval_line_name'] ?? '-' }}
                                                 </p>
@@ -213,7 +213,7 @@
                                             </div>
                                         </div>
                                         <div class="row data-form d-none">
-                                            <div class="col-12 text-right">
+                                            <div class="col-md-12 text-right">
                                                 <button type="button" onclick="closeForm()"
                                                     class="btn btn-secondary btn-sm"><i class="fa fa-times"></i> Cancel
                                                 </button>

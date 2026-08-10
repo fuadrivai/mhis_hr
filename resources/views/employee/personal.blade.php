@@ -2,12 +2,49 @@
 @section('content-class')
     <link href="/plugins/datatables.net-bs/css/dataTables.bootstrap.min.css" rel="stylesheet">
     <link href="/plugins/datatables.net-buttons-bs/css/buttons.bootstrap.min.css" rel="stylesheet">
+    <style>
+        .personal-profile-page .data-text {
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 767px) {
+            .personal-profile-page .bar_tabs {
+                display: flex;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .personal-profile-page .bar_tabs .nav-item {
+                flex: 0 0 auto;
+            }
+
+            .personal-profile-page .bar_tabs .nav-link {
+                white-space: nowrap;
+            }
+
+            .personal-profile-page .personal-actions {
+                margin-bottom: 15px;
+            }
+
+            .personal-profile-page .modal-footer {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .personal-profile-page .modal-footer .btn {
+                margin: 0;
+            }
+        }
+    </style>
 @endsection
 
 @section('content-employee')
     <?php $isAdmin = auth()->user()->hasRole('admin'); ?>
-    <div class="row">
-        <div class="col-12">
+    <div class="row personal-profile-page mt-3">
+        <div class="col-md-12">
             <div class="x_panel">
                 <div class="x_content">
                     <ul class="nav nav-tabs bar_tabs" id="myTab" role="tablist">
@@ -34,7 +71,7 @@
                         <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
                             @if ($isAdmin)
                                 <div class="row">
-                                    <div class="col-12 text-right">
+                                    <div class="col-md-12 text-right personal-actions">
                                         <button onclick="showForm()" type="button" class="btn btn-info btn-sm btn-edit">
                                             <i class="fa fa-edit"></i> Edit
                                         </button>
@@ -49,27 +86,27 @@
                                     @method('PUT')
                                 @endif
                                 <div class="row">
-                                    <div class="col-md-4 col-12">
+                                    <div class="col-md-4">
                                         <h4 style="color: black">Personal Data</h4>
                                         <br>
                                         <small>Your email address is your identity on MHIS Hub is used to log in.</small>
                                     </div>
-                                    <div class="col-md-8 col-12">
+                                    <div class="col-md-8">
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-user text-info"></i> Full Name</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->fullname }}</p>
                                                 <div class="row data-form d-none">
-                                                    <div class="col-md-6 col-12">
+                                                    <div class="col-md-6">
                                                         <div class="form-group">
                                                             <input type="text" placeholder="First Name"
                                                                 class="form-control" name="first_name" id="first-name"
                                                                 required value="{{ $data['personal']->first_name }}" />
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-6 col-12">
+                                                    <div class="col-md-6">
                                                         <div class="form-group">
                                                             <input type="text" placeholder="Last Name"
                                                                 class="form-control" name="last_name" id="last-name"
@@ -80,10 +117,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-phone text-info"></i> Phone</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->phone ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <input type="text" class="form-control" name="phone" id="phone"
@@ -92,10 +129,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-mobile-phone text-info"></i> Mobile Phone</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']['mobile_phone'] ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <input required type="text" class="form-control"
@@ -105,10 +142,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-envelope text-info"></i> Email</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']['email'] ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <input required type="text" class="form-control" name="email"
@@ -117,10 +154,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-globe text-info"></i> Place of Birth</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']['birth_place'] ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <input type="text" class="form-control" name="birth_place"
@@ -130,10 +167,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-calendar text-info"></i> Birthdate</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">
                                                     {{ $data['personal']->birthDate() ?? '-' }} - <span
                                                         class="badge badge-secondary">
@@ -147,11 +184,11 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-{{ $data['personal']->gender() }} text-info"></i>
                                                     gender</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ ucfirst($data['personal']->gender()) }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <p>
@@ -176,10 +213,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-pagelines text-info"></i> Marital Status</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->maritalStatus() }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <select required name="marital_status" class="form-control select2"
@@ -201,10 +238,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-calendar text-info"></i> Blood Type</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->blood_type ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <select name="blood_type" class="form-control select2"
@@ -227,10 +264,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-moon-o text-info"></i> Religion</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->religion->name ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <select required name="religion_id" class="form-control select2"
@@ -247,15 +284,15 @@
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-md-4 col-12">
+                                    <div class="col-md-4">
                                         <h4 style="color: black">Identity & Address</h4>
                                     </div>
-                                    <div class="col-md-8 col-12">
+                                    <div class="col-md-8">
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-credit-card text-info"></i> NIK (NPWP 16 digit)</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->identity_number ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <input type="text" class="form-control" name="identity_number"
@@ -265,10 +302,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-book text-info"></i> Passport number</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->passport_number ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <input type="text" class="form-control" name="passport_number"
@@ -278,10 +315,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-calendar text-info"></i> Passport expiration date</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->expiredIdentity() }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <input type="text" class="form-control date-picker"
@@ -291,10 +328,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-file-code-o text-info"></i> Postal code</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->postal_code ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <input type="text" class="form-control" name="postal_code"
@@ -303,10 +340,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-map-marker text-info"></i> Citizen ID address</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->address ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <textarea name="address" id="address" class="form-control" rows="3">{{ $data['personal']->address }}</textarea>
@@ -314,10 +351,10 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 col-12">
+                                            <div class="col-md-4">
                                                 <p><i class="fa fa-map-marker text-info"></i> Residential address</p>
                                             </div>
-                                            <div class="col-md-8 col-12">
+                                            <div class="col-md-8">
                                                 <p class="data-text">{{ $data['personal']->current_address ?? '-' }}</p>
                                                 <div class="form-group data-form d-none">
                                                     <textarea name="current_address" id="current-address" class="form-control" rows="3">{{ $data['personal']->current_address }}</textarea>
@@ -325,7 +362,7 @@
                                             </div>
                                         </div>
                                         <div class="row data-form d-none">
-                                            <div class="col-12 text-right">
+                                            <div class="col-md-12 text-right">
                                                 <button type="button" onclick="closeForm()"
                                                     class="btn btn-secondary btn-sm"><i class="fa fa-times"></i> Cancel
                                                 </button>
@@ -341,14 +378,14 @@
                         <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
                             @if ($isAdmin)
                                 <div class="row">
-                                    <div class="col-12 text-right">
+                                    <div class="col-md-12 text-right">
                                         <button data-toggle="modal" data-target="#modal-family"
                                             class="btn btn-success btn-sm"><i class="fa fa-plus"></i> Add Family</button>
                                     </div>
                                 </div>
                             @endif
                             <div class="row">
-                                <div class="col-12">
+                                <div class="col-md-12">
                                     <div class="table-responsive card-box">
                                         <table id="tbl-member" class="table table-striped table-bordered table-sm"
                                             style="width: 100%">
@@ -391,7 +428,7 @@
                         <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
                             @if ($isAdmin)
                                 <div class="row">
-                                    <div class="col-12 text-right">
+                                    <div class="col-md-12 text-right">
                                         <button data-toggle="modal" data-target="#modal-econ"
                                             class="btn btn-success btn-sm"><i class="fa fa-plus"></i> Add Emergency
                                             Contact</button>
@@ -399,7 +436,7 @@
                                 </div>
                             @endif
                             <div class="row">
-                                <div class="col-12">
+                                <div class="col-md-12">
                                     <div class="table-responsive card-box">
                                         <table id="tbl-econ" class="table table-striped table-bordered table-sm"
                                             style="width: 100%">
