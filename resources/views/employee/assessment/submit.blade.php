@@ -67,9 +67,12 @@
                                             </td>
                                             <td>
                                                 @if($sub && $sub->status == 'need_revision')
-                                                    <span class="label label-danger">Needs Revision</span><br>
-                                                    @if($sub->approvals->count() > 0)
-                                                    <small>Notes: {{ $sub->approvals->last()->notes }}</small>
+                                                    <span class="label label-danger">Needs Revision</span>
+                                                    @php
+                                                        $lastRevision = $sub->approvals->where('status', 'need_revision')->last();
+                                                    @endphp
+                                                    @if($lastRevision && $lastRevision->notes)
+                                                        <br><small class="text-danger" style="display:block; margin-top:5px;"><strong>Comment:</strong> {{ $lastRevision->notes }}</small>
                                                     @endif
                                                 @else
                                                     <span class="label label-default">Draft</span>
