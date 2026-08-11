@@ -189,7 +189,9 @@ class AttendanceController extends Controller
                 ->where('status', 'present')
                 ->whereNotNull('check_in')
                 ->whereNotNull('schedule_in')
-                ->whereRaw('TIME(check_in) > CAST(schedule_in AS TIME)')
+                 ->whereRaw(
+                    'TIME(check_in) >= ADDTIME(CAST(schedule_in AS TIME), "00:01:00")'
+                )
                 ->count(),
         ]);
     }
@@ -274,7 +276,9 @@ class AttendanceController extends Controller
             $attendances->where('status', 'present')
                 ->whereNotNull('check_in')
                 ->whereNotNull('schedule_in')
-                ->whereRaw('TIME(check_in) > CAST(schedule_in AS TIME)');
+                ->whereRaw(
+                    'TIME(check_in) >= ADDTIME(CAST(schedule_in AS TIME), "00:01:00")'
+                );
         }
 
         foreach ($filters as $filter => $column) {
