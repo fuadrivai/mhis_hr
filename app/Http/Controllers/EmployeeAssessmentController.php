@@ -33,6 +33,7 @@ class EmployeeAssessmentController extends Controller
 
         $submission = \App\Models\AssessmentSubmission::where('assessment_assignment_id', $assignmentId)
                             ->where('assessment_target_id', $targetId)
+                            ->with('approvals')
                             ->first();
 
         return view('employee.assessment.submit', compact('title', 'target', 'assignment', 'submission'));

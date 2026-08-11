@@ -72,6 +72,12 @@
                                                     <td>
                                                         @if($sub && $sub->status == 'need_revision')
                                                             <span class="label label-danger">Needs Revision</span>
+                                                            @php
+                                                                $lastRevision = $sub->approvals->where('status', 'need_revision')->last();
+                                                            @endphp
+                                                            @if($lastRevision && $lastRevision->comments)
+                                                                <br><small class="text-danger" style="display:block; margin-top:5px;"><strong>Comment:</strong> {{ $lastRevision->comments }}</small>
+                                                            @endif
                                                         @else
                                                             <span class="label label-default">Draft</span>
                                                         @endif

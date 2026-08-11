@@ -43,6 +43,7 @@ class EmployeeLessonPlanController extends Controller
         $monthIds = $target->months->pluck('id');
         $submissions = LessonPlanSubmission::where('employee_subject_id', $assignmentId)
                             ->whereIn('lesson_plan_target_month_id', $monthIds)
+                            ->with('approvals')
                             ->get()
                             ->groupBy('lesson_plan_target_month_id');
 
