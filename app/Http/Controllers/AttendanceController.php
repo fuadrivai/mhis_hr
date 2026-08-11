@@ -210,12 +210,27 @@ class AttendanceController extends Controller
             'level' => 'job_level_id',
         ];
 
+        $user = auth()->user();
+
         if ($type === 'absent') {
             $employees = Employee::with(['personal', 'employment.branch', 'employment.organization', 'employment.job_position'])
                 ->where('is_active', 1)
                 ->whereDoesntHave('attendances', function ($query) use ($date) {
                     $query->where('date', $date)->where('status', 'present');
                 });
+            
+                if ($user && $user->roles->contains('id', 3)) {
+                    if ($user->employee && $user->employee->employment) {
+                        $branchId = $user->employee->employment->branch_id;
+                        $orgId = $user->employee->employment->organization_id;
+                        $employees->whereHas('employment', function ($q) use ($branchId, $orgId) {
+                            $q->where('branch_id', $branchId)
+                            ->where('organization_id', $orgId);
+                        });
+                    } else {
+                        $employees->where('id', 0);
+                    }
+                }
 
             foreach ($filters as $filter => $column) {
                 if ($request->filled($filter) && $request->input($filter) !== 'all') {
@@ -240,6 +255,19 @@ class AttendanceController extends Controller
         $attendances = Attendance::with(['employee.personal', 'employee.employment.branch', 'employee.employment.organization', 'employee.employment.job_position'])
             ->where('date', $date)
             ->where('status', 'present');
+        
+            if ($user && $user->roles->contains('id', 3)) {
+                if ($user->employee && $user->employee->employment) {
+                    $branchId = $user->employee->employment->branch_id;
+                    $orgId = $user->employee->employment->organization_id;
+                    $attendances->whereHas('employee.employment', function ($q) use ($branchId, $orgId) {
+                        $q->where('branch_id', $branchId)
+                        ->where('organization_id', $orgId);
+                    });
+                } else {
+                    $attendances->where('id', 0);
+                }
+            }
 
         if ($type === 'late') {
             $attendances->whereNotNull('check_in')
