@@ -186,9 +186,10 @@ class AttendanceController extends Controller
             'present' => $present,
             'absent' => max(0, $employees->count() - $present),
             'late' => (clone $attendances)
+                ->where('status', 'present')
                 ->whereNotNull('check_in')
                 ->whereNotNull('schedule_in')
-                ->whereRaw('TIME(check_in) > TIME(schedule_in)')
+                ->whereRaw('TIME(check_in) > CAST(schedule_in AS TIME)')
                 ->count(),
         ]);
     }
@@ -270,9 +271,10 @@ class AttendanceController extends Controller
             }
 
         if ($type === 'late') {
-            $attendances->whereNotNull('check_in')
+            $attendances->where('status', 'present')
+                ->whereNotNull('check_in')
                 ->whereNotNull('schedule_in')
-                ->whereRaw('TIME(check_in) > TIME(schedule_in)');
+                ->whereRaw('TIME(check_in) > CAST(schedule_in AS TIME)');
         }
 
         foreach ($filters as $filter => $column) {
