@@ -154,6 +154,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('assessment/subject', [\App\Http\Controllers\AssessmentSettingController::class, 'storeSubject'])->name('assessment-setting.subject.store');
             Route::delete('assessment/subject/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroySubject'])->name('assessment-setting.subject.destroy');
             Route::post('assessment/approver', [\App\Http\Controllers\AssessmentSettingController::class, 'storeApprover'])->name('assessment-setting.approver.store');
+            Route::put('assessment/approver/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'updateApprover'])->name('assessment-setting.approver.update');
             Route::delete('assessment/approver/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyApprover'])->name('assessment-setting.approver.destroy');
             Route::post('assessment/monitor', [\App\Http\Controllers\AssessmentSettingController::class, 'storeMonitor'])->name('assessment-setting.monitor.store');
             Route::delete('assessment/monitor/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyMonitor'])->name('assessment-setting.monitor.destroy');

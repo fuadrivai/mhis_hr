@@ -12,7 +12,7 @@ class AssessmentSettingController extends Controller
         $classes = \App\Models\SchoolClass::all();
         $categories = \App\Models\SubjectCategory::all();
         $subjects = \App\Models\Subject::with('subjectCategory')->get();
-        $approvers = \App\Models\AssessmentApprover::with(['subjectCategory', 'employee', 'schoolClasses'])->get();
+        $approvers = \App\Models\AssessmentApprover::with(['subjectCategory', 'employee.user', 'schoolClasses', 'subjects'])->get();
         $monitors = \App\Models\AssessmentMonitor::with(['subjectCategory', 'employee'])->get();
         $employeeSubjects = \App\Models\AssessmentAssignment::with(['employee', 'subject', 'schoolClass'])->get();
         $employees = \App\Models\Employee::with('user')->get();
@@ -30,11 +30,16 @@ class AssessmentSettingController extends Controller
             'employee_id' => 'required|exists:employees,id',
             'level' => 'required|integer|min:1',
             'school_class_ids' => 'nullable|array',
-            'school_class_ids.*' => 'exists:school_classes,id'
+            'school_class_ids.*' => 'exists:school_classes,id',
+            'subject_ids' => 'nullable|array',
+            'subject_ids.*' => 'exists:subjects,id'
         ]);
         $approver = \App\Models\AssessmentApprover::create($request->only('subject_category_id', 'employee_id', 'level'));
         if ($request->has('school_class_ids')) {
             $approver->schoolClasses()->sync($request->school_class_ids);
+        }
+        if ($request->has('subject_ids')) {
+            $approver->subjects()->sync($request->subject_ids);
         }
         return redirect()->back()->with('success', 'Approver added successfully');
     }
@@ -46,7 +51,9 @@ class AssessmentSettingController extends Controller
             'employee_id' => 'required|exists:employees,id',
             'level' => 'required|integer|min:1',
             'school_class_ids' => 'nullable|array',
-            'school_class_ids.*' => 'exists:school_classes,id'
+            'school_class_ids.*' => 'exists:school_classes,id',
+            'subject_ids' => 'nullable|array',
+            'subject_ids.*' => 'exists:subjects,id'
         ]);
 
         $approver = \App\Models\AssessmentApprover::findOrFail($id);
@@ -56,6 +63,12 @@ class AssessmentSettingController extends Controller
             $approver->schoolClasses()->sync($request->school_class_ids);
         } else {
             $approver->schoolClasses()->sync([]);
+        }
+
+        if ($request->has('subject_ids')) {
+            $approver->subjects()->sync($request->subject_ids);
+        } else {
+            $approver->subjects()->sync([]);
         }
 
         return redirect()->back()->with('success', 'Approver updated successfully');
