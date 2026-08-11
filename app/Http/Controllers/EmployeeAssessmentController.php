@@ -64,6 +64,7 @@ class EmployeeAssessmentController extends Controller
         );
 
         $schoolClassId = $assignment->school_class_id;
+        $subjectId = $assignment->subject_id;
         $approver = \App\Models\AssessmentApprover::where('subject_category_id', $assignment->subject->subject_category_id)
                         ->where('level', 1)
                         ->where(function($q) use ($schoolClassId) {
@@ -71,7 +72,13 @@ class EmployeeAssessmentController extends Controller
                                 $sq->where('school_classes.id', $schoolClassId);
                             })->orWhereDoesntHave('schoolClasses');
                         })
-                        ->withCount('schoolClasses')
+                        ->where(function($q) use ($subjectId) {
+                            $q->whereHas('subjects', function($sq) use ($subjectId) {
+                                $sq->where('subjects.id', $subjectId);
+                            })->orWhereDoesntHave('subjects');
+                        })
+                        ->withCount(['schoolClasses', 'subjects'])
+                        ->orderByDesc('subjects_count')
                         ->orderByDesc('school_classes_count')
                         ->first();
                         

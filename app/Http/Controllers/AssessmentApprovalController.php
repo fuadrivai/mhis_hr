@@ -21,6 +21,7 @@ class AssessmentApprovalController extends Controller
 
         foreach ($approverRoles as $role) {
             $classIds = $role->schoolClasses->pluck('id')->toArray();
+            $subjectIds = $role->subjects->pluck('id')->toArray();
             
             $query = \App\Models\AssessmentSubmission::with(['assignment.employee.user', 'assignment.subject', 'assignment.schoolClass', 'target'])
                 ->where('status', 'submitted')
@@ -32,6 +33,12 @@ class AssessmentApprovalController extends Controller
             if (!empty($classIds)) {
                 $query->whereHas('assignment', function($q) use ($classIds) {
                     $q->whereIn('school_class_id', $classIds);
+                });
+            }
+
+            if (!empty($subjectIds)) {
+                $query->whereHas('assignment', function($q) use ($subjectIds) {
+                    $q->whereIn('subject_id', $subjectIds);
                 });
             }
 
@@ -74,6 +81,7 @@ class AssessmentApprovalController extends Controller
             $currentLevel = $submission->current_approval_level;
 
             $schoolClassId = $submission->assignment->school_class_id;
+            $subjectId = $submission->assignment->subject_id;
 
             $nextLevelApprover = \App\Models\AssessmentApprover::where('subject_category_id', $subjectCategoryId)
                                     ->where('level', '>', $currentLevel)
@@ -82,8 +90,14 @@ class AssessmentApprovalController extends Controller
                                             $sq->where('school_classes.id', $schoolClassId);
                                         })->orWhereDoesntHave('schoolClasses');
                                     })
-                                    ->withCount('schoolClasses')
+                                    ->where(function($q) use ($subjectId) {
+                                        $q->whereHas('subjects', function($sq) use ($subjectId) {
+                                            $sq->where('subjects.id', $subjectId);
+                                        })->orWhereDoesntHave('subjects');
+                                    })
+                                    ->withCount(['schoolClasses', 'subjects'])
                                     ->orderBy('level', 'asc')
+                                    ->orderByDesc('subjects_count')
                                     ->orderByDesc('school_classes_count')
                                     ->first();
 
