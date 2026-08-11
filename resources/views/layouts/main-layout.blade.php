@@ -167,6 +167,18 @@
                                     </ul>
                                 </li>
 
+                                {{-- @if ($isAdmin)
+                                    <li class={{ Request::is('time*') ? 'active' : '' }}><a><i
+                                                class="fa fa-file-text"></i>
+                                            Report <span class="fa fa-chevron-down"></span></a>
+                                        <ul class="nav child_menu"
+                                            style="display: {{ Request::is('time*') ? 'block' : 'none' }}">
+                                            <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                    href="/report/attendance">Attendance</a></li>
+                                        </ul>
+                                    </li>
+                                @endif --}}
+
                                 @if ($isAdmin || $isRole3)
                                     <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i
                                                 class="fa fa-gears"></i>

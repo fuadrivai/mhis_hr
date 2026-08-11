@@ -142,10 +142,8 @@
                                 <tr>
                                     <th>Requester</th>
                                     <th>Time Off Type</th>
-                                    <th>Start Date</th>
-                                    <th>End Date</th>
-                                    <th>Start Time</th>
-                                    <th>End Time</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
                                     <th>Status</th>
                                     <th>Step</th>
                                     <th>#</th>
@@ -228,29 +226,35 @@
                         data: "start_date",
                         defaultContent: "--",
                         className: "text-center",
-                        mRender: function(data) {
-                            return data && data !== '--' ? moment(data).format('DD MMM YYYY') :
+                        mRender: function(data, type, full) {
+                            let startDate = data && data !== '--' ? moment(data).format(
+                                    'DD MMM YYYY') :
                                 '--';
-                        }
-                    },
-                    {
-                        data: "end_date",
-                        defaultContent: "--",
-                        className: "text-center",
-                        mRender: function(data) {
-                            return data && data !== '--' ? moment(data).format('DD MMM YYYY') :
-                                '--';
+                            let endDate = full.end_date && full.end_date !== '--' ? moment(full
+                                .end_date).format('DD MMM YYYY') : '';
+                            let diffDays = endDate ? moment(full.end_date).diff(moment(data),
+                                'days') + 1 : 0;
+                            return (startDate === endDate || endDate === '') ? startDate :
+                                `${startDate} - ${endDate} <br>${diffDays} day(s)`;
                         }
                     },
                     {
                         data: "start_time",
                         defaultContent: "--",
                         className: "text-center",
-                    },
-                    {
-                        data: "end_time",
-                        defaultContent: "--",
-                        className: "text-center",
+                        mRender: function(data, type, full) {
+                            let startTime = data && data !== '--' ? moment(data,
+                                    'HH:mm:ss').format('HH:mm') :
+                                '--';
+                            let endTime = full.end_time && full.end_time !== '--' ? moment(full
+                                .end_time, 'HH:mm:ss').format('HH:mm') : '--';
+                            let diffMinutes = moment(full.end_time, 'HH:mm:ss').diff(moment(data,
+                                'HH:mm:ss'), 'minutes');
+                            let hours = Math.floor(diffMinutes / 60);
+                            let minutes = diffMinutes % 60;
+                            return startTime === endTime ? startTime :
+                                `${startTime} - ${endTime}<br><small>${hours}h ${minutes}m</small>`;
+                        }
                     },
                     {
                         data: "status",
@@ -410,24 +414,24 @@
             return `
                 <div class="timeline">
                     ${history.map((item, index) => `
-                                                                                                                                                <div class="timeline-item ${index === 0 ? 'active' : ''}">
-                                                                                                                                                    <div class="timeline-marker bg-primary"></div>
-                                                                                                                                                    <div class="timeline-content">
-                                                                                                                                                        <div class="d-flex justify-content-between align-items-start">
-                                                                                                                                                            <div>
-                                                                                                                                                                <h6 class="mb-1">${item.action || 'Action performed'}</h6>
-                                                                                                                                                                <p class="mb-1 text-muted">${item.note || ''}</p>
-                                                                                                                                                                <small class="text-muted">
-                                                                                                                                                                    By: ${item.approver?.personal?.fullname || 'System'}
-                                                                                                                                                                </small>
+                                                                                                                                                            <div class="timeline-item ${index === 0 ? 'active' : ''}">
+                                                                                                                                                                <div class="timeline-marker bg-primary"></div>
+                                                                                                                                                                <div class="timeline-content">
+                                                                                                                                                                    <div class="d-flex justify-content-between align-items-start">
+                                                                                                                                                                        <div>
+                                                                                                                                                                            <h6 class="mb-1">${item.action || 'Action performed'}</h6>
+                                                                                                                                                                            <p class="mb-1 text-muted">${item.note || ''}</p>
+                                                                                                                                                                            <small class="text-muted">
+                                                                                                                                                                                By: ${item.approver?.personal?.fullname || 'System'}
+                                                                                                                                                                            </small>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        <small class="text-muted">
+                                                                                                                                                                            ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
+                                                                                                                                                                        </small>
+                                                                                                                                                                    </div>
+                                                                                                                                                                </div>
                                                                                                                                                             </div>
-                                                                                                                                                            <small class="text-muted">
-                                                                                                                                                                ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
-                                                                                                                                                            </small>
-                                                                                                                                                        </div>
-                                                                                                                                                    </div>
-                                                                                                                                                </div>
-                                                                                                                                            `).join('')}
+                                                                                                                                                        `).join('')}
                 </div>
             `;
         }

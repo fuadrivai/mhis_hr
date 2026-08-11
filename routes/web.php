@@ -30,6 +30,7 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AnnouncementCategoryController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\LeaveAllocationController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReprimandController;
 use App\Http\Controllers\ReprimandTypeController;
 use App\Http\Controllers\RoleController;
@@ -226,6 +227,10 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('approval', [ApprovalRequestController::class, 'approvalByUser']);
 
             Route::resource('request', ApprovalRequestController::class);
+        });
+        Route::group(['prefix' => 'report'], function () {
+            Route::get('attendance/filter', [ReportController::class, 'filterReport'])->name('report.attendance.filter');
+            Route::get('attendance', [ReportController::class, 'attendance'])->name('report.attendance');
         });
 
         Route::group(['prefix' => 'lesson-plan'], function () {

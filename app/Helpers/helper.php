@@ -313,19 +313,16 @@ function prepareAttendance($employee,$user,$clockTime) {
             'date' => $attendanceDate,
         ],
         [
-            'user_id' => $user['id'],
+            'user_id' =>$user['id'] ?? $employee->user_id,
             'fullname' => $employee->personal->fullname,
             'shift_name' => $employee->activeSchedule->schedule_name ?? '-',
-            'status' => 'present',
+            'status' => '-',
             'holiday' => $shift->holiday ? 1 : 0,
             'schedule_in' => $resolved['schedule_in'],
             'schedule_out' => $resolved['schedule_out'],
         ]
     );
-    return [
-        $attendance,
-        $attendanceDate
-    ];
+    return [$attendance,$attendanceDate];
 }
 
     function handlePhotoAndFaceRecognition($employee,?string $photo, bool $requireFaceRecognition = true): ?string

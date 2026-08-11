@@ -34,4 +34,13 @@ class Attendance extends Model
     {
         return $this->hasMany(AttendanceLog::class);
     }
+    public function approvalRequests()
+    {
+        return $this->belongsToMany(
+            ApprovalRequest::class,
+            'approval_request_attendances',
+            'attendance_id',
+            'approval_request_id'
+        );
+    }
 }

@@ -8,6 +8,7 @@ use App\Models\ApprovalHistory;
 use App\Models\ApprovalRequest;
 use App\Models\ApprovalRequestAttachment;
 use App\Models\ApprovalRequestData;
+use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\LeaveAllocation;
 use App\Models\LeaveAllocationHistory;
@@ -17,10 +18,12 @@ use App\Models\User;
 use App\Services\AcademicYearService;
 use App\Services\ApprovalEngine;
 use App\Services\ApprovalRequestService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
+use function App\Helpers\prepareAttendance;
 use function App\Helpers\sendMessage;
 
 class ApprovalRequestImplement implements ApprovalRequestService{
@@ -371,9 +374,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
 
         try {
             $payload = is_array($data)? $data : $data->all();
-
             $userId = data_get($payload, 'user.id')?? auth()->id();
-
             if (!$userId) {
                 throw new \Exception('User ID is required');
             }
@@ -382,23 +383,17 @@ class ApprovalRequestImplement implements ApprovalRequestService{
             $employee = Employee::where('user_id',$userId)->first();
 
             if (!$employee) {
-                throw new \Exception(
-                    'Employee not found for the given user ID'
-                );
+                throw new \Exception('Employee not found for the given user ID');
             }
 
             $requestId = data_get($payload,'request_id');
-
             $request = ApprovalRequest::findOrFail($requestId);
 
             $action = data_get($payload,'action');
-
             $note = data_get($payload,'note');
 
             if (!in_array($action, ['approved','rejected','cancelled'])) {
-                throw new \Exception(
-                    'Invalid action.'
-                );
+                throw new \Exception('Invalid action.');
             }
 
             $isAdmin = $user->hasRole('admin') || $user->roles->contains('id', 1);
@@ -411,9 +406,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 $approvalQuery->where('approver_employee_id', $employee->id);
             }
 
-            $approval = $approvalQuery
-                ->orderBy('step_order')
-                ->first();
+            $approval = $approvalQuery->orderBy('step_order')->first();
 
             if (!$approval) {
                 throw new \Exception('You are not authorized to act on this request, or it no longer has a pending approval.');
@@ -442,7 +435,6 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                     ]);
 
                 $this->restoreLeaveBalance($request);
-
                 $this->_sendNotification($request->requester->user_id,
                     [
                         'title' =>
@@ -454,117 +446,88 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 );
 
                 $request['status'] ='rejected';
-
-                $request['approver_name'] =$user->name
-                    ?? $approval->approver->personal->fullname
-                    ?? null;
-
-                $request['approver_note'] =
-                    $approval->note
-                    ?? null;
-
-                $this->_sendEmailToRequester(
-                    $request
-                );
+                $request['approver_name'] =$user->name ?? $approval->approver->personal->fullname ?? null;
+                $request['approver_note'] = $approval->note ?? null;
+                $this->_sendEmailToRequester($request);
             }
-
             elseif ($action === 'cancelled') {
                 $request->status ='cancelled';
-
-                $request->show_cancel =
-                    0;
-
+                $request->show_cancel = 0;
                 $request->save();
 
                 Approval::where('approval_request_id',$request->id)
                     ->where('id','!=',$approval->id)
                     ->where('status','pending')
-                    ->update([
-                        'status' => 'skipped',
-                        'show_action' => 0,
-                    ]);
-
+                    ->update(['status' => 'skipped','show_action' => 0]);
                 $this->restoreLeaveBalance($request);
+
+                    $startDate = data_get($request->data->payload ?? [], 'start_date');
+                    $endDate = data_get($request->data->payload ?? [], 'end_date')?? $startDate;
+                    $dateDiff = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+
+                    for ($i = 0; $i < $dateDiff; $i++) {
+                        $date = Carbon::parse($startDate)->addDays($i)->toDateString();
+                        $attendance = Attendance::where('employee_id', $request->requester_employee_id)
+                            ->where('date', $date)
+                            ->first();
+                        if ($attendance) {
+                            $request->attendances()->detach($attendance->id);
+                        } 
+                    }
             }
-
             else {
-
-                $nextApproval = Approval::where(
-                    'approval_request_id',
-                    $request->id
-                )
-                    ->where(
-                        'status',
-                        'pending'
-                    )
-                    ->orderBy(
-                        'step_order'
-                    )
+                $nextApproval = Approval::where('approval_request_id',$request->id)
+                    ->where('status','pending')
+                    ->orderBy('step_order')
                     ->first();
 
                 if (!$nextApproval) {
-
-                    $request->status =
-                        'approved';
-
-                    $request->show_cancel =
-                        0;
-
+                    $request->status = 'approved';
+                    $request->show_cancel = 0;
                     $request->save();
 
-                    $this->_sendNotification(
-                        $request->requester->user_id,
+                    $this->_sendNotification($request->requester->user_id,
                         [
-                            'title' =>
-                                'Approval Request Approved',
-
-                            'body' =>
-                                'Your time off request has been approved by ' . $approval->approver->personal->fullname . '.',
+                            'title' =>'Approval Request Approved',
+                            'body' => 'Your time off request has been approved by ' . $approval->approver->personal->fullname . '.',
                         ]
                     );
 
-                    $request['status'] =
-                        'approved';
+                    $request['status'] = 'approved';
+                    $request['approver_name'] = $user->name ?? $approval->approver->personal->fullname ?? null;
+                    $request['approver_note'] = $approval->note ?? null;
+                    $this->_sendEmailToRequester($request);
 
-                    $request['approver_name'] = $user->name
-                            ??
-                        $approval
-                            ->approver
-                            ->personal
-                            ->fullname
-                            ?? null;
+                    $startDate = data_get($request->data->payload ?? [], 'start_date');
+                    $endDate = data_get($request->data->payload ?? [], 'end_date')?? $startDate;
+                    $dateDiff = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
 
-                    $request['approver_note'] =
-                        $approval->note
-                        ?? null;
+                    for ($i = 0; $i < $dateDiff; $i++) {
+                        $date = Carbon::parse($startDate)->addDays($i)->toDateString();
+                        $attendance = Attendance::where('employee_id', $request->requester_employee_id)
+                            ->where('date', $date)
+                            ->first();
+                        if ($attendance) {
+                            $request->attendances()->syncWithoutDetaching([$attendance->id]);
+                        } else {
+                            $_requester = Employee::with(['personal','user', 'activeSchedule'])->where( 'id', $request->requester_employee_id)->first();
 
-                    $this->_sendEmailToRequester(
-                        $request
-                    );
+                            [$attendance, $attendanceDate] = prepareAttendance($_requester, $_requester->user, Carbon::parse($date));
+                            $request->attendances()->syncWithoutDetaching([$attendance->id]);
+                        }
+                    }
 
                 } else {
-
-                    $nextApproval->show_action =
-                        1;
-
+                    $nextApproval->show_action =1;
                     $nextApproval->save();
-
                 }
             }
 
             ApprovalHistory::create([
-                'approval_request_id' =>
-                    $request->id,
-
-                'action' =>
-                    $action,
-
-                'step_order' =>
-                    $approval->step_order,
-
-                'approver_employee_id' =>
-                    $employee->id,
-
+                'approval_request_id' =>$request->id,
+                'action' => $action,
+                'step_order' => $approval->step_order,
+                'approver_employee_id' => $employee->id,
                 'note' =>
                     "Time off request has been {$action}"
                     . (
@@ -573,15 +536,10 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                             : ''
                     ),
             ]);
-
             DB::commit();
-
             return $approval;
-
         } catch (\Throwable $e) {
-
             DB::rollBack();
-
             throw $e;
         }
     }

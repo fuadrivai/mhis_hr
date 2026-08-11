@@ -52,4 +52,14 @@ class ApprovalRequest extends Model
     {
         return $this->hasMany(ApprovalHistory::class);
     }
+
+    public function attendances()
+    {
+        return $this->belongsToMany(
+            Attendance::class,
+            'approval_request_attendances',
+            'approval_request_id',
+            'attendance_id'
+        );
+    }
 }
