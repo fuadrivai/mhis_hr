@@ -228,54 +228,20 @@ class CompressAttendancePhotos extends Command
          *
          * Resize hanya 10% setiap iterasi.
          */
-        while (
-            filesize($tempPath) > $maxSize &&
-            $newWidth > 640
-        ) {
-
-            $newWidth = max(
-                640,
-                (int) round($newWidth * 0.90)
-            );
-
-            $newHeight = max(
-                640,
-                (int) round($newHeight * 0.90)
-            );
-
-            $smallerImage = $this->resizeImage(
-                $newImage,
-                $newWidth,
-                $newHeight
-            );
-
+        while (filesize($tempPath) > $maxSize && $newWidth > 640) {
+            $newWidth = max(640,(int) round($newWidth * 0.90));
+            $newHeight = max(640,(int) round($newHeight * 0.90));
+            $smallerImage = $this->resizeImage($newImage,$newWidth,$newHeight);
             imagedestroy($newImage);
-
             $newImage = $smallerImage;
-
             /*
              * Setelah resize, naikkan kembali quality.
              */
             $quality = 75;
-
-            imagejpeg(
-                $newImage,
-                $tempPath,
-                $quality
-            );
-
-            while (
-                filesize($tempPath) > $targetSize &&
-                $quality > 30
-            ) {
-
+            imagejpeg($newImage,$tempPath,$quality);
+            while (filesize($tempPath) > $targetSize && $quality > 30) {
                 $quality -= 5;
-
-                imagejpeg(
-                    $newImage,
-                    $tempPath,
-                    $quality
-                );
+                imagejpeg($newImage,$tempPath,$quality);
             }
         }
 
@@ -336,76 +302,29 @@ class CompressAttendancePhotos extends Command
          * Maksimum dimensi.
          */
         $maxDimension = 1280;
-
-        $scale = min(
-            $maxDimension / $originalWidth,
-            $maxDimension / $originalHeight,
-            1
-        );
-
-        $newWidth = max(
-            1,
-            (int) round($originalWidth * $scale)
-        );
-
-        $newHeight = max(
-            1,
-            (int) round($originalHeight * $scale)
-        );
-
-        $newImage = $this->resizeImage(
-            $image,
-            $newWidth,
-            $newHeight
-        );
-
+        $scale = min($maxDimension / $originalWidth,$maxDimension / $originalHeight,1);
+        $newWidth = max(1,(int) round($originalWidth * $scale));
+        $newHeight = max(1,(int) round($originalHeight * $scale));
+        $newImage = $this->resizeImage($image,$newWidth,$newHeight);
         imagedestroy($image);
-
         $tempPath = $path . '.tmp';
 
         /*
          * PNG compression level 9.
          */
-        imagepng(
-            $newImage,
-            $tempPath,
-            9
-        );
+        imagepng($newImage,$tempPath,9);
 
         /*
          * Kalau masih >60 KB,
          * resize 10% setiap iterasi.
          */
-        while (
-            filesize($tempPath) > $maxSize &&
-            $newWidth > 320
-        ) {
-
-            $newWidth = max(
-                320,
-                (int) round($newWidth * 0.90)
-            );
-
-            $newHeight = max(
-                320,
-                (int) round($newHeight * 0.90)
-            );
-
-            $smallerImage = $this->resizeImage(
-                $newImage,
-                $newWidth,
-                $newHeight
-            );
-
+        while (filesize($tempPath) > $maxSize && $newWidth > 320) {
+            $newWidth = max(320,(int) round($newWidth * 0.90));
+            $newHeight = max(320,(int) round($newHeight * 0.90));
+            $smallerImage = $this->resizeImage($newImage,$newWidth,$newHeight);
             imagedestroy($newImage);
-
             $newImage = $smallerImage;
-
-            imagepng(
-                $newImage,
-                $tempPath,
-                9
-            );
+            imagepng($newImage,$tempPath,9);
         }
 
         imagedestroy($newImage);
@@ -419,9 +338,7 @@ class CompressAttendancePhotos extends Command
          * dari original.
          */
         if (filesize($tempPath) >= filesize($path)) {
-
 @unlink($tempPath);
-
             return false;
         }
 
@@ -431,9 +348,7 @@ class CompressAttendancePhotos extends Command
          * Path tetap .png.
          */
         if (!rename($tempPath, $path)) {
-
 @unlink($tempPath);
-
             return false;
         }
 
@@ -445,29 +360,13 @@ class CompressAttendancePhotos extends Command
      *
      * Transparency PNG tetap dipertahankan.
      */
-    private function resizeImage(
-        $source,
-        int $width,
-        int $height
-    ) {
-        $target = imagecreatetruecolor(
-            $width,
-            $height
-        );
-
+    private function resizeImage($source,int $width,int $height) {
+        $target = imagecreatetruecolor($width,$height);
         /*
          * Preserve PNG transparency.
          */
-        imagealphablending(
-            $target,
-            false
-        );
-
-        imagesavealpha(
-            $target,
-            true
-        );
-
+        imagealphablending($target,false);
+        imagesavealpha($target,true);
         imagecopyresampled(
             $target,
             $source,
@@ -490,19 +389,11 @@ class CompressAttendancePhotos extends Command
     private function formatBytes(int $bytes): string
     {
         if ($bytes >= 1024 * 1024) {
-
-            return number_format(
-                $bytes / 1024 / 1024,
-                2
-            ) . ' MB';
+            return number_format($bytes / 1024 / 1024,2) . ' MB';
         }
 
         if ($bytes >= 1024) {
-
-            return number_format(
-                $bytes / 1024,
-                2
-            ) . ' KB';
+            return number_format($bytes / 1024,2) . ' KB';
         }
 
         return $bytes . ' B';
