@@ -40,18 +40,12 @@ class CompressAttendancePhotos extends Command
 
             $path = $file->getPathname();
 
-            $extension = strtolower(
-                $file->getExtension()
-            );
+            $extension = strtolower($file->getExtension());
 
             /*
              * Hanya proses PNG, JPG, dan JPEG.
              */
-            if (!in_array($extension, [
-                'png',
-                'jpg',
-                'jpeg',
-            ])) {
+            if (!in_array($extension, ['png','jpg','jpeg'])) {
                 $skipped++;
                 continue;
             }
@@ -78,31 +72,21 @@ class CompressAttendancePhotos extends Command
             ));
 
             try {
-
                 if ($extension === 'png') {
-
                     $result = $this->compressPng($path);
-
                 } else {
-
                     $result = $this->compressJpeg($path);
                 }
 
                 if (!$result) {
-
                     $failed++;
-
                     $this->error('  Failed');
-
                     continue;
                 }
 
                 $after = filesize($path);
-
                 $totalAfter += $after;
-
                 $processed++;
-
                 $this->info(sprintf(
                     '  %s -> %s',
                     $this->formatBytes($before),
@@ -110,12 +94,8 @@ class CompressAttendancePhotos extends Command
                 ));
 
             } catch (\Throwable $e) {
-
                 $failed++;
-
-                $this->error(
-                    '  Error: ' . $e->getMessage()
-                );
+                $this->error('  Error: ' . $e->getMessage());
 
                 Log::error(
                     'Failed to compress attendance photo',
