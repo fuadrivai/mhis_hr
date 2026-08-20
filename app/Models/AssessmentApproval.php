@@ -20,4 +20,9 @@ class AssessmentApproval extends Model
     {
         return $this->belongsTo(Employee::class, 'approver_id');
     }
+
+    public function approverEmployee()
+    {
+        return $this->belongsTo(Employee::class, 'approver_id');
+    }
 }
