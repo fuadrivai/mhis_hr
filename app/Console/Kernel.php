@@ -16,8 +16,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('attendance:generate-daily')->dailyAt('00:05');
-        $schedule->command('attendance:compress-photos')->dailyAt('12:00')->withoutOverlapping(120);
-        $schedule->command('attendance:compress-photos')->dailyAt('19:00')->withoutOverlapping(120);
+        $schedule->command('attendance:compress-photos')->dailyAt('01:00')->withoutOverlapping(120);
     }
 
     /**

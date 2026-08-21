@@ -33,21 +33,21 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group employee-field">
-                            <label class="employee-field-label" for="">Organization</label>
-                            <select name="organization" id="organization" class="select2 form-control">
+                            <label class="employee-field-label" for="">Branch</label>
+                            <select name="branch" id="branch" class="select2 form-control">
                                 <option value="all">All</option>
-                                @foreach ($organizations as $org)
-                                    <option value="{{ $org['id'] }}">{{ $org['name'] }}</option>
+                                @foreach ($branches as $org)
+                                    <option value="{{ $org->id }}">{{ $org->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group employee-field">
-                            <label class="employee-field-label" for="">Position</label>
-                            <select name="position" id="position" class="select2 form-control">
+                            <label class="employee-field-label" for="">Organization</label>
+                            <select name="organization" id="organization" class="select2 form-control">
                                 <option value="all">All</option>
-                                @foreach ($positions as $org)
+                                @foreach ($organizations as $org)
                                     <option value="{{ $org['id'] }}">{{ $org['name'] }}</option>
                                 @endforeach
                             </select>
@@ -66,7 +66,18 @@
                     </div>
                     <div class="col-md-3">
                         <div class="form-group employee-field">
-                            <label class="employee-field-label" for="">Status</label>
+                            <label class="employee-field-label" for="">Position</label>
+                            <select name="position" id="position" class="select2 form-control">
+                                <option value="all">All</option>
+                                @foreach ($positions as $org)
+                                    <option value="{{ $org['id'] }}">{{ $org['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group employee-field">
+                            <label class="employee-field-label" for="">Employment Status</label>
                             <select name="status" id="status" class="select2 form-control">
                                 <option value="all">All</option>
                                 <option value="permanent">Permanent</option>
@@ -77,12 +88,11 @@
                     </div>
                     <div class="col-md-3">
                         <div class="form-group employee-field">
-                            <label class="employee-field-label" for="">Branch</label>
-                            <select name="branch" id="branch" class="select2 form-control">
+                            <label class="employee-field-label" for="is_active">Active Status</label>
+                            <select name="is_active" id="is_active" class="select2 form-control">
                                 <option value="all">All</option>
-                                @foreach ($branches as $org)
-                                    <option value="{{ $org->id }}">{{ $org->name }}</option>
-                                @endforeach
+                                <option value="1" selected>Active</option>
+                                <option value="0">Not Active</option>
                             </select>
                         </div>
                     </div>
@@ -287,9 +297,10 @@
                 }, 400);
             });
 
-            $('.perpage, #level, #branch, #status, #organization, #position').on('change keyup', function() {
-                loadEmployee();
-            });
+            $('.perpage, #level, #branch, #status, #is_active, #organization, #position').on('change keyup',
+                function() {
+                    loadEmployee();
+                });
 
             $('#employee-select-all').on('change', function() {
                 let isChecked = $(this).is(':checked');
@@ -394,6 +405,7 @@
                 position: $('#position').val(),
                 level: $('#level').val(),
                 status: $('#status').val(),
+                is_active: $('#is_active').val(),
                 branch: $('#branch').val(),
                 perpage: $('.perpage').val(),
             };

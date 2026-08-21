@@ -5,6 +5,7 @@ namespace App\Helpers;
 use App\Models\Attendance;
 use App\Models\AttendanceLog;
 use App\Models\Employee;
+use App\Models\EmployeeShiftOverride;
 use Carbon\Carbon;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 use Google\Auth\HttpHandler\HttpHandlerFactory;
@@ -201,8 +202,18 @@ function diffTime($start, $end)
 
 function getShiftByDate(Employee $employee,$date)
 {
+    $targetDate = Carbon::parse($date)->toDateString();
+    $override = EmployeeShiftOverride::with('shift')
+        ->where('employee_id', $employee->id)
+        ->where('date', $targetDate)
+        ->first();
+
+    if ($override && $override->shift) {
+        return $override->shift;
+    }
+
     $shiftLength = $employee->activeSchedule->schedule->count_detail;
-    $target = Carbon::parse($date)->startOfDay();
+    $target = Carbon::parse($targetDate)->startOfDay();
     $effective = Carbon::parse($employee->activeSchedule->effective_start_date)->startOfDay();
     $diffDays = $effective->diffInDays($target, false);
 

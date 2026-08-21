@@ -9,6 +9,7 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeScheduleController;
+use App\Http\Controllers\EmployeeShiftOverrideController;
 use App\Http\Controllers\EmploymentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalDocumentController;
@@ -61,6 +62,10 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('clockin', [AttendanceLogController::class, 'clockin']);
 
         Route::resource('pin-location', PinLocationController::class);
+        Route::get('scheduler/calendar', [EmployeeScheduleController::class, 'calendar'])->name('scheduler.calendar');
+        Route::get('scheduler/calendar/export', [EmployeeScheduleController::class, 'exportCalendar'])->name('scheduler.calendar.export');
+        Route::get('scheduler/override/create', [EmployeeShiftOverrideController::class, 'create'])->name('scheduler.override.create');
+        Route::post('scheduler/override', [EmployeeShiftOverrideController::class, 'store'])->name('scheduler.override.store');
         Route::resource('scheduler', EmployeeScheduleController::class);
         Route::get('shift/get', [ShiftController::class, 'get']);
 

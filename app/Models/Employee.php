@@ -40,6 +40,10 @@ class Employee extends Model
     {
         return $this->hasMany(EmployeeSchedule::class);
     }
+    public function shiftOverrides()
+    {
+        return $this->hasMany(EmployeeShiftOverride::class);
+    }
     public function activeSchedule()
     {
         return $this->hasOne(EmployeeSchedule::class)
