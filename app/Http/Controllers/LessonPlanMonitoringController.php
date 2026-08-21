@@ -104,7 +104,90 @@ class LessonPlanMonitoringController extends Controller
             $data['progress'] = $data['progress_approved']; // For backward compatibility if needed
         }
 
-        return view('employee.lesson_plan.monitoring.show', compact('title', 'target', 'groupedData'));
+        return view('employee.lesson_plan.monitoring.show', compact('title', 'target', 'groupedData', 'monitorRoles'));
+    }
+
+    public function printTarget(Request $request, $id)
+    {
+        $title = 'Print Lesson Plan Target Details';
+        $employeeId = auth()->user()->employee->id ?? null;
+
+        if (!$employeeId) {
+            return redirect()->back()->with('error', 'Employee record not found.');
+        }
+
+        $target = LessonPlanTarget::with('months')->findOrFail($id);
+
+        $monitorRoles = SubjectCategoryMonitor::where('employee_id', $employeeId)->get();
+        if ($monitorRoles->isEmpty()) {
+            return redirect()->back()->with('error', 'You do not have access to monitor lesson plans.');
+        }
+
+        $monitoredCategoryIds = $monitorRoles->pluck('subject_category_id')->toArray();
+        $selectedCategories = $request->input('category_ids', []);
+        
+        // Filter monitored categories by selected categories if any are provided
+        if (!empty($selectedCategories)) {
+            $monitoredCategoryIds = array_intersect($monitoredCategoryIds, $selectedCategories);
+        }
+
+        if (empty($monitoredCategoryIds)) {
+            return redirect()->back()->with('error', 'No categories selected to print.');
+        }
+
+        $employeeSubjects = \App\Models\EmployeeSubject::with(['employee.user', 'subject.subjectCategory', 'schoolClass'])
+            ->whereHas('subject', function($q) use ($monitoredCategoryIds) {
+                $q->whereIn('subject_category_id', $monitoredCategoryIds);
+            })
+            ->get();
+
+        $submissions = LessonPlanSubmission::whereHas('lessonPlanTargetMonth', function($q) use ($id) {
+                $q->where('lesson_plan_target_id', $id);
+            })
+            ->whereIn('employee_subject_id', $employeeSubjects->pluck('id'))
+            ->get();
+
+        $expectedSubmissionsPerES = $target->months->sum(function($month) {
+            return $month->has_5_weeks ? 5 : 4;
+        });
+
+        $groupedData = [];
+
+        foreach ($employeeSubjects as $es) {
+            $catName = $es->subject->subjectCategory->name ?? 'Unknown Category';
+            $subName = $es->subject->name ?? 'Unknown Subject';
+            $subjectId = $es->subject_id;
+
+            if (!isset($groupedData[$subjectId])) {
+                $groupedData[$subjectId] = [
+                    'category_name' => $catName,
+                    'subject_name' => $subName,
+                    'total_approved' => 0,
+                    'total_submitted' => 0,
+                    'total_revision' => 0,
+                    'total_expected' => 0,
+                    'details' => []
+                ];
+            }
+
+            $approvedCount = $submissions->where('employee_subject_id', $es->id)->where('status', 'approved')->count();
+            $submittedCount = $submissions->where('employee_subject_id', $es->id)->where('status', 'submitted')->count();
+            $revisionCount = $submissions->where('employee_subject_id', $es->id)->where('status', 'need_revision')->count();
+            
+            $groupedData[$subjectId]['total_approved'] += $approvedCount;
+            $groupedData[$subjectId]['total_submitted'] += $submittedCount;
+            $groupedData[$subjectId]['total_revision'] += $revisionCount;
+            $groupedData[$subjectId]['total_expected'] += $expectedSubmissionsPerES;
+        }
+
+        foreach ($groupedData as &$data) {
+            $data['progress_approved'] = $data['total_expected'] > 0 ? round(($data['total_approved'] / $data['total_expected']) * 100) : 0;
+            $data['progress_submitted'] = $data['total_expected'] > 0 ? round(($data['total_submitted'] / $data['total_expected']) * 100) : 0;
+            $data['progress_revision'] = $data['total_expected'] > 0 ? round(($data['total_revision'] / $data['total_expected']) * 100) : 0;
+            $data['progress'] = $data['progress_approved']; 
+        }
+
+        return view('employee.lesson_plan.monitoring.print', compact('title', 'target', 'groupedData'));
     }
 
     public function showSubject($id, $subject_id)

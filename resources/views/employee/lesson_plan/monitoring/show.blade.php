@@ -30,6 +30,28 @@
                 @if(empty($groupedData))
                     <div class="alert alert-info">No data available for the monitored categories.</div>
                 @else
+                    <div class="well">
+                        <form action="{{ route('employee.lesson-plan.monitoring.print', $target->id) }}" method="POST" target="_blank">
+                            @csrf
+                            <h4><i class="fa fa-print"></i> Print Report</h4>
+                            <p>Select categories to print:</p>
+                            <div class="row">
+                                @foreach($monitorRoles as $role)
+                                    @if($role->subjectCategory)
+                                    <div class="col-md-3 col-sm-4 col-xs-6">
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" name="category_ids[]" value="{{ $role->subject_category_id }}" checked>
+                                            {{ $role->subjectCategory->name }}
+                                        </label>
+                                    </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                            <hr>
+                            <button type="submit" class="btn btn-primary"><i class="fa fa-print"></i> Print Selected Categories</button>
+                        </form>
+                    </div>
+
                     <div class="table-responsive">
                         <table id="subjectsTable" class="table table-striped table-bordered datatable">
                             <thead>
