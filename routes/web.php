@@ -237,6 +237,9 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::group(['prefix' => 'report'], function () {
             Route::get('attendance/filter', [ReportController::class, 'filterReport'])->name('report.attendance.filter');
             Route::get('attendance', [ReportController::class, 'attendance'])->name('report.attendance');
+            Route::get('attendance/monthly', [ReportController::class, 'monthly'])->name('report.attendance.monthly');
+            Route::get('attendance/monthly/{employee}/detail', [ReportController::class, 'monthlyDetail'])->name('report.attendance.monthly.detail');
+            Route::get('attendance/monthly/{employee}/logs', [ReportController::class, 'monthlyLogs'])->name('report.attendance.monthly.logs');
         });
 
         Route::group(['prefix' => 'lesson-plan'], function () {

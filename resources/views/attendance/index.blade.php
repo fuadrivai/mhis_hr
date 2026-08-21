@@ -217,6 +217,12 @@
         </div>
     </div>
 
+    <div class="col-md-12 mb-3 text-right">
+        <a href="{{ route('report.attendance') }}" class="btn btn-primary">
+            <i class="fa fa-calendar"></i> Monthly Attendance Report
+        </a>
+    </div>
+
     <div class="col-md-12">
         <div class="row">
             <div class="col-md-4 col-sm-6">
