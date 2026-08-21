@@ -287,6 +287,120 @@
             padding: 18px 10px;
         }
 
+        #calendarCellModal .modal-dialog {
+            max-width: 430px;
+        }
+
+        #calendarCellModal .modal-content {
+            overflow: hidden;
+            border: 0;
+            border-radius: 16px;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.2);
+        }
+
+        #calendarCellModal .modal-header {
+            padding: 20px 22px;
+            border-bottom: 0;
+            background: linear-gradient(135deg, #1f6feb 0%, #1555b5 100%);
+            color: #fff;
+        }
+
+        #calendarCellModal .modal-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #calendarCellModal .modal-title-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.18);
+            font-size: 1rem;
+        }
+
+        #calendarCellModal .modal-kicker {
+            display: block;
+            margin-bottom: 3px;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        #calendarCellModal .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        #calendarCellModal .close {
+            color: #fff;
+            opacity: 0.85;
+            text-shadow: none;
+        }
+
+        #calendarCellModal .modal-body {
+            padding: 20px 22px;
+            background: #fff;
+        }
+
+        #calendarCellModal .calendar-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        #calendarCellModal .calendar-detail-item {
+            min-width: 0;
+            padding: 12px 13px;
+            border: 1px solid #e5eaf1;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+
+        #calendarCellModal .calendar-detail-item:first-child {
+            grid-column: 1 / -1;
+            background: #eef5ff;
+            border-color: #d7e6ff;
+        }
+
+        #calendarCellModal .calendar-detail-label {
+            display: block;
+            margin-bottom: 5px;
+            color: #64748b;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        #calendarCellModal .calendar-detail-value {
+            display: block;
+            overflow: hidden;
+            color: #172033;
+            font-size: 0.9rem;
+            font-weight: 700;
+            line-height: 1.35;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #calendarCellModal .modal-footer {
+            gap: 8px;
+            padding: 14px 22px;
+            border-top: 1px solid #e5eaf1;
+            background: #f8fafc;
+        }
+
+        #calendarCellModal .modal-footer .btn {
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
         @media (max-width: 768px) {
             .scheduler-toolbar {
                 align-items: flex-start;
@@ -632,35 +746,46 @@
 
     <div class="modal fade" id="calendarCellModal" tabindex="-1" role="dialog"
         aria-labelledby="calendarCellModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="calendarCellModalLabel">Schedule Details</h5>
+                    <div class="modal-title-wrap">
+                        <span class="modal-title-icon"><i class="fa fa-calendar"></i></span>
+                        <div>
+                            <span class="modal-kicker">Calendar entry</span>
+                            <h5 class="modal-title mb-0" id="calendarCellModalLabel">Schedule Details</h5>
+                        </div>
+                    </div>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="form-group mb-2">
-                        <small class="text-muted">Employee</small>
-                        <div id="calendarCellEmployee" class="font-weight-bold"></div>
-                    </div>
-                    <div class="form-group mb-2">
-                        <small class="text-muted">Date</small>
-                        <div id="calendarCellDate" class="font-weight-bold"></div>
-                    </div>
-                    <div class="form-group mb-2">
-                        <small class="text-muted">Schedule</small>
-                        <div id="calendarCellSchedule" class="font-weight-bold"></div>
-                    </div>
-                    <div class="form-group mb-0">
-                        <small class="text-muted">Shift</small>
-                        <div id="calendarCellShift" class="font-weight-bold"></div>
+                    <div class="calendar-detail-grid">
+                        <div class="calendar-detail-item">
+                            <span class="calendar-detail-label"><i class="fa fa-user mr-1"></i> Employee</span>
+                            <span id="calendarCellEmployee" class="calendar-detail-value"></span>
+                        </div>
+                        <div class="calendar-detail-item">
+                            <span class="calendar-detail-label"><i class="fa fa-clock-o mr-1"></i> Date</span>
+                            <span id="calendarCellDate" class="calendar-detail-value"></span>
+                        </div>
+                        <div class="calendar-detail-item">
+                            <span class="calendar-detail-label"><i class="fa fa-list-alt mr-1"></i> Schedule</span>
+                            <span id="calendarCellSchedule" class="calendar-detail-value"></span>
+                        </div>
+                        <div class="calendar-detail-item">
+                            <span class="calendar-detail-label"><i class="fa fa-exchange mr-1"></i> Shift</span>
+                            <span id="calendarCellShift" class="calendar-detail-value"></span>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" id="calendarAssignShiftBtn">
                         <i class="fa fa-plus"></i> Assign Shift
+                    </button>
+                    <button type="button" class="btn btn-danger d-none" id="calendarRemoveOverrideBtn">
+                        <i class="fa fa-trash"></i> Remove Override
                     </button>
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
@@ -1001,6 +1126,7 @@
                                 data-employee-schedule-id="${cell.employee_schedule_id || ''}"
                                 data-schedule-id="${cell.schedule_id || ''}"
                                 data-schedule-detail-id="${cell.schedule_detail_id || ''}"
+                                data-override-id="${cell.override_id || ''}"
                                 data-shift-id="${cell.shift_id || ''}"
                                 data-schedule-name="${cellMeta}"
                                 data-shift-name="${cell.shift_name || ''}"
@@ -1021,6 +1147,7 @@
             $('.schedule-chip').on('click', function() {
                 const employeeName = $(this).data('employee-name');
                 const date = $(this).data('date');
+                const overrideId = $(this).data('override-id');
                 const scheduleName = $(this).data('schedule-name') || 'N/A';
                 const shiftName = $(this).data('shift-name') || 'N/A';
                 const timeText = $(this).data('time-text') || '00:00 - 00:00';
@@ -1031,6 +1158,7 @@
                 $('#calendarCellShift').text(`${timeText} / ${shiftName}`);
                 $('#calendarAssignShiftBtn').data('employee-id', $(this).data('employee-id'));
                 $('#calendarAssignShiftBtn').data('date', date);
+                $('#calendarRemoveOverrideBtn').data('override-id', overrideId).toggleClass('d-none', !overrideId);
                 $('#calendarCellModal').modal('show');
             });
 
@@ -1039,6 +1167,32 @@
                 const date = $(this).data('date');
                 window.location.href =
                     `{{ route('scheduler.override.create') }}?date=${encodeURIComponent(date)}&employee_ids[]=${encodeURIComponent(employeeId)}`;
+            });
+
+            $('#calendarRemoveOverrideBtn').off('click').on('click', function() {
+                const overrideId = $(this).data('override-id');
+                if (!overrideId || !window.confirm('Remove this shift override?')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: `{{ route('scheduler.override.destroy', ['override' => '__OVERRIDE__']) }}`
+                        .replace(
+                            '__OVERRIDE__', overrideId),
+                    type: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        $('#calendarCellModal').modal('hide');
+                        sweetAlert('Success', response.message, 'success');
+                        loadScheduleCalendar();
+                    },
+                    error: function(xhr) {
+                        sweetAlert('Error', xhr.responseJSON?.message ||
+                            'Unable to remove shift override.', 'error');
+                    }
+                });
             });
         }
     </script>

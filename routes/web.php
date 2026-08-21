@@ -66,6 +66,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('scheduler/calendar/export', [EmployeeScheduleController::class, 'exportCalendar'])->name('scheduler.calendar.export');
         Route::get('scheduler/override/create', [EmployeeShiftOverrideController::class, 'create'])->name('scheduler.override.create');
         Route::post('scheduler/override', [EmployeeShiftOverrideController::class, 'store'])->name('scheduler.override.store');
+        Route::delete('scheduler/override/{override}', [EmployeeShiftOverrideController::class, 'destroy'])->name('scheduler.override.destroy');
         Route::resource('scheduler', EmployeeScheduleController::class);
         Route::get('shift/get', [ShiftController::class, 'get']);
 

@@ -70,4 +70,13 @@ class EmployeeShiftOverrideController extends Controller
 
         return redirect()->route('scheduler.index')->with('success', 'Shift override saved successfully.');
     }
+
+    public function destroy(EmployeeShiftOverride $override)
+    {
+        $override->delete();
+
+        return response()->json([
+            'message' => 'Shift override removed successfully.',
+        ]);
+    }
 }
