@@ -89,11 +89,14 @@
                                                 class={{ Request::is('employee*') && !Request::is('employee/reprimand*') && !Request::is('employee/kpi-monitoring*') ? 'current-page' : '' }}>
                                                 <a href="/employee">Employee</a>
                                             </li>
-                                            <li class={{ Request::is('employee/reprimand*') ? 'current-page' : '' }}>
-                                                <a href="/employee/reprimand">Reprimand</a>
-                                            </li>
-                                            <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
-                                                    href="/scheduler">Scheduler</a></li>
+                                            @if ($isAdmin)
+                                                <li
+                                                    class={{ Request::is('employee/reprimand*') ? 'current-page' : '' }}>
+                                                    <a href="/employee/reprimand">Reprimand</a>
+                                                </li>
+                                                <li class={{ Request::is('employee*') ? 'current-page' : '' }}><a
+                                                        href="/scheduler">Scheduler</a></li>
+                                            @endif
                                             <li
                                                 class={{ Request::is('employee/kpi-monitoring*') ? 'current-page' : '' }}>
                                                 <a href="{{ route('employee.kpi-monitoring') }}">KPI Monitoring</a>
@@ -102,7 +105,7 @@
                                     </li>
                                 @endif
 
-                                @if ($isAdmin)
+                                @if ($isAdmin || $isRole3)
                                     <li class={{ Request::is('time*') ? 'active' : '' }}><a><i
                                                 class="fa fa-clock-o"></i>
                                             Time <span class="fa fa-chevron-down"></span></a>
@@ -110,10 +113,14 @@
                                             style="display: {{ Request::is('time*') ? 'block' : 'none' }}">
                                             <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
                                                     href="/time/attendance">Attendance</a></li>
-                                            {{-- <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
-                                                    href="#">Overtime</a></li> --}}
-                                            <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
-                                                    href="/time/request">Time Off</a></li>
+                                            @if ($isAdmin)
+                                                <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                        href="/time/request">Time Off</a></li>
+                                            @endif
+                                            @if ($isRole3)
+                                                <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                        href="/time/approval">Approvals</a></li>
+                                            @endif
                                         </ul>
                                     </li>
                                     </li>
@@ -153,11 +160,24 @@
                                         @if ($isAssessmentMonitor)
                                             <li
                                                 class={{ Request::is('assessment/monitoring*') ? 'current-page' : '' }}>
-                                                <a href="{{ route('employee.assessment.monitoring.index') }}">Monitoring Assessment</a>
+                                                <a href="{{ route('employee.assessment.monitoring.index') }}">Monitoring
+                                                    Assessment</a>
                                             </li>
                                         @endif
                                     </ul>
                                 </li>
+
+                                {{-- @if ($isAdmin)
+                                    <li class={{ Request::is('time*') ? 'active' : '' }}><a><i
+                                                class="fa fa-file-text"></i>
+                                            Report <span class="fa fa-chevron-down"></span></a>
+                                        <ul class="nav child_menu"
+                                            style="display: {{ Request::is('time*') ? 'block' : 'none' }}">
+                                            <li class={{ Request::is('time*') ? 'current-page' : '' }}><a
+                                                    href="/report/attendance">Attendance</a></li>
+                                        </ul>
+                                    </li>
+                                @endif --}}
 
                                 @if ($isAdmin || $isRole3)
                                     <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i
@@ -198,6 +218,8 @@
                                                         <li><a href="/setting/schedule">Schedule</a></li>
                                                         <li><a href="/setting/timeoff">Time off</a></li>
                                                         <li><a href="/setting/holiday">Holiday</a></li>
+                                                        <li><a href="/setting/leave/allocation">Leave Allocation</a>
+                                                        </li>
                                                         <li><a href="/setting/location">Live Attendance</a></li>
                                                     </ul>
                                                 </li>

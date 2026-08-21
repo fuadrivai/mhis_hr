@@ -167,7 +167,7 @@
         </div>
 
         <div class="approval-detail-footer">
-            <a href="/time/request" class="btn btn-outline-secondary">Back to list</a>
+            <a onclick="window.history.back()" class="btn btn-outline-secondary">Back to list</a>
             @if ($approvalRequest->status === 'pending' && $canProcessRequest)
                 <div class="approval-detail-actions">
                     <button type="button" class="btn btn-outline-danger btn-request-action" data-action="rejected"

@@ -192,7 +192,7 @@
                 processing: true,
                 serverSide: true,
                 ajax: {
-                    url: "/time/request/datatable",
+                    url: "/time/approval/datatable",
                     type: "GET",
                     data: function(data) {
                         data.status = $('#filter-status').val();
@@ -205,22 +205,6 @@
                 pageLength: 25,
                 ordering: false,
                 responsive: true,
-                pagingType: 'simple',
-                dom: `<"row"<"col-sm-6 d-flex align-items-center"lB><"col-sm-6"f>>tip`,
-                buttons: [
-                    @if ($isAdmin)
-                        {
-                            text: 'Add Request <i class="fa fa-plus-circle"></i>',
-                            attr: {
-                                id: 'btn-approval-request'
-                            },
-                            className: 'btn btn-success font-weight-bold mx-1',
-                            action: function() {
-                                window.location.href = '/time/request/create';
-                            }
-                        }
-                    @endif
-                ],
                 language: {
                     info: "Page _PAGE_ of _PAGES_",
                     lengthMenu: "_MENU_ ",
@@ -291,12 +275,13 @@
                         data: "id",
                         searchable: false,
                         className: "text-center",
-                        mRender: function(data) {
+                        mRender: function(data, type, full) {
+                            let approvalRequestId = full.approval_request.id;
                             return `
-                            <button type="button" class="btn btn-sm btn-secondary btn-timeline" data-id="${data}" title="View timeline">
+                            <button type="button" class="btn btn-sm btn-secondary btn-timeline" data-id="${approvalRequestId}" title="View timeline">
                                 <i class="fa fa-history"></i>
                             </button>
-                            <a href="/time/request/${data}/edit" class="btn btn-sm btn-primary" title="Edit Request">
+                            <a href="/time/request/${approvalRequestId}/edit" class="btn btn-sm btn-primary" title="Edit Request">
                                 <i class="fa fa-edit"></i>
                             </a>
                             `;
@@ -429,24 +414,24 @@
             return `
                 <div class="timeline">
                     ${history.map((item, index) => `
-                                                                                                                                                                                    <div class="timeline-item ${index === 0 ? 'active' : ''}">
-                                                                                                                                                                                        <div class="timeline-marker bg-primary"></div>
-                                                                                                                                                                                        <div class="timeline-content">
-                                                                                                                                                                                            <div class="d-flex justify-content-between align-items-start">
-                                                                                                                                                                                                <div>
-                                                                                                                                                                                                    <h6 class="mb-1">${item.action || 'Action performed'}</h6>
-                                                                                                                                                                                                    <p class="mb-1 text-muted">${item.note || ''}</p>
-                                                                                                                                                                                                    <small class="text-muted">
-                                                                                                                                                                                                        By: ${item.approver?.personal?.fullname || 'System'}
-                                                                                                                                                                                                    </small>
-                                                                                                                                                                                                </div>
-                                                                                                                                                                                                <small class="text-muted">
-                                                                                                                                                                                                    ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
-                                                                                                                                                                                                </small>
-                                                                                                                                                                                            </div>
-                                                                                                                                                                                        </div>
-                                                                                                                                                                                    </div>
-                                                                                                                                                                                `).join('')}
+                                                                                                                                                            <div class="timeline-item ${index === 0 ? 'active' : ''}">
+                                                                                                                                                                <div class="timeline-marker bg-primary"></div>
+                                                                                                                                                                <div class="timeline-content">
+                                                                                                                                                                    <div class="d-flex justify-content-between align-items-start">
+                                                                                                                                                                        <div>
+                                                                                                                                                                            <h6 class="mb-1">${item.action || 'Action performed'}</h6>
+                                                                                                                                                                            <p class="mb-1 text-muted">${item.note || ''}</p>
+                                                                                                                                                                            <small class="text-muted">
+                                                                                                                                                                                By: ${item.approver?.personal?.fullname || 'System'}
+                                                                                                                                                                            </small>
+                                                                                                                                                                        </div>
+                                                                                                                                                                        <small class="text-muted">
+                                                                                                                                                                            ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
+                                                                                                                                                                        </small>
+                                                                                                                                                                    </div>
+                                                                                                                                                                </div>
+                                                                                                                                                            </div>
+                                                                                                                                                        `).join('')}
                 </div>
             `;
         }

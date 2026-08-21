@@ -2,6 +2,7 @@
 
 namespace App\Services\Implement;
 
+use App\Jobs\SendAnnouncementEmail;
 use App\Mail\TimeoffMail;
 use App\Models\AnnouncementCategory;
 use App\Models\Branch;
@@ -146,123 +147,214 @@ class AnnouncementImplement implements AnnouncementService
     }
 
     public function storeAnnouncement(array $data, int $createdBy): Announcement
-    {
-        return DB::transaction(function () use ($data, $createdBy) {
-            $creator = Employee::where('user_id', $createdBy)->first();
-            $attachmentPath = null;
-            if (!empty($data['attachment']) && $data['attachment']->isValid()) {
-                $attachmentPath = $data['attachment']->store('announcements', 'public');
-            }
+{
+    return DB::transaction(function () use ($data, $createdBy) {
 
-            $announcement = Announcement::create([
-                'title' => $data['title'],
-                'content' => $data['content'],
-                'link' => $data['link'] ?? null,
-                'attachment' => $attachmentPath,
-                'category_id' => $data['category_id'] ?? null,
-                'publish_at' => Carbon::now(),
-                'all_employees' => (bool) ($data['all_employees'] ?? true),
-                'send_email' => (bool) ($data['send_email'] ?? false),
-                'send_push_notification' => (bool) ($data['send_push_notification'] ?? true),
-                'created_by' => $creator ? $creator->id : null,
-                'status' => $data['status'] ?? 'draft',
-            ]);
+        $creator = Employee::where('user_id', $createdBy)->first();
+
+        $attachmentPath = null;
+
+        if (!empty($data['attachment']) && $data['attachment']->isValid()) {
+            $attachmentPath = $data['attachment']->store(
+                'announcements',
+                'public'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create Announcement
+        |--------------------------------------------------------------------------
+        */
+
+        $announcement = Announcement::create([
+            'title' => $data['title'],
+            'content' => $data['content'],
+            'link' => $data['link'] ?? null,
+            'attachment' => $attachmentPath,
+            'category_id' => $data['category_id'] ?? null,
+            'publish_at' => Carbon::now(),
+            'all_employees' => (bool) ($data['all_employees'] ?? true),
+            'send_email' => (bool) ($data['send_email'] ?? false),
+            'send_push_notification' => (bool) ($data['send_push_notification'] ?? true),
+            'created_by' => $creator ? $creator->id : null,
+            'status' => $data['status'] ?? 'draft',
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Save Target Relations
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$announcement->all_employees) {
+            $announcement->branches()->sync($data['branches'] ?? []);
+            $announcement->organizations()->sync($data['organizations'] ?? []);
+            $announcement->jobLevels()->sync($data['job_levels'] ?? []);
+            $announcement->positions()->sync($data['positions'] ?? []);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Send Announcement Email
+        |--------------------------------------------------------------------------
+        */
+
+        if ($announcement->send_email) {
+
+            $employeeQuery = Employee::query()
+                ->where('is_active', 1)
+                ->with('personal', 'employment');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Filter Employees
+            |--------------------------------------------------------------------------
+            */
 
             if (!$announcement->all_employees) {
-                $announcement->branches()->sync($data['branches'] ?? []);
-                $announcement->organizations()->sync($data['organizations'] ?? []);
-                $announcement->jobLevels()->sync($data['job_levels'] ?? []);
-                $announcement->positions()->sync($data['positions'] ?? []);
+                $employeeQuery->whereHas('employment', function ($query) use ($data) {
+
+                    if (!empty($data['branches'])) {
+                        $query->whereIn(
+                            'branch_id',
+                            $data['branches']
+                        );
+                    }
+
+                    if (!empty($data['organizations'])) {
+                        $query->whereIn(
+                            'organization_id',
+                            $data['organizations']
+                        );
+                    }
+
+                    if (!empty($data['job_levels'])) {
+                        $query->whereIn(
+                            'job_level_id',
+                            $data['job_levels']
+                        );
+                    }
+
+                    if (!empty($data['positions'])) {
+                        $query->whereIn(
+                            'job_position_id',
+                            $data['positions']
+                        );
+                    }
+                });
             }
 
-            $message = [
-                'title' => $announcement->title,
-                'content' => $announcement->content,
-                'link' => $announcement->link,
-                'subject'=>'You have a new announcement From MHIS HUB',
-                'template'=>'email-template.announcement',
-            ];
+            /*
+            |--------------------------------------------------------------------------
+            | Dispatch Email Jobs
+            |--------------------------------------------------------------------------
+            |
+            | DO NOT send email directly here.
+            | The job will run only after the transaction is committed.
+            |
+            */
 
-            if ($announcement->send_email) {
-                $employeeQueries = Employee::where('is_active', 1)->with('personal', 'employment');
-                if(!$announcement->all_employees){
-                    $employeeQueries->whereHas('employment', function ($query) use ($data) {
-                        if (!empty($data['branches'])) {
-                            $query->whereIn('branch_id', $data['branches']);
-                        }
-                        if (!empty($data['organizations'])) {
-                            $query->whereIn('organization_id', $data['organizations']);
-                        }
-                        if (!empty($data['job_levels'])) {
-                            $query->whereIn('job_level_id', $data['job_levels']);
-                        }
-                        if (!empty($data['positions'])) {
-                            $query->whereIn('job_position_id', $data['positions']);
-                        }
-                    });
-                }
-                $employees = $employeeQueries->get();
-                $attachmentFullPath = $announcement->attachment
-                    ? storage_path('app/public/' . $announcement->attachment)
-                    : null;
+            $employeeQuery->chunkById(100, function ($employees) use ($announcement) {
 
                 foreach ($employees as $employee) {
-                    if (empty(optional($employee->personal)->email)) {
+
+                    $email = optional($employee->personal)->email;
+
+                    if (empty($email)) {
                         continue;
                     }
 
-                    $mail = new TimeoffMail($message);
-                    if ($attachmentFullPath && file_exists($attachmentFullPath)) {
-                        $mail->attach($attachmentFullPath);
+                    SendAnnouncementEmail::dispatch(
+                        $announcement->id,
+                        $email
+                    )->afterCommit();
+                }
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Send Push Notification
+        |--------------------------------------------------------------------------
+        */
+
+        if ($announcement->send_push_notification) {
+
+            $employeeQuery = Employee::query()
+                ->where('is_active', 1);
+
+            if (!$announcement->all_employees) {
+
+                $employeeQuery->whereHas('employment', function ($query) use ($data) {
+
+                    if (!empty($data['branches'])) {
+                        $query->whereIn(
+                            'branch_id',
+                            $data['branches']
+                        );
                     }
 
-                    Mail::mailer('smtp')->to($employee->personal->email)->send($mail);
-                }
+                    if (!empty($data['organizations'])) {
+                        $query->whereIn(
+                            'organization_id',
+                            $data['organizations']
+                        );
+                    }
+
+                    if (!empty($data['job_levels'])) {
+                        $query->whereIn(
+                            'job_level_id',
+                            $data['job_levels']
+                        );
+                    }
+
+                    if (!empty($data['positions'])) {
+                        $query->whereIn(
+                            'job_position_id',
+                            $data['positions']
+                        );
+                    }
+                });
             }
 
-            if ($announcement->send_push_notification) {
-                $employeeQuery = Employee::query()->where('is_active', 1);
+            $targetUserIds = $employeeQuery
+                ->whereNotNull('user_id')
+                ->pluck('user_id');
 
-                if (!$announcement->all_employees) {
-                    $employeeQuery->whereHas('employment', function ($query) use ($data) {
-                        if (!empty($data['branches'])) {
-                            $query->whereIn('branch_id', $data['branches']);
-                        }
-                        if (!empty($data['organizations'])) {
-                            $query->whereIn('organization_id', $data['organizations']);
-                        }
-                        if (!empty($data['job_levels'])) {
-                            $query->whereIn('job_level_id', $data['job_levels']);
-                        }
-                        if (!empty($data['positions'])) {
-                            $query->whereIn('job_position_id', $data['positions']);
-                        }
-                    });
-                }
+            $deviceTokens = DB::table('sessions')
+                ->whereIn('user_id', $targetUserIds)
+                ->whereIn('device', ['android'])
+                ->distinct()
+                ->pluck('device_id');
 
-                $targetUserIds = $employeeQuery
-                    ->whereNotNull('user_id')
-                    ->pluck('user_id');
+            $notificationData = [
+                'title' => $announcement->title,
+                'body' => 'Message from ' . auth()->user()->name,
+            ];
 
-                $deviceTokens = DB::table('sessions')
-                    ->whereIn('user_id', $targetUserIds)
-                    ->whereIn('device', ['android'])
-                    ->distinct()
-                    ->pluck('device_id');
-
-                $notificationData = [
-                    "title" => $announcement->title,
-                    "body" => "Message from " . auth()->user()->name,
-                ];
-
-                foreach ($deviceTokens as $token) {
-                    sendMessage($token, $notificationData);
-                }
+            foreach ($deviceTokens as $token) {
+                sendMessage($token, $notificationData);
             }
-            
-            return $announcement->load(['category', 'creator', 'updater', 'branches', 'organizations', 'jobLevels', 'positions']);
-        });
-    }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Return Announcement
+        |--------------------------------------------------------------------------
+        */
+
+        return $announcement->load([
+            'category',
+            'creator',
+            'updater',
+            'branches',
+            'organizations',
+            'jobLevels',
+            'positions',
+        ]);
+    });
+}
 
     function post($request)
     {

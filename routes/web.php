@@ -9,6 +9,7 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeScheduleController;
+use App\Http\Controllers\EmployeeShiftOverrideController;
 use App\Http\Controllers\EmploymentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InternalDocumentController;
@@ -29,6 +30,8 @@ use App\Http\Controllers\EmployeeKpiController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AnnouncementCategoryController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\LeaveAllocationController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReprimandController;
 use App\Http\Controllers\ReprimandTypeController;
 use App\Http\Controllers\RoleController;
@@ -59,6 +62,11 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('clockin', [AttendanceLogController::class, 'clockin']);
 
         Route::resource('pin-location', PinLocationController::class);
+        Route::get('scheduler/calendar', [EmployeeScheduleController::class, 'calendar'])->name('scheduler.calendar');
+        Route::get('scheduler/calendar/export', [EmployeeScheduleController::class, 'exportCalendar'])->name('scheduler.calendar.export');
+        Route::get('scheduler/override/create', [EmployeeShiftOverrideController::class, 'create'])->name('scheduler.override.create');
+        Route::post('scheduler/override', [EmployeeShiftOverrideController::class, 'store'])->name('scheduler.override.store');
+        Route::delete('scheduler/override/{override}', [EmployeeShiftOverrideController::class, 'destroy'])->name('scheduler.override.destroy');
         Route::resource('scheduler', EmployeeScheduleController::class);
         Route::get('shift/get', [ShiftController::class, 'get']);
 
@@ -111,8 +119,12 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('timeoff/assignment', [TimeOffController::class, 'employeeAssignment'])->name('timeoff.employeeAssignment');
             Route::get('timeoff/assignment/{timeoffId}', [TimeOffController::class, 'assignment'])->name('timeoff.assignment');
             Route::resource('timeoff', TimeOffController::class);
-
+            
+            Route::get('leave/allocation/{id}/histories', [LeaveAllocationController::class, 'getLeaveAllocationHistories']);
+            Route::resource('leave/allocation', LeaveAllocationController::class);
+            
             Route::get('location/employee/filter', [LocationController::class, 'filterEmployee']);
+            Route::put('location/cutoff/{cutoff}', [LocationController::class, 'updateCutoff'])->name('location.cutoff.update');
             Route::put('live-attendance/face-recognition', [LocationController::class, 'updateFaceRecognitionSetting']);
             Route::resource('location', LocationController::class);
 
@@ -207,13 +219,27 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('kpi/{kpi_id}/save-score', [EmployeeKpiController::class, 'saveScore'])->name('employee.kpi.save-score');
         });
         Route::group(['prefix' => 'time'], function () {
+            Route::get('attendance/summary', [AttendanceController::class, 'attendanceSummary']);
+            Route::get('attendance/summary/{type}', [AttendanceController::class, 'attendanceSummaryList']);
+            Route::get('attendance/{attendance}/logs', [AttendanceController::class, 'attendanceLogs']);
             Route::get('attendance', [AttendanceController::class, 'attendance']);
             Route::get('request/datatable', [ApprovalRequestController::class, 'dataTable']);
             Route::get('request/{id}/history', [ApprovalRequestController::class, 'history']);
             Route::get('request/{id}/approver', [ApprovalRequestController::class, 'approver']);
             Route::post('request/{approvalRequest}/action', [ApprovalRequestController::class, 'processAction'])
-                ->name('time.request.action');
+            ->name('time.request.action');
+            
+            Route::get('approval/datatable', [ApprovalRequestController::class, 'approvalDataTable']);
+            Route::get('approval', [ApprovalRequestController::class, 'approvalByUser']);
+
             Route::resource('request', ApprovalRequestController::class);
+        });
+        Route::group(['prefix' => 'report'], function () {
+            Route::get('attendance/filter', [ReportController::class, 'filterReport'])->name('report.attendance.filter');
+            Route::get('attendance', [ReportController::class, 'attendance'])->name('report.attendance');
+            Route::get('attendance/monthly', [ReportController::class, 'monthly'])->name('report.attendance.monthly');
+            Route::get('attendance/monthly/{employee}/detail', [ReportController::class, 'monthlyDetail'])->name('report.attendance.monthly.detail');
+            Route::get('attendance/monthly/{employee}/logs', [ReportController::class, 'monthlyLogs'])->name('report.attendance.monthly.logs');
         });
 
         Route::group(['prefix' => 'lesson-plan'], function () {

@@ -5,6 +5,7 @@ namespace App\Helpers;
 use App\Models\Attendance;
 use App\Models\AttendanceLog;
 use App\Models\Employee;
+use App\Models\EmployeeShiftOverride;
 use Carbon\Carbon;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 use Google\Auth\HttpHandler\HttpHandlerFactory;
@@ -201,8 +202,18 @@ function diffTime($start, $end)
 
 function getShiftByDate(Employee $employee,$date)
 {
+    $targetDate = Carbon::parse($date)->toDateString();
+    $override = EmployeeShiftOverride::with('shift')
+        ->where('employee_id', $employee->id)
+        ->where('date', $targetDate)
+        ->first();
+
+    if ($override && $override->shift) {
+        return $override->shift;
+    }
+
     $shiftLength = $employee->activeSchedule->schedule->count_detail;
-    $target = Carbon::parse($date)->startOfDay();
+    $target = Carbon::parse($targetDate)->startOfDay();
     $effective = Carbon::parse($employee->activeSchedule->effective_start_date)->startOfDay();
     $diffDays = $effective->diffInDays($target, false);
 
@@ -313,19 +324,16 @@ function prepareAttendance($employee,$user,$clockTime) {
             'date' => $attendanceDate,
         ],
         [
-            'user_id' => $user['id'],
+            'user_id' =>$user['id'] ?? $employee->user_id,
             'fullname' => $employee->personal->fullname,
             'shift_name' => $employee->activeSchedule->schedule_name ?? '-',
-            'status' => 'present',
+            'status' => '-',
             'holiday' => $shift->holiday ? 1 : 0,
             'schedule_in' => $resolved['schedule_in'],
             'schedule_out' => $resolved['schedule_out'],
         ]
     );
-    return [
-        $attendance,
-        $attendanceDate
-    ];
+    return [$attendance,$attendanceDate];
 }
 
     function handlePhotoAndFaceRecognition($employee,?string $photo, bool $requireFaceRecognition = true): ?string
@@ -364,17 +372,7 @@ function prepareAttendance($employee,$user,$clockTime) {
             return;
         }
         $fullPath = storage_path('app/public/' . $photoPath);
-
         try {
-
-            // Log::info('Face Recognition Image', [
-            //     'employee_id' => $employee->id,
-            //     'path'        => $fullPath,
-            //     'mime'        => mime_content_type($fullPath),
-            //     'size_kb'     => round(filesize($fullPath) / 1024, 2),
-            //     'width'       => $image->width(),
-            //     'height'      => $image->height(),
-            // ]);
             $response = Http::timeout(15)
                 ->attach(
                     'image',
@@ -410,21 +408,11 @@ function prepareAttendance($employee,$user,$clockTime) {
                     );
             }
             
-            // $image = Image::make($fullPath);
             $jpgPath = preg_replace('/\.(png|jpeg|jpg)$/i', '.jpg', $fullPath);
-            // if ($image->width() > 1280) {
-            //     $image->orientate();
-            //     $image->resize(1280, null, function ($constraint) {
-            //         $constraint->aspectRatio();
-            //         $constraint->upsize();
-            //     });
-            // }
-            // $image->encode('jpg', 50)->save($fullPath);
             if ($jpgPath !== $fullPath) {
                 unlink($fullPath);
             }
 
-            // $fullPath = $jpgPath;
         } catch (\Throwable $e) {
             deleteAttendancePhoto($fullPath);
             Log::warning('Face recognition request failed', [

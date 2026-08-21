@@ -125,8 +125,6 @@ class EmployeeController extends Controller
             'asc'
         );
 
-        $query->where('is_active', 1 );
-
         $user = auth()->user();
         if ($user && $user->roles->contains('id', 3)) {
             if ($user->employee && $user->employee->employment) {
@@ -197,6 +195,11 @@ class EmployeeController extends Controller
             } else {
                 $query->with(['user', 'personal', 'employment']);
             }
+        }
+
+        $isActive = $request->input('is_active', '1');
+        if ($isActive !== 'all') {
+            $query->where('employees.is_active', $isActive);
         }
 
         $employees = $query->paginate($request->perpage ?? 10)->withQueryString();

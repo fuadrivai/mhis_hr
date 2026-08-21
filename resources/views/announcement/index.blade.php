@@ -68,10 +68,10 @@
                                                 title="View" data-announcement='@json($announcementPayload)'>
                                                 <i class="fa fa-eye"></i>
                                             </button>
-                                            <a title="Edit" href="/announcement/{{ $item->id }}/edit"
+                                            {{-- <a title="Edit" href="/announcement/{{ $item->id }}/edit"
                                                 class="btn btn-sm btn-success">
                                                 <i class="fa fa-pencil"></i>
-                                            </a>
+                                            </a> --}}
                                         </td>
                                     </tr>
                                 @endforeach

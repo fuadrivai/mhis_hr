@@ -40,6 +40,10 @@ class Employee extends Model
     {
         return $this->hasMany(EmployeeSchedule::class);
     }
+    public function shiftOverrides()
+    {
+        return $this->hasMany(EmployeeShiftOverride::class);
+    }
     public function activeSchedule()
     {
         return $this->hasOne(EmployeeSchedule::class)
@@ -73,5 +77,13 @@ class Employee extends Model
     public function reprimands()
     {
         return $this->hasMany(Reprimand::class);
+    }
+    public function leavesBalance()
+    {
+        return $this->belongsTo(LeaveAllocation::class, 'id', 'employee_id');
+    }
+    public function approvals()
+    {
+        return $this->hasMany(Approval::class, 'approver_employee_id');
     }
 }

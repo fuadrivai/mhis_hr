@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cutoff;
 use App\Models\Location;
 use App\Models\LiveAttendanceSetting;
 use App\Services\LocationService;
@@ -30,7 +31,9 @@ class LocationController extends Controller
             ['need_face_recognition' => true]
         );
 
-        return view('settings.time.location.index', compact('locations', 'liveAttendanceSetting') + ['title' => "Live Attendance"]);
+        $cutoffs = Cutoff::where('is_active', true)->get();
+
+        return view('settings.time.location.index', compact('locations', 'liveAttendanceSetting', 'cutoffs') + ['title' => "Live Attendance Settings"]);
     }
 
     public function updateFaceRecognitionSetting(Request $request)
@@ -47,6 +50,19 @@ class LocationController extends Controller
         if ($request->expectsJson()) {
             return response()->json($setting);
         }
+
+        return redirect('setting/location');
+    }
+
+    public function updateCutoff(Request $request, Cutoff $cutoff)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'cutoff_day' => ['required', 'integer', 'between:1,31', 'unique:cutoffs,cutoff_day,' . $cutoff->id],
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $cutoff->update($validated);
 
         return redirect('setting/location');
     }
