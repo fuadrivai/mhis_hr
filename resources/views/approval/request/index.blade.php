@@ -140,6 +140,7 @@
                         <table id="tbl-datatable" class="table table-striped table-bordered table-sm" style="width: 100%">
                             <thead>
                                 <tr>
+                                    <th>Id</th>
                                     <th>Requester</th>
                                     <th>Time Off Type</th>
                                     <th>Date</th>
@@ -228,6 +229,10 @@
                     searchPlaceholder: "Search.."
                 },
                 columns: [{
+                        data: "id",
+                        defaultContent: "--",
+                    },
+                    {
                         data: "fullname",
                         defaultContent: "--",
                     },
@@ -429,24 +434,24 @@
             return `
                 <div class="timeline">
                     ${history.map((item, index) => `
-                                                                                                                                                                                    <div class="timeline-item ${index === 0 ? 'active' : ''}">
-                                                                                                                                                                                        <div class="timeline-marker bg-primary"></div>
-                                                                                                                                                                                        <div class="timeline-content">
-                                                                                                                                                                                            <div class="d-flex justify-content-between align-items-start">
-                                                                                                                                                                                                <div>
-                                                                                                                                                                                                    <h6 class="mb-1">${item.action || 'Action performed'}</h6>
-                                                                                                                                                                                                    <p class="mb-1 text-muted">${item.note || ''}</p>
+                                                                                                                                                                                        <div class="timeline-item ${index === 0 ? 'active' : ''}">
+                                                                                                                                                                                            <div class="timeline-marker bg-primary"></div>
+                                                                                                                                                                                            <div class="timeline-content">
+                                                                                                                                                                                                <div class="d-flex justify-content-between align-items-start">
+                                                                                                                                                                                                    <div>
+                                                                                                                                                                                                        <h6 class="mb-1">${item.action || 'Action performed'}</h6>
+                                                                                                                                                                                                        <p class="mb-1 text-muted">${item.note || ''}</p>
+                                                                                                                                                                                                        <small class="text-muted">
+                                                                                                                                                                                                            By: ${item.approver?.personal?.fullname || 'System'}
+                                                                                                                                                                                                        </small>
+                                                                                                                                                                                                    </div>
                                                                                                                                                                                                     <small class="text-muted">
-                                                                                                                                                                                                        By: ${item.approver?.personal?.fullname || 'System'}
+                                                                                                                                                                                                        ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
                                                                                                                                                                                                     </small>
                                                                                                                                                                                                 </div>
-                                                                                                                                                                                                <small class="text-muted">
-                                                                                                                                                                                                    ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
-                                                                                                                                                                                                </small>
                                                                                                                                                                                             </div>
                                                                                                                                                                                         </div>
-                                                                                                                                                                                    </div>
-                                                                                                                                                                                `).join('')}
+                                                                                                                                                                                    `).join('')}
                 </div>
             `;
         }
