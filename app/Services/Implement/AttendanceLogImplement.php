@@ -79,7 +79,7 @@ class AttendanceLogImplement implements AttendanceLogService
                 'status' => 'present',
                 'check_out_latitude' => $data['latitude'] ?? null,
                 'check_out_longitude' => $data['longitude'] ?? null,
-                'check_out_radius' => $data['radius'] ?? null,
+                'check_out_radius' => isset($data['radius']) ? (float) $data['radius'] : null,
             ]);
             $log->photo = !empty($data['photo']) ? asset('storage/' . $photoPath) : null;
             return $log->load(['attendance', 'employee.personal', 'employee.employment']);

@@ -321,6 +321,147 @@ class ReportController extends Controller
         return response()->json($attendances);
     }
 
+    public function exceptionReport(Request $request)
+    {
+        $month = Carbon::createFromFormat('Y-m', $request->input('month', now()->format('Y-m')))->startOfMonth();
+        [$startDate, $endDate, $cutoff] = $this->reportPeriod($month);
+        $employees = $this->reportEmployees($request)->get();
+        $employeeIds = $employees->pluck('id');
+
+        $attendances = Attendance::whereIn('employee_id', $employeeIds)
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->get()
+            ->keyBy(fn ($attendance) => $attendance->employee_id . '|' . $attendance->date->toDateString());
+
+        $overrides = EmployeeShiftOverride::with('shift')
+            ->whereIn('employee_id', $employeeIds)
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->get()
+            ->keyBy(fn ($override) => $override->employee_id . '|' . $override->date->toDateString());
+
+        $timeoffs = $this->approvedTimeoffs($employees, $startDate, $endDate);
+        $today = Carbon::today();
+        $exceptions = [];
+
+        foreach ($employees as $employee) {
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                $key = $employee->id . '|' . $date->toDateString();
+                $shift = $this->resolveReportShift($employee, $date, $overrides->get($key));
+                $attendance = $attendances->get($key);
+                $leave = $timeoffs[$key] ?? null;
+
+                $normalizedShiftName = str_replace([' ', '_', '-'], '', strtolower((string) optional($shift)->name));
+                $isDayOff = str_contains($normalizedShiftName, 'dayoff');
+                $isWorking = $shift && !$shift->holiday && !$isDayOff;
+
+                $issues = [];
+                $clockIn = $attendance && $attendance->check_in ? $attendance->check_in->format('H:i') : null;
+                $clockOut = $attendance && $attendance->check_out ? $attendance->check_out->format('H:i') : null;
+                $time = '';
+                $duration = '';
+                $hasTimeoff = !!$leave;
+                $lateMinutes = 0;
+                $earlyMinutes = 0;
+
+                // Detect exceptions only for working days and past dates
+                if ($isWorking && $date->lt($today)) {
+                    // If no timeoff, check for Absent, Not Clock In, Not Clock Out (mutually exclusive)
+                    if (!$leave) {
+                        // Not Clock In
+                        if (!$clockIn && $clockOut) {
+                            $issues[] = 'Not Clock In';
+                        }
+                        // Not Clock Out
+                        elseif ($clockIn && !$clockOut) {
+                            $issues[] = 'Not Clock Out';
+                        }
+                        // Absent (no attendance and no timeoff)
+                        elseif (!$clockIn && !$clockOut) {
+                            $issues[] = 'Absent';
+                        }
+                    }
+
+                    // Come Late (check regardless of timeoff or clock out status)
+                    if ($clockIn && $shift && $shift->schedule_in) {
+                        $scheduled = Carbon::parse($date->toDateString() . ' ' . $shift->schedule_in);
+                        $actual = Carbon::parse($date->toDateString() . ' ' . $clockIn);
+                        if ($actual->gt($scheduled)) {
+                            $lateMinutes = $scheduled->diffInMinutes($actual);
+                            if (!in_array('Come Late', $issues)) {
+                                $issues[] = 'Come Late';
+                            }
+                        }
+                    }
+
+                    // Leave Early (check regardless of timeoff or clock in status)
+                    if ($clockOut && $shift && $shift->schedule_out) {
+                        $scheduled = Carbon::parse($date->toDateString() . ' ' . $shift->schedule_out);
+                        $actual = Carbon::parse($date->toDateString() . ' ' . $clockOut);
+                        if ($actual->lt($scheduled)) {
+                            $earlyMinutes = $actual->diffInMinutes($scheduled);
+                            if (!in_array('Leave Early', $issues)) {
+                                $issues[] = 'Leave Early';
+                            }
+                        }
+                    }
+                }
+
+                // If has timeoff and no other exceptions, add timeoff to issues
+                if ($leave && empty($issues)) {
+                    $issues[] = $leave['type'] ?? 'Timeoff';
+                }
+                // If has timeoff and other exceptions (Come Late/Leave Early), add timeoff to issues
+                elseif ($leave && !empty($issues)) {
+                    $issues[] = $leave['type'] ?? 'Timeoff';
+                }
+
+                // Build time and duration display
+                if ($leave) {
+                    $time = '-';
+                    $duration = '-';
+                } else {
+                    $time = ($clockIn ?? '-') . ' - ' . ($clockOut ?? '-');
+                    $durationParts = [];
+                    if ($lateMinutes > 0 && $earlyMinutes > 0) {
+                        // Both late and early: add labels
+                        $durationParts[] = $lateMinutes . ' Minutes Late';
+                        $durationParts[] = $earlyMinutes . ' Minutes Early';
+                    } elseif ($lateMinutes > 0) {
+                        // Only late
+                        $durationParts[] = $lateMinutes . ' Minutes';
+                    } elseif ($earlyMinutes > 0) {
+                        // Only early
+                        $durationParts[] = $earlyMinutes . ' Minutes';
+                    }
+                    $duration = $durationParts ? implode(', ', $durationParts) : '-';
+                }
+
+                // Add to exceptions only if has issues
+                if (!empty($issues)) {
+                    $exceptions[] = [
+                        'employee_id' => $employee->id,
+                        'employee_name' => optional($employee->personal)->fullname ?? 'Unknown',
+                        'branch' => optional(optional($employee->employment)->branch)->name ?? '-',
+                        'organization' => optional(optional($employee->employment)->organization)->name ?? '-',
+                        'level' => optional(optional($employee->employment)->jobLevel)->name ?? '-',
+                        'position' => optional(optional($employee->employment)->jobPosition)->name ?? '-',
+                        'date' => $date->format('d M Y'),
+                        'date_raw' => $date->toDateString(),
+                        'issue' => implode(', ', $issues),
+                        'time' => $time,
+                        'duration' => $duration,
+                        'has_timeoff' => $hasTimeoff ? 'Yes' : 'No',
+                    ];
+                }
+            }
+        }
+
+        return response()->json([
+            'period' => $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y'),
+            'exceptions' => $exceptions,
+        ]);
+    }
+
     /**
      * Show the form for creating a new resource.
      *

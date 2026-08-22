@@ -307,7 +307,7 @@ function validateLocation($employee, array &$data)
             $data['radius'] = (float) $detail->radius;
             return;
         }
-        $data['radius'] = $detail->radius;
+        $data['radius'] = (float) $detail->radius;
     }
     throw new \Illuminate\Http\Exceptions\HttpResponseException(
         response()->json(['message' => "Out of coverage area"], 422)
@@ -446,7 +446,7 @@ function prepareAttendance($employee,$user,$clockTime) {
             'time' => Carbon::parse($data['date'])->format('H:i:s'),
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
-            'radius' => $data['radius'] ?? null,
+            'radius' => isset($data['radius']) ? (float) $data['radius'] : null,
         ]);
     }
 
@@ -464,7 +464,7 @@ function prepareAttendance($employee,$user,$clockTime) {
                 'check_in_photo' => $photoPath??null,
                 'check_in_latitude' => $data['latitude'] ?? null,
                 'check_in_longitude' => $data['longitude'] ?? null,
-                'check_in_radius' => $data['radius'] ?? null,
+                'check_in_radius' => isset($data['radius']) ? (float) $data['radius'] : null,
             ]);
         }
     }

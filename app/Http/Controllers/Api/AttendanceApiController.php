@@ -76,7 +76,7 @@ class AttendanceApiController extends Controller
             ]);
             $validated['user'] = $request->user;
             $data =  $this->attendanceLogService->clock_in($validated);
-            return response()->json($data, 200);
+            return response()->json($data, 200, [], JSON_PRESERVE_ZERO_FRACTION);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validation Error', 'errors' => $e->errors()], 422);
         }
@@ -84,7 +84,7 @@ class AttendanceApiController extends Controller
     public function clockOut(Request $request)
     {
         $data =  $this->attendanceLogService->clock_out($request);
-        return response()->json($data, 200);
+        return response()->json($data, 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }
     
     public function liveAttendanceGa(){
@@ -105,7 +105,7 @@ class AttendanceApiController extends Controller
             }else{
                 return response()->json(['message' => 'Invalid type'], 422);
             }
-            return response()->json($data, 200);
+            return response()->json($data, 200, [], JSON_PRESERVE_ZERO_FRACTION);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validation Error', 'errors' => $e->errors()], 422);
         }

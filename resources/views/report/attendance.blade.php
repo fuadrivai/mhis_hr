@@ -174,36 +174,112 @@
     </div>
 
     <div class="col-md-12 col-sm-12">
-        <div class="x_panel">
-            <div class="x_title">
-                <div class="d-flex align-items-center">
-                    <h2 id="monthly-report-title" class="mb-0">Monthly Employee Attendance</h2>
-                    <button type="button" class="btn btn-success btn-sm ml-3" id="export-monthly-report" disabled>
-                        <i class="fa fa-file-excel-o"></i> Export to Excel
-                    </button>
-                </div>
-                <div class="justify-content-end d-flex">
-                    <div class="form-group">
-                        <input type="search" class="form-control" id="employee-search" placeholder="Search employee name">
+        <div class="" role="tabpanel" data-example-id="togglable-tabs">
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs" role="tablist" style="border-bottom: 2px solid #e0e0e0;">
+                <li class="nav-item">
+                    <a class="nav-link active" id="index-tab" data-toggle="tab" href="#index-pane" role="tab"
+                        aria-controls="index-pane" aria-selected="true">
+                        <i class="fa fa-list"></i> Index
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="timeoff-issue-tab" data-toggle="tab" href="#timeoff-issue-pane" role="tab"
+                        aria-controls="timeoff-issue-pane" aria-selected="false">
+                        <i class="fa fa-exclamation-triangle"></i> Timeoff Issue
+                    </a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div id="index-pane" class="tab-pane fade show active" role="tabpanel" aria-labelledby="index-tab">
+
+                    <div class="x_panel">
+                        <div class="x_title">
+                            <div class="d-flex align-items-center">
+                                <h2 id="monthly-report-title" class="mb-0">Monthly Employee Attendance</h2>
+                                <button type="button" class="btn btn-success btn-sm ml-3" id="export-monthly-report"
+                                    disabled>
+                                    <i class="fa fa-file-excel-o"></i> Export to Excel
+                                </button>
+                            </div>
+                            <div class="justify-content-end d-flex">
+                                <div class="form-group">
+                                    <input type="search" class="form-control" id="employee-search"
+                                        placeholder="Search employee name">
+                                </div>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="x_content">
+                            <div id="monthly-report-loading" class="text-center py-4">
+                                <i class="fa fa-spinner fa-spin mr-1"></i> Loading attendance...
+                            </div>
+                            <div class="table-responsive monthly-report-table-wrap d-none" id="monthly-report-content">
+                                <table class="table table-striped table-bordered table-sm monthly-report-table">
+                                    <thead id="monthly-report-head"></thead>
+                                    <tbody id="monthly-report-body"></tbody>
+                                </table>
+                            </div>
+                            <div id="monthly-report-empty" class="text-center text-muted py-4 d-none">No employees
+                                found.
+                            </div>
+                        </div>
                     </div>
+                    <a href="{{ route('attendance.index') }}" class="btn btn-secondary">
+                        <i class="fa fa-arrow-left"></i> Back
+                    </a>
                 </div>
-                <div class="clearfix"></div>
-            </div>
-            <div class="x_content">
-                <div id="monthly-report-loading" class="text-center py-4">
-                    <i class="fa fa-spinner fa-spin mr-1"></i> Loading attendance...
+                <div id="timeoff-issue-pane" class="tab-pane fade" role="tabpanel" aria-labelledby="timeoff-issue-tab">
+
+                    <div class="x_panel">
+                        <div class="x_title">
+                            <div class="d-flex align-items-center">
+                                <h2>Attendance Exception Report</h2>
+                                <button type="button" class="btn btn-success btn-sm ml-3" id="export-exception-report"
+                                    disabled>
+                                    <i class="fa fa-file-excel-o"></i> Export to Excel
+                                </button>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="x_content">
+                            <div id="exception-period" class="alert alert-info d-none" role="alert"></div>
+                            <div id="exception-report-loading" class="text-center py-4">
+                                <i class="fa fa-spinner fa-spin mr-1"></i> Loading exceptions...
+                            </div>
+                            <div class="table-responsive monthly-report-table-wrap d-none" id="exception-report-content">
+                                <table class="table table-striped table-bordered table-sm mb-0 monthly-report-table"
+                                    id="exception-report-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="min-width: 40px;">No</th>
+                                            <th style="min-width: 100px;">Employee ID</th>
+                                            <th style="min-width: 150px;">Name</th>
+                                            <th style="min-width: 150px;">Branch</th>
+                                            <th style="min-width: 150px;">Organization</th>
+                                            <th style="min-width: 100px;">Level</th>
+                                            <th style="min-width: 150px;">Position</th>
+                                            <th style="min-width: 120px;">Date</th>
+                                            <th style="min-width: 200px;">Issue</th>
+                                            <th style="min-width: 100px;">Time</th>
+                                            <th style="min-width: 150px;">Duration</th>
+                                            <th style="min-width: 80px;">Time Off</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="exception-report-body"></tbody>
+                                </table>
+                            </div>
+                            <div id="exception-report-empty" class="text-center text-muted py-4 d-none">No attendance
+                                exceptions found for the selected period.</div>
+                        </div>
+                    </div>
+                    <a href="{{ route('attendance.index') }}" class="btn btn-secondary">
+                        <i class="fa fa-arrow-left"></i> Back
+                    </a>
                 </div>
-                <div class="table-responsive monthly-report-table-wrap d-none" id="monthly-report-content">
-                    <table class="table table-striped table-bordered table-sm monthly-report-table">
-                        <thead id="monthly-report-head"></thead>
-                        <tbody id="monthly-report-body"></tbody>
-                    </table>
-                </div>
-                <div id="monthly-report-empty" class="text-center text-muted py-4 d-none">No employees found.</div>
             </div>
         </div>
     </div>
-
     <div class="modal fade" id="no-clock-modal" tabindex="-1" role="dialog" aria-labelledby="no-clock-modal-title"
         aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -233,10 +309,34 @@
         </div>
     </div>
 
-    <div class="col-md-12 col-sm-12 mb-3">
-        <a href="{{ route('attendance.index') }}" class="btn btn-secondary">
-            <i class="fa fa-arrow-left"></i> Back
-        </a>
+    <!-- Modals (outside tab-content) -->
+    <div class="modal fade" id="no-clock-modal" tabindex="-1" role="dialog" aria-labelledby="no-clock-modal-title"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="no-clock-modal-title">Missing Clock In/Out</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Clock In</th>
+                                    <th>Clock Out</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="no-clock-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal fade" id="monthly-detail-modal" tabindex="-1" role="dialog"
@@ -321,10 +421,20 @@
             timeoff: {}
         };
         let monthlyReportData = null;
+        let exceptionReportData = null;
         $(document).ready(function() {
-            $('#btn-filter').on('click', loadMonthlyReport);
-            $('#month, #branch-filter, #organization-filter, #level-filter, #position-filter').on('change',
-                loadMonthlyReport);
+            $('#btn-filter').on('click', function() {
+                loadMonthlyReport();
+                if ($('#timeoff-issue-tab').hasClass('active')) {
+                    loadExceptionReport();
+                }
+            });
+            $('#month, #branch-filter, #organization-filter, #level-filter, #position-filter').on('change', function() {
+                loadMonthlyReport();
+                if ($('#timeoff-issue-tab').hasClass('active')) {
+                    loadExceptionReport();
+                }
+            });
             $('#employee-search').on('input', filterEmployees);
             $('#monthly-view-logs').on('click', loadMonthlyLogs);
             loadMonthlyReport();
@@ -424,13 +534,14 @@
                     const missingDescription = missingClockIn && missingClockOut ?
                         'Missing clock in and clock out' : missingClockIn ? 'Missing clock in' :
                         'Missing clock out';
-                    const cellContent = showTimes ?
-                        '<span class="monthly-clock-time" title="' + (missingClockIn || missingClockOut ?
-                            missingDescription : 'Clock in and clock out') + '">' + escapeHtml(clockIn) +
-                        ' - ' + escapeHtml(clockOut) + (missingClockIn || missingClockOut ?
-                            ' <span class="monthly-clock-missing">!</span>' : '') + '</span>' +
-                        '<span class="monthly-clock-status">' + escapeHtml(displayStatus) + '</span>' :
-                        '<span class="monthly-clock-status">' + escapeHtml(displayStatus) + '</span>';
+                    const cellContent = showTimes ? '<span class="monthly-clock-time" title="' + (
+                            missingClockIn || missingClockOut ? missingDescription :
+                            'Clock in and clock out') + '">' + escapeHtml(clockIn) + ' - ' + escapeHtml(
+                            clockOut) + (missingClockIn || missingClockOut ?
+                            ' <span class="monthly-clock-missing">!</span>' : '') +
+                        '</span><span class="monthly-clock-status">' + escapeHtml(displayStatus) +
+                        '</span>' : '<span class="monthly-clock-status">' + escapeHtml(displayStatus) +
+                        '</span>';
                     body += '<td><button type="button" class="monthly-report-cell monthly-status-' + cell
                         .status.toLowerCase() + '" title="' + escapeHtml(label) + '" data-employee-id="' +
                         employee.id + '" data-date="' + cell.date + '">' + cellContent + '</button></td>';
@@ -448,8 +559,8 @@
             }
 
             const report = monthlyReportData;
-            let table = '<table><thead><tr><th>Employee</th><th>Total Late</th><th>Total Absent</th>' +
-                '<th>Total Timeoff</th><th>No clock in/out</th>';
+            let table =
+                '<table><thead><tr><th>Employee</th><th>Total Late</th><th>Total Absent</th><th>Total Timeoff</th><th>No clock in/out</th>';
             report.dates.forEach(function(date) {
                 table += '<th>' + escapeHtml(date.day + ' ' + date.weekday) + '</th>';
             });
@@ -457,15 +568,14 @@
 
             report.employees.forEach(function(employee) {
                 table += '<tr><td>' + escapeHtml(employee.name) + '</td><td>' + escapeHtml(employee.late) +
-                    '</td><td>' + employee.absent + '</td><td>' + employee.timeoff + '</td><td>' +
-                    employee.no_clock_in_out + '</td>';
+                    '</td><td>' + employee.absent + '</td><td>' + employee.timeoff + '</td><td>' + employee
+                    .no_clock_in_out + '</td>';
                 employee.cells.forEach(function(cell) {
                     const displayStatus = cell.display_status || cell.status;
                     const hasClockData = cell.clock_in !== '-' || cell.clock_out !== '-';
                     const showTimes = hasClockData || !['A', 'OFF', 'TO', 'H'].includes(cell.status);
                     const value = showTimes ? cell.clock_in + ' - ' + cell.clock_out + ' / ' +
-                        displayStatus :
-                        displayStatus;
+                        displayStatus : displayStatus;
                     table += '<td>' + escapeHtml(value) + '</td>';
                 });
                 table += '</tr>';
@@ -528,15 +638,15 @@
         $('#monthly-report-body').on('click', '.summary-details', function() {
             const type = $(this).data('summary-type');
             const employeeId = $(this).data('employee-id');
-            const dates = type === 'no-clock' ? monthlyNoClockDates[employeeId] || [] :
-                monthlySummaryDates[type][employeeId] || [];
+            const dates = type === 'no-clock' ? monthlyNoClockDates[employeeId] || [] : monthlySummaryDates[type][
+                employeeId
+            ] || [];
 
             const rows = dates.map(function(item) {
                 return '<tr><td>' + escapeHtml(moment(item.date).format('dddd, DD MMM YYYY')) +
-                    '</td><td>' +
-                    escapeHtml(item.clock_in === '-' ? 'X' : item.clock_in) + '</td><td>' +
-                    escapeHtml(item.clock_out === '-' ? 'X' : item.clock_out) + '</td><td>' +
-                    escapeHtml(item.display_status || item.status) + '</td></tr>';
+                    '</td><td>' + escapeHtml(item.clock_in === '-' ? 'X' : item.clock_in) + '</td><td>' +
+                    escapeHtml(item.clock_out === '-' ? 'X' : item.clock_out) + '</td><td>' + escapeHtml(
+                        item.display_status || item.status) + '</td></tr>';
             }).join('');
             const titles = {
                 late: 'Late Attendance',
@@ -571,5 +681,112 @@
                 $('#monthly-logs-loading').addClass('d-none');
             });
         }
+
+        // Exception Report Handler
+        function loadExceptionReport() {
+            const month = $('#month').val();
+            if (!month) return;
+            setExceptionReportLoading(true);
+            $('#exception-report-content, #exception-report-empty, #exception-period').addClass('d-none');
+            $.getJSON('{{ route('report.attendance.exception') }}', {
+                month: month,
+                branch: $('#branch-filter').val(),
+                organization: $('#organization-filter').val(),
+                level: $('#level-filter').val(),
+                position: $('#position-filter').val()
+            }).done(renderExceptionReport).fail(function() {
+                sweetAlert('Error', 'Unable to load exception report.', 'error');
+            }).always(function() {
+                setExceptionReportLoading(false);
+            });
+        }
+
+        function setExceptionReportLoading(isLoading) {
+            $('#exception-report-loading').toggleClass('d-none', !isLoading);
+            $('#export-exception-report').prop('disabled', isLoading || !exceptionReportData);
+        }
+
+        function renderExceptionReport(report) {
+            exceptionReportData = report;
+            $('#exception-period').text('Period: ' + report.period).removeClass('d-none');
+
+            if (!report.exceptions || report.exceptions.length === 0) {
+                $('#export-exception-report').prop('disabled', true);
+                $('#exception-report-empty').removeClass('d-none');
+                $('#exception-report-content').addClass('d-none');
+                return;
+            }
+
+            $('#export-exception-report').prop('disabled', false);
+            let body = '';
+            report.exceptions.forEach(function(exception, index) {
+                body += '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + escapeHtml(exception.employee_id) + '</td>' +
+                    '<td>' + escapeHtml(exception.employee_name) + '</td>' +
+                    '<td>' + escapeHtml(exception.branch) + '</td>' +
+                    '<td>' + escapeHtml(exception.organization) + '</td>' +
+                    '<td>' + escapeHtml(exception.level) + '</td>' +
+                    '<td>' + escapeHtml(exception.position) + '</td>' +
+                    '<td>' + escapeHtml(exception.date) + '</td>' +
+                    '<td>' + escapeHtml(exception.issue) + '</td>' +
+                    '<td>' + escapeHtml(exception.time) + '</td>' +
+                    '<td>' + escapeHtml(exception.duration) + '</td>' +
+                    '<td>' + escapeHtml(exception.has_timeoff) + '</td>' +
+                    '</tr>';
+            });
+
+            $('#exception-report-body').html(body);
+            $('#exception-report-content').removeClass('d-none');
+        }
+
+        function exportExceptionReport() {
+            if (!exceptionReportData || !exceptionReportData.exceptions || !exceptionReportData.exceptions.length) {
+                return;
+            }
+
+            const report = exceptionReportData;
+            let table = '<table><thead><tr>' +
+                '<th>No</th><th>Employee ID</th><th>Name</th><th>Branch</th>' +
+                '<th>Organization</th><th>Level</th><th>Position</th><th>Date</th>' +
+                '<th>Issue</th><th>Time</th><th>Duration</th><th>Time Off</th>' +
+                '</tr></thead><tbody>';
+
+            report.exceptions.forEach(function(exception, index) {
+                table += '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + escapeHtml(exception.employee_id) + '</td>' +
+                    '<td>' + escapeHtml(exception.employee_name) + '</td>' +
+                    '<td>' + escapeHtml(exception.branch) + '</td>' +
+                    '<td>' + escapeHtml(exception.organization) + '</td>' +
+                    '<td>' + escapeHtml(exception.level) + '</td>' +
+                    '<td>' + escapeHtml(exception.position) + '</td>' +
+                    '<td>' + escapeHtml(exception.date) + '</td>' +
+                    '<td>' + escapeHtml(exception.issue) + '</td>' +
+                    '<td>' + escapeHtml(exception.time) + '</td>' +
+                    '<td>' + escapeHtml(exception.duration) + '</td>' +
+                    '<td>' + escapeHtml(exception.has_timeoff) + '</td>' +
+                    '</tr>';
+            });
+            table += '</tbody></table>';
+
+            const blob = new Blob(['\ufeff', table], { type: 'application/vnd.ms-excel' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'attendance-exceptions-' + report.period.replace(/\s+|-/g, '-').toLowerCase() + '.xls';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
+        $('#export-exception-report').on('click', exportExceptionReport);
+
+        // Load exception report when tab is clicked
+        $('#timeoff-issue-tab').on('click', function() {
+            if ($('#exception-report-body').html() === '') {
+                loadExceptionReport();
+            }
+        });
     </script>
 @endsection
