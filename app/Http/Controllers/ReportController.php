@@ -73,6 +73,10 @@ class ReportController extends Controller
                 $lateMinutes = 0;
                 $absent = 0;
                 $timeoff = 0;
+                $noClockDates = [];
+                $lateDates = [];
+                $absentDates = [];
+                $timeoffDates = [];
                 $cells = [];
 
                 foreach ($dates as $date) {
@@ -84,6 +88,22 @@ class ReportController extends Controller
                     $lateMinutes += $cell['late_minutes'];
                     $absent += $cell['status'] === 'A' ? 1 : 0;
                     $timeoff += $cell['status'] === 'TO' ? 1 : 0;
+                    if ($cell['status'] === 'L') {
+                        $lateDates[] = $cell;
+                    } elseif ($cell['status'] === 'A') {
+                        $absentDates[] = $cell;
+                    } elseif ($cell['status'] === 'TO') {
+                        $timeoffDates[] = $cell;
+                    }
+                    if ($date->lte(Carbon::today()) && $cell['status'] !== 'TO' && $cell['status'] !== 'OFF'
+                        && $cell['status'] !== 'H' && ($cell['clock_in'] === '-' || $cell['clock_out'] === '-')) {
+                        $noClockDates[] = [
+                            'date' => $cell['date'],
+                            'clock_in' => $cell['clock_in'],
+                            'clock_out' => $cell['clock_out'],
+                            'status' => $cell['status'],
+                        ];
+                    }
                     $cells[] = $cell;
                 }
 
@@ -93,6 +113,11 @@ class ReportController extends Controller
                     'late' => $this->formatMinutes($lateMinutes),
                     'absent' => $absent,
                     'timeoff' => $timeoff,
+                    'late_dates' => $lateDates,
+                    'absent_dates' => $absentDates,
+                    'timeoff_dates' => $timeoffDates,
+                    'no_clock_in_out' => count($noClockDates),
+                    'no_clock_dates' => $noClockDates,
                     'cells' => $cells,
                 ];
             })->values(),
@@ -223,6 +248,7 @@ class ReportController extends Controller
             while ($current->lte($last)) {
                 $map[$request->requester_employee_id . '|' . $current->toDateString()] = [
                     'type' => optional($request->type)->name ?? 'Timeoff',
+                    'code' => optional($request->type)->code ?? 'TO',
                 ];
                 $current->addDay();
             }
@@ -266,7 +292,10 @@ class ReportController extends Controller
         }
         return [
             'date' => $date->toDateString(),
+            'clock_in' => optional(optional($attendance)->check_in)->format('H:i') ?? '-',
+            'clock_out' => optional(optional($attendance)->check_out)->format('H:i') ?? '-',
             'status' => $status,
+            'display_status' => $status === 'TO' ? ($leave['code'] ?? 'TO') : $status,
             'label' => $status === 'P' ? 'Present' : ($status === 'L' ? 'Late' : ($status === 'TO' ? 'Timeoff' : ($status === 'OFF' ? 'Day Off' : ($status === 'H' ? 'Holiday' : ($status === 'A' ? 'Absent' : $status))))),
             'timeoff_type' => $leave['type'] ?? null,
             'late_minutes' => $lateMinutes,

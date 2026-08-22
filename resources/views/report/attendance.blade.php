@@ -60,12 +60,30 @@
         }
 
         .monthly-report-cell {
-            width: 34px;
-            height: 30px;
+            width: 54px;
+            min-height: 64px;
             padding: 0;
             border: 0;
             border-radius: 6px;
             background: transparent;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .monthly-report-cell .monthly-clock-time {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .monthly-report-cell .monthly-clock-status {
+            display: block;
+            margin-top: 2px;
+        }
+
+        .monthly-report-cell .monthly-clock-missing {
+            color: #dc3545;
             font-weight: 700;
         }
 
@@ -158,7 +176,12 @@
     <div class="col-md-12 col-sm-12">
         <div class="x_panel">
             <div class="x_title">
-                <h2 id="monthly-report-title">Monthly Employee Attendance</h2>
+                <div class="d-flex align-items-center">
+                    <h2 id="monthly-report-title" class="mb-0">Monthly Employee Attendance</h2>
+                    <button type="button" class="btn btn-success btn-sm ml-3" id="export-monthly-report" disabled>
+                        <i class="fa fa-file-excel-o"></i> Export to Excel
+                    </button>
+                </div>
                 <div class="justify-content-end d-flex">
                     <div class="form-group">
                         <input type="search" class="form-control" id="employee-search" placeholder="Search employee name">
@@ -177,6 +200,35 @@
                     </table>
                 </div>
                 <div id="monthly-report-empty" class="text-center text-muted py-4 d-none">No employees found.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="no-clock-modal" tabindex="-1" role="dialog" aria-labelledby="no-clock-modal-title"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="no-clock-modal-title">Missing Clock In/Out</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Clock In</th>
+                                    <th>Clock Out</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="no-clock-list"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -262,6 +314,13 @@
             employeeId: null,
             date: null
         };
+        let monthlyNoClockDates = {};
+        let monthlySummaryDates = {
+            late: {},
+            absent: {},
+            timeoff: {}
+        };
+        let monthlyReportData = null;
         $(document).ready(function() {
             $('#btn-filter').on('click', loadMonthlyReport);
             $('#month, #branch-filter, #organization-filter, #level-filter, #position-filter').on('change',
@@ -297,32 +356,84 @@
             $('#monthly-report-loading').toggleClass('d-none', !isLoading);
             $('#month, #branch-filter, #organization-filter, #level-filter, #position-filter, #btn-filter')
                 .prop('disabled', isLoading);
+            $('#export-monthly-report').prop('disabled', isLoading || !monthlyReportData);
+        }
+
+        function summaryButton(type, employee, value) {
+            const dates = employee[type + '_dates'] || [];
+            if (!dates.length) {
+                return escapeHtml(value);
+            }
+
+            return '<button type="button" class="btn btn-link p-0 summary-details" data-summary-type="' + type +
+                '" data-employee-name="' + escapeHtml(employee.name) + '" data-employee-id="' + employee.id + '">' +
+                escapeHtml(value) + '</button>';
         }
 
         function renderMonthlyReport(report) {
+            monthlyReportData = report;
+            monthlyNoClockDates = {};
+            monthlySummaryDates = {
+                late: {},
+                absent: {},
+                timeoff: {}
+            };
             $('#monthly-report-title').text('Monthly Employee Attendance - ' + report.month);
             let head =
-                '<tr><th class="employee-column sticky-column">Employee</th><th class="summary-column">Total Late</th><th class="summary-column">Total Absent</th><th class="summary-column">Total Timeoff</th>';
+                '<tr><th class="employee-column sticky-column">Employee</th><th class="summary-column">Late</th><th class="summary-column">Absent</th><th class="summary-column">Timeoff</th><th class="summary-column">No clock in/out</th>';
             report.dates.forEach(function(date) {
                 head += '<th>' + date.day + '<span class="date-header-day">' + escapeHtml(date.weekday) +
                     '</span></th>';
             });
             $('#monthly-report-head').html(head + '</tr>');
             if (!report.employees.length) {
+                $('#export-monthly-report').prop('disabled', true);
                 $('#monthly-report-empty').removeClass('d-none');
                 return;
             }
+            $('#export-monthly-report').prop('disabled', false);
             let body = '';
             report.employees.forEach(function(employee) {
+                monthlyNoClockDates[employee.id] = employee.no_clock_dates || [];
+                monthlySummaryDates.late[employee.id] = employee.late_dates || [];
+                monthlySummaryDates.absent[employee.id] = employee.absent_dates || [];
+                monthlySummaryDates.timeoff[employee.id] = employee.timeoff_dates || [];
                 body += '<tr><td class="employee-column sticky-column font-weight-bold">' + escapeHtml(employee
-                        .name) + '</td><td>' + escapeHtml(employee.late) + '</td><td>' + employee.absent +
-                    '</td><td>' + employee.timeoff + '</td>';
+                        .name) + '</td><td>' + summaryButton('late', employee, employee.late) + '</td><td>' +
+                    summaryButton('absent', employee, employee.absent) + '</td><td>' + summaryButton('timeoff',
+                        employee, employee.timeoff) + '</td><td>';
+                if (employee.no_clock_in_out > 0) {
+                    body +=
+                        '<button type="button" class="btn btn-link p-0 summary-details" data-summary-type="no-clock" data-employee-name="' +
+                        escapeHtml(employee.name) + '" data-employee-id="' + employee.id + '">' + employee
+                        .no_clock_in_out + '</button>';
+                } else {
+                    body += '0';
+                }
+                body += '</td>';
                 employee.cells.forEach(function(cell) {
-                    const label = cell.status === 'P' ? 'Present' : cell.label;
+                    const displayStatus = cell.display_status || cell.status;
+                    const label = cell.status === 'P' ? 'Present' : (cell.status === 'TO' ? cell
+                        .timeoff_type : cell.label);
+                    const hasClockData = cell.clock_in !== '-' || cell.clock_out !== '-';
+                    const showTimes = hasClockData || !['A', 'OFF', 'TO', 'H'].includes(cell.status);
+                    const clockIn = cell.clock_in === '-' ? 'X' : cell.clock_in;
+                    const clockOut = cell.clock_out === '-' ? 'X' : cell.clock_out;
+                    const missingClockIn = clockIn === 'X';
+                    const missingClockOut = clockOut === 'X';
+                    const missingDescription = missingClockIn && missingClockOut ?
+                        'Missing clock in and clock out' : missingClockIn ? 'Missing clock in' :
+                        'Missing clock out';
+                    const cellContent = showTimes ?
+                        '<span class="monthly-clock-time" title="' + (missingClockIn || missingClockOut ?
+                            missingDescription : 'Clock in and clock out') + '">' + escapeHtml(clockIn) +
+                        ' - ' + escapeHtml(clockOut) + (missingClockIn || missingClockOut ?
+                            ' <span class="monthly-clock-missing">!</span>' : '') + '</span>' +
+                        '<span class="monthly-clock-status">' + escapeHtml(displayStatus) + '</span>' :
+                        '<span class="monthly-clock-status">' + escapeHtml(displayStatus) + '</span>';
                     body += '<td><button type="button" class="monthly-report-cell monthly-status-' + cell
                         .status.toLowerCase() + '" title="' + escapeHtml(label) + '" data-employee-id="' +
-                        employee.id + '" data-date="' + cell.date + '">' + escapeHtml(cell.status) +
-                        '</button></td>';
+                        employee.id + '" data-date="' + cell.date + '">' + cellContent + '</button></td>';
                 });
                 body += '</tr>';
             });
@@ -330,6 +441,50 @@
             $('#monthly-report-content').removeClass('d-none');
             filterEmployees();
         }
+
+        function exportMonthlyReport() {
+            if (!monthlyReportData) {
+                return;
+            }
+
+            const report = monthlyReportData;
+            let table = '<table><thead><tr><th>Employee</th><th>Total Late</th><th>Total Absent</th>' +
+                '<th>Total Timeoff</th><th>No clock in/out</th>';
+            report.dates.forEach(function(date) {
+                table += '<th>' + escapeHtml(date.day + ' ' + date.weekday) + '</th>';
+            });
+            table += '</tr></thead><tbody>';
+
+            report.employees.forEach(function(employee) {
+                table += '<tr><td>' + escapeHtml(employee.name) + '</td><td>' + escapeHtml(employee.late) +
+                    '</td><td>' + employee.absent + '</td><td>' + employee.timeoff + '</td><td>' +
+                    employee.no_clock_in_out + '</td>';
+                employee.cells.forEach(function(cell) {
+                    const displayStatus = cell.display_status || cell.status;
+                    const hasClockData = cell.clock_in !== '-' || cell.clock_out !== '-';
+                    const showTimes = hasClockData || !['A', 'OFF', 'TO', 'H'].includes(cell.status);
+                    const value = showTimes ? cell.clock_in + ' - ' + cell.clock_out + ' / ' +
+                        displayStatus :
+                        displayStatus;
+                    table += '<td>' + escapeHtml(value) + '</td>';
+                });
+                table += '</tr>';
+            });
+            table += '</tbody></table>';
+
+            const blob = new Blob(['\ufeff', table], {
+                type: 'application/vnd.ms-excel'
+            });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'monthly-attendance-' + report.month.replace(/\s+/g, '-').toLowerCase() + '.xls';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
+        $('#export-monthly-report').on('click', exportMonthlyReport);
 
         function filterEmployees() {
             const search = String($('#employee-search').val() || '').trim().toLowerCase();
@@ -368,6 +523,30 @@
             }).always(function() {
                 $('#monthly-detail-loading').addClass('d-none');
             });
+        });
+
+        $('#monthly-report-body').on('click', '.summary-details', function() {
+            const type = $(this).data('summary-type');
+            const employeeId = $(this).data('employee-id');
+            const dates = type === 'no-clock' ? monthlyNoClockDates[employeeId] || [] :
+                monthlySummaryDates[type][employeeId] || [];
+
+            const rows = dates.map(function(item) {
+                return '<tr><td>' + escapeHtml(moment(item.date).format('dddd, DD MMM YYYY')) +
+                    '</td><td>' +
+                    escapeHtml(item.clock_in === '-' ? 'X' : item.clock_in) + '</td><td>' +
+                    escapeHtml(item.clock_out === '-' ? 'X' : item.clock_out) + '</td><td>' +
+                    escapeHtml(item.display_status || item.status) + '</td></tr>';
+            }).join('');
+            const titles = {
+                late: 'Late Attendance',
+                absent: 'Absent Attendance',
+                timeoff: 'Timeoff Dates',
+                'no-clock': 'Missing Clock In/Out'
+            };
+            $('#no-clock-modal-title').text(titles[type] + ' - ' + $(this).data('employee-name'));
+            $('#no-clock-list').html(rows || '<tr><td colspan="4" class="text-center">No dates found.</td></tr>');
+            $('#no-clock-modal').modal('show');
         });
 
         function loadMonthlyLogs() {
