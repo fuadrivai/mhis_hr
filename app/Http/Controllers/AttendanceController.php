@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\AttendanceLog;
 use App\Models\Employee;
+use App\Models\Shift;
 use App\Services\BranchService;
 use App\Services\JobLevelService;
 use App\Services\OrganizationService;
 use App\Services\PositionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
 use Illuminate\Support\Facades\File;
 
@@ -125,6 +127,7 @@ class AttendanceController extends Controller
         $organizations = $this->organizationService->get();
         $positions = $this->positionService->get();
         $levels = $this->jobLevelService->get();
+        $shifts = Shift::orderBy('name')->get();
         return view('attendance.index',
             [
                 "title" => "Attendance data",
@@ -132,6 +135,7 @@ class AttendanceController extends Controller
                 "organizations"=> $organizations,
                 "positions"=> $positions,
                 "levels"=> $levels,
+                "shifts" => $shifts,
             ]
         );
     }
@@ -365,7 +369,57 @@ class AttendanceController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $validated = $request->validate([
+            'shift_id' => ['required', 'exists:shifts,id'],
+            'check_in' => ['nullable', 'date_format:H:i'],
+            'check_out' => ['nullable', 'date_format:H:i'],
+        ]);
+
+        $attendance = Attendance::findOrFail($id);
+        abort_if($attendance->is_locked, 423, 'Attendance is locked.');
+        $shift = Shift::findOrFail($validated['shift_id']);
+        $oldClockIn = optional($attendance->check_in)->format('H:i') ?: '--';
+        $oldClockOut = optional($attendance->check_out)->format('H:i') ?: '--';
+        $newClockIn = $validated['check_in'] ?? '--';
+        $newClockOut = $validated['check_out'] ?? '--';
+        $description = sprintf(
+            'Shift: %s to %s; Clock in: %s to %s; Clock out: %s to %s',
+            $attendance->shift_name ?: '--',
+            $shift->name,
+            $oldClockIn,
+            $newClockIn,
+            $oldClockOut,
+            $newClockOut
+        );
+
+        $toDateTime = function (?string $time) use ($attendance) {
+            return $time ? Carbon::parse($attendance->date->format('Y-m-d') . ' ' . $time) : null;
+        };
+
+        DB::transaction(function () use ($attendance, $shift, $validated, $toDateTime, $description) {
+            $attendance->update([
+                'shift_name' => $shift->name,
+                'schedule_in' => $shift->schedule_in,
+                'schedule_out' => $shift->schedule_out,
+                'check_in' => $toDateTime($validated['check_in'] ?? null),
+                'check_out' => $toDateTime($validated['check_out'] ?? null),
+            ]);
+
+            AttendanceLog::create([
+                'employee_id' => $attendance->employee_id,
+                'attendance_id' => $attendance->id,
+                'type' => 'edit',
+                'clock_datetime' => now(),
+                'clock_date' => $attendance->date,
+                'time' => now()->format('H:i:s'),
+                'has_location' => false,
+                'fullname' => $attendance->fullname,
+                'shift_name' => $attendance->shift_name,
+                'description' => $description,
+            ]);
+        });
+
+        return response()->json(['message' => 'Attendance updated successfully.']);
     }
 
     /**
@@ -376,6 +430,123 @@ class AttendanceController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $user = auth()->user();
+        $isAdmin = $user && $user->roles->contains(function ($role) {
+            return strtolower($role->name) === 'admin';
+        });
+        abort_unless($isAdmin, 403);
+
+        $attendance = Attendance::findOrFail($id);
+        abort_if($attendance->is_locked, 423, 'Attendance is locked.');
+        $now = now();
+        $description = sprintf(
+            'Attendance cleared. Clock in: %s; Clock out: %s; Check-in photo: %s; Check-out photo: %s; '
+                . 'Check-in location: %s, %s (radius %s); Check-out location: %s, %s (radius %s)',
+            optional($attendance->check_in)->format('H:i') ?: '--',
+            optional($attendance->check_out)->format('H:i') ?: '--',
+            $attendance->check_in_photo ?: 'none',
+            $attendance->check_out_photo ?: 'none',
+            $attendance->check_in_latitude ?? '--',
+            $attendance->check_in_longitude ?? '--',
+            $attendance->check_in_radius ?? '--',
+            $attendance->check_out_latitude ?? '--',
+            $attendance->check_out_longitude ?? '--',
+            $attendance->check_out_radius ?? '--'
+        );
+
+        DB::transaction(function () use ($attendance, $now, $description) {
+            $attendance->update([
+                'check_in' => null,
+                'check_in_photo' => null,
+                'check_in_latitude' => null,
+                'check_in_longitude' => null,
+                'check_in_radius' => null,
+                'check_out' => null,
+                'check_out_photo' => null,
+                'check_out_latitude' => null,
+                'check_out_longitude' => null,
+                'check_out_radius' => null,
+            ]);
+
+            AttendanceLog::create([
+                'employee_id' => $attendance->employee_id,
+                'attendance_id' => $attendance->id,
+                'type' => 'delete',
+                'clock_datetime' => $now,
+                'clock_date' => $attendance->date,
+                'time' => $now->format('H:i:s'),
+                'has_location' => false,
+                'fullname' => $attendance->fullname,
+                'shift_name' => $attendance->shift_name,
+                'description' => $description,
+            ]);
+        });
+
+        return response()->json(['message' => 'Attendance cleared successfully.']);
+    }
+
+    public function lock($id)
+    {
+        $user = auth()->user();
+        $isAdmin = $user && $user->roles->contains(function ($role) {
+            return strtolower($role->name) === 'admin';
+        });
+        abort_unless($isAdmin, 403);
+
+        $attendance = Attendance::findOrFail($id);
+        abort_if($attendance->is_locked, 423, 'Attendance is already locked.');
+        abort_if(!$attendance->check_in && !$attendance->check_out, 422, 'Cannot lock cleared attendance.');
+        $now = now();
+
+        DB::transaction(function () use ($attendance, $now) {
+            $attendance->update(['is_locked' => true]);
+
+            AttendanceLog::create([
+                'employee_id' => $attendance->employee_id,
+                'attendance_id' => $attendance->id,
+                'type' => 'lock',
+                'clock_datetime' => $now,
+                'clock_date' => $attendance->date,
+                'time' => $now->format('H:i:s'),
+                'has_location' => false,
+                'fullname' => $attendance->fullname,
+                'shift_name' => $attendance->shift_name,
+                'description' => 'Attendance locked. Editing and clearing are disabled.',
+            ]);
+        });
+
+        return response()->json(['message' => 'Attendance locked successfully.']);
+    }
+
+    public function unlock($id)
+    {
+        $user = auth()->user();
+        $isAdmin = $user && $user->roles->contains(function ($role) {
+            return strtolower($role->name) === 'admin';
+        });
+        abort_unless($isAdmin, 403);
+
+        $attendance = Attendance::findOrFail($id);
+        abort_if(!$attendance->is_locked, 422, 'Attendance is not locked.');
+        $now = now();
+
+        DB::transaction(function () use ($attendance, $now) {
+            $attendance->update(['is_locked' => false]);
+
+            AttendanceLog::create([
+                'employee_id' => $attendance->employee_id,
+                'attendance_id' => $attendance->id,
+                'type' => 'unlock',
+                'clock_datetime' => $now,
+                'clock_date' => $attendance->date,
+                'time' => $now->format('H:i:s'),
+                'has_location' => false,
+                'fullname' => $attendance->fullname,
+                'shift_name' => $attendance->shift_name,
+                'description' => 'Attendance unlocked. Editing and clearing are enabled.',
+            ]);
+        });
+
+        return response()->json(['message' => 'Attendance unlocked successfully.']);
     }
 }

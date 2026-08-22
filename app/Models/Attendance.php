@@ -23,6 +23,7 @@ class Attendance extends Model
         'check_out_latitude' => 'float',
         'check_out_longitude' => 'float',
         'check_out_radius' => 'float',
+        'is_locked' => 'boolean',
     ];
 
     public function employee()

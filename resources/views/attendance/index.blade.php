@@ -310,6 +310,63 @@
         </div>
     </div>
 
+    <div class="modal fade attendance-modal" id="attendance-edit-modal" tabindex="-1" role="dialog"
+        aria-labelledby="attendance-edit-modal-title" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="attendance-edit-modal-title"><i class="fa fa-pencil"></i>
+                        Edit Attendance</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="attendance-edit-form">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="edit-attendance-date">Date</label>
+                            <input type="text" id="edit-attendance-date" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-attendance-shift">Shift</label>
+                            <select id="edit-attendance-shift" name="shift_id" class="form-control select2" required>
+                                @foreach ($shifts as $shift)
+                                    <option value="{{ $shift->id }}" data-shift-name="{{ $shift->name }}"
+                                        data-schedule-in="{{ $shift->schedule_in }}"
+                                        data-schedule-out="{{ $shift->schedule_out }}">{{ $shift->name }}
+                                        ({{ $shift->schedule_in }} - {{ $shift->schedule_out }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="edit-attendance-check-in">Clock in</label>
+                                    <input type="time" id="edit-attendance-check-in" name="check_in"
+                                        class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="edit-attendance-check-out">Clock out</label>
+                                    <input type="time" id="edit-attendance-check-out" name="check_out"
+                                        class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="attendance-edit-error" class="alert alert-danger d-none mb-0"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade attendance-modal" id="attendance-log-modal" tabindex="-1" role="dialog"
         aria-labelledby="attendance-log-modal-title" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -332,6 +389,7 @@
                                     <th>Clock Date</th>
                                     <th>Clock Time</th>
                                     <th>Has Location</th>
+                                    <th>Description</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -369,6 +427,8 @@
                         <dd class="col-sm-8" id="log-detail-shift"></dd>
                         <dt class="col-sm-4">Type</dt>
                         <dd class="col-sm-8" id="log-detail-type"></dd>
+                        <dt class="col-sm-4">Description</dt>
+                        <dd class="col-sm-8" id="log-detail-description"></dd>
                         <dt class="col-sm-4">Has Location</dt>
                         <dd class="col-sm-8" id="log-detail-has-location"></dd>
                         <dt class="col-sm-4">Clock Date</dt>
@@ -390,9 +450,16 @@
 @section('content-script')
     <script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
     <script src="/plugins/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
+    <script src="/plugins/select2/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
             let attendanceLogTable;
+            const canEditAttendance = @json(auth()->user()->roles()->whereRaw('LOWER(name) = ?', ['admin'])->exists());
+
+            $('#edit-attendance-shift').select2({
+                width: '100%',
+                dropdownParent: $('#attendance-edit-modal')
+            });
 
             function isLateAttendance(checkIn, scheduleIn) {
                 if (!checkIn || !scheduleIn) {
@@ -412,6 +479,33 @@
                     (checkInTime.minutes() * 60) + checkInTime.seconds();
 
                 return checkInSeconds > scheduleInSeconds;
+            }
+
+            function formatAttendanceLogDescription(description) {
+                if (!description) {
+                    return '--';
+                }
+
+                description = String(description).replace(/-&gt;/g, ' to ');
+
+                const match = description.match(/^Changed from (\{.*?\}) to (\{.*\})$/);
+
+                if (!match) {
+                    return description;
+                }
+
+                try {
+                    const oldValues = JSON.parse(match[1]);
+                    const newValues = JSON.parse(match[2]);
+                    const value = function(key) {
+                        return (oldValues[key] || '--') + ' to ' + (newValues[key] || '--');
+                    };
+
+                    return 'Shift: ' + value('shift') + '; Clock in: ' + value('clock in') +
+                        '; Clock out: ' + value('clock out');
+                } catch (error) {
+                    return description;
+                }
             }
 
             function loadAttendanceSummary() {
@@ -531,7 +625,26 @@
                     {
                         data: "id",
                         defaultContent: "--",
-                        mRender: function(data) {
+                        mRender: function(data, type, full) {
+                            const isLocked = Boolean(Number(full.is_locked));
+                            const hasAttendanceData = Boolean(full.check_in || full.check_out);
+                            const editAction = canEditAttendance && !isLocked ? `
+                                    <button type="button" class="dropdown-item btn-edit-attendance"
+                                        data-attendance-id="${data}">Edit</button>` : '';
+                            const deleteAction = canEditAttendance && !isLocked ? `
+                                    <button type="button" class="dropdown-item btn-delete-attendance"
+                                        data-attendance-id="${data}">Delete</button>` : '';
+                            const lockAction = canEditAttendance && !isLocked && hasAttendanceData ? `
+                                    <button type="button" class="dropdown-item btn-lock-attendance"
+                                        data-attendance-id="${data}">Lock attendance</button>` :
+                                (canEditAttendance && isLocked ? `
+                                    <button type="button" class="dropdown-item btn-unlock-attendance"
+                                        data-attendance-id="${data}">Unlock attendance</button>` :
+                                    (isLocked ?
+                                        '<span class="dropdown-item-text text-muted">Locked</span>' :
+                                        '')
+                                );
+
                             return `
                             <div class="btn-group">
                                 <button type="button" class="btn btn-outline-dark btn-sm dropdown-toggle"
@@ -539,11 +652,11 @@
                                     Actions
                                 </button>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" href="#">Edit</a>
+                                    ${editAction}
                                     <button type="button" class="dropdown-item btn-view-attendance-logs"
                                         data-attendance-id="${data}">View history log</button>
-                                    <a class="dropdown-item" href="#">Lock attendance</a>
-                                    <a class="dropdown-item" href="#">Delete</a>
+                                    ${lockAction}
+                                    ${deleteAction}
                                 </div>
                             </div>`
                         }
@@ -573,7 +686,23 @@
                             data: 'type',
                             defaultContent: '--',
                             render: function(data) {
-                                return data === 'check_in' ? 'Clock In' : 'Clock Out';
+                                if (data === 'check_in') {
+                                    return 'Clock In';
+                                }
+
+                                if (data === 'check_out') {
+                                    return 'Clock Out';
+                                }
+
+                                if (data === 'delete') {
+                                    return 'Deleted';
+                                }
+
+                                if (data === 'lock') {
+                                    return 'Locked';
+                                }
+
+                                return data === 'unlock' ? 'Unlocked' : 'Edited';
                             }
                         },
                         {
@@ -592,6 +721,13 @@
                             }
                         },
                         {
+                            data: 'description',
+                            defaultContent: '--',
+                            render: function(data) {
+                                return formatAttendanceLogDescription(data);
+                            }
+                        },
+                        {
                             data: 'id',
                             render: function(data) {
                                 return '<button type="button" class="btn btn-info btn-sm btn-log-detail" data-log-id="' +
@@ -603,6 +739,122 @@
                 });
 
                 $('#attendance-log-modal').modal('show');
+            });
+
+            $('#tbl-attendance').on('click', '.btn-edit-attendance', function() {
+                const attendance = tblAttendance.row($(this).closest('tr')).data();
+                if (!attendance) {
+                    return;
+                }
+
+                $('#edit-attendance-date').val(moment(attendance.date).format('DD MMMM YYYY'));
+                $('#edit-attendance-shift').val('');
+                $('#edit-attendance-shift option').filter(function() {
+                    return $(this).data('shift-name') === String(attendance.shift_name || '')
+                        .trim();
+                }).prop('selected', true);
+                $('#edit-attendance-shift').trigger('change');
+                $('#edit-attendance-check-in').val(attendance.check_in ? moment(attendance.check_in).format(
+                    'HH:mm') : '');
+                $('#edit-attendance-check-out').val(attendance.check_out ? moment(attendance.check_out)
+                    .format('HH:mm') : '');
+                $('#attendance-edit-form').data('attendance-id', attendance.id);
+                $('#attendance-edit-error').addClass('d-none').text('');
+                $('#attendance-edit-modal').modal('show');
+            });
+
+            $('#attendance-edit-form').on('submit', function(event) {
+                event.preventDefault();
+                const form = $(this);
+                const attendanceId = form.data('attendance-id');
+                const saveButton = form.find('button[type="submit"]');
+
+                saveButton.prop('disabled', true);
+                $('#attendance-edit-error').addClass('d-none').text('');
+
+                $.ajax({
+                    url: '/time/attendance/' + attendanceId,
+                    type: 'PUT',
+                    data: form.serialize()
+                }).done(function() {
+                    $('#attendance-edit-modal').modal('hide');
+                    tblAttendance.ajax.reload(null, false);
+                    loadAttendanceSummary();
+                }).fail(function(xhr) {
+                    const message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON
+                        .message :
+                        'Unable to update attendance.';
+                    $('#attendance-edit-error').text(message).removeClass('d-none');
+                }).always(function() {
+                    saveButton.prop('disabled', false);
+                });
+            });
+
+            $('#tbl-attendance').on('click', '.btn-delete-attendance', function() {
+                const attendanceId = $(this).data('attendance-id');
+
+                if (!window.confirm('Clear this attendance clock-in and clock-out data?')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: '/time/attendance/' + attendanceId,
+                    type: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    }
+                }).done(function() {
+                    tblAttendance.ajax.reload(null, false);
+                    loadAttendanceSummary();
+                }).fail(function(xhr) {
+                    const message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON
+                        .message : 'Unable to clear attendance.';
+                    window.alert(message);
+                });
+            });
+
+            $('#tbl-attendance').on('click', '.btn-lock-attendance', function() {
+                const attendanceId = $(this).data('attendance-id');
+
+                if (!window.confirm('Lock this attendance? Editing and clearing will be disabled.')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: '/time/attendance/' + attendanceId + '/lock',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    }
+                }).done(function() {
+                    tblAttendance.ajax.reload(null, false);
+                }).fail(function(xhr) {
+                    const message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON
+                        .message : 'Unable to lock attendance.';
+                    window.alert(message);
+                });
+            });
+
+            $('#tbl-attendance').on('click', '.btn-unlock-attendance', function() {
+                const attendanceId = $(this).data('attendance-id');
+
+                if (!window.confirm('Unlock this attendance? Editing and clearing will be enabled.')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: '/time/attendance/' + attendanceId + '/unlock',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    }
+                }).done(function() {
+                    tblAttendance.ajax.reload(null, false);
+                }).fail(function(xhr) {
+                    const message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON
+                        .message : 'Unable to unlock attendance.';
+                    window.alert(message);
+                });
             });
 
             $('#tbl-attendance-log').on('click', '.btn-log-detail', function() {
@@ -617,7 +869,13 @@
 
                 $('#log-detail-name').text(log.fullname || '--');
                 $('#log-detail-shift').text(log.shift_name || '--');
-                $('#log-detail-type').text(log.type === 'check_in' ? 'Clock In' : 'Clock Out');
+                const logType = log.type === 'check_in' ? 'Clock In' :
+                    (log.type === 'check_out' ? 'Clock Out' :
+                        (log.type === 'delete' ? 'Deleted' :
+                            (log.type === 'lock' ? 'Locked' :
+                                (log.type === 'unlock' ? 'Unlocked' : 'Edited'))));
+                $('#log-detail-type').text(logType);
+                $('#log-detail-description').text(formatAttendanceLogDescription(log.description));
                 $('#log-detail-has-location').text(Number(log.has_location) === 1 ? 'Yes' : 'No');
                 $('#log-detail-date').text(log.clock_date || '--');
                 $('#log-detail-time').text(log.time || '--');
