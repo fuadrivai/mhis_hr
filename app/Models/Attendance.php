@@ -19,10 +19,10 @@ class Attendance extends Model
         'user_id' => 'integer',
         'check_in_latitude' => 'float',
         'check_in_longitude' => 'float',
-        'check_in_radius' => 'integer',
+        'check_in_radius' => 'float',
         'check_out_latitude' => 'float',
         'check_out_longitude' => 'float',
-        'check_out_radius' => 'integer',
+        'check_out_radius' => 'float',
         'is_locked' => 'boolean',
     ];
 

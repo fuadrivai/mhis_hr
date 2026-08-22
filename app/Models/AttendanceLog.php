@@ -15,7 +15,7 @@ class AttendanceLog extends Model
         'log_time' => 'datetime',
         'latitude'=>'float',
         'longitude'=>'float',
-        'radius'=>'integer',
+        'radius'=>'float',
     ];
 
     public function employee()
