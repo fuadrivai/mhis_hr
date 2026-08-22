@@ -282,7 +282,7 @@ function getEmployee($userId)
     return $employee;
 }
 
-function validateLocation($employee, $data)
+function validateLocation($employee, array &$data)
 {
     $location = $employee->location;
     if (!$location) {
@@ -304,6 +304,7 @@ function validateLocation($employee, $data)
         );
         $distance = $distanceInKM * 1000;
         if ($distance <= (float)$detail->radius) {
+            $data['radius'] = (float) $detail->radius;
             return;
         }
         $data['radius'] = $detail->radius;
@@ -326,7 +327,7 @@ function prepareAttendance($employee,$user,$clockTime) {
         [
             'user_id' =>$user['id'] ?? $employee->user_id,
             'fullname' => $employee->personal->fullname,
-            'shift_name' => $employee->activeSchedule->schedule_name ?? '-',
+            'shift_name' => $shift->name ?? '-',
             'status' => '-',
             'holiday' => $shift->holiday ? 1 : 0,
             'schedule_in' => $resolved['schedule_in'],

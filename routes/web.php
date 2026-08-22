@@ -222,6 +222,10 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('attendance/summary', [AttendanceController::class, 'attendanceSummary']);
             Route::get('attendance/summary/{type}', [AttendanceController::class, 'attendanceSummaryList']);
             Route::get('attendance/{attendance}/logs', [AttendanceController::class, 'attendanceLogs']);
+            Route::put('attendance/{attendance}', [AttendanceController::class, 'update']);
+            Route::delete('attendance/{attendance}', [AttendanceController::class, 'destroy']);
+            Route::post('attendance/{attendance}/lock', [AttendanceController::class, 'lock']);
+            Route::post('attendance/{attendance}/unlock', [AttendanceController::class, 'unlock']);
             Route::get('attendance', [AttendanceController::class, 'attendance']);
             Route::get('request/datatable', [ApprovalRequestController::class, 'dataTable']);
             Route::get('request/{id}/history', [ApprovalRequestController::class, 'history']);
