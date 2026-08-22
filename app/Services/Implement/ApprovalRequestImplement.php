@@ -482,6 +482,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                     ->first();
 
                 if (!$nextApproval) {
+                    $request->current_step = $approval->step_order;
                     $request->status = 'approved';
                     $request->show_cancel = 0;
                     $request->save();
@@ -518,6 +519,8 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                     }
 
                 } else {
+                    $request->current_step = $nextApproval->step_order;
+                    $request->save();
                     $nextApproval->show_action =1;
                     $nextApproval->save();
                 }
