@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Approval;
 use App\Models\ApprovalRequest;
+use App\Models\ApprovalStep;
 use App\Models\Branch;
 use App\Models\Employee;
 use App\Models\JobLevel;
@@ -42,6 +43,11 @@ class ApprovalRequestController extends Controller
             'organizations' => Organization::orderBy('name')->get(),
             'levels' => JobLevel::orderBy('name')->get(),
             'positions' => Position::orderBy('name')->get(),
+            'currentSteps' => ApprovalStep::query()
+                ->select('step_order')
+                ->distinct()
+                ->orderBy('step_order')
+                ->pluck('step_order'),
         ]);
     }
 
@@ -60,6 +66,10 @@ class ApprovalRequestController extends Controller
         $status = $request->input('status', 'pending');
         if ($status !== 'all') {
             $approvalRequests->where('status', $status);
+        }
+
+        if ($request->filled('current_step') && $request->input('current_step') !== 'all') {
+            $approvalRequests->where('current_step', $request->input('current_step'));
         }
 
         foreach ([
@@ -223,7 +233,13 @@ class ApprovalRequestController extends Controller
                 'note' => $request->input('note'),
             ]);
 
-            return redirect('/time/request/' . $approvalRequest->id . '/edit')
+            $nextRequest = $this->getNextPendingRequest($approvalRequest->id);
+
+            $redirectUrl = $nextRequest
+                ? '/time/request/' . $nextRequest->id . '/edit'
+                : '/time/request';
+
+            return redirect($redirectUrl)
                 ->with('success', 'Request ' . $validated['action'] . ' successfully.');
         } catch (\Throwable $exception) {
             return redirect('/time/request/' . $approvalRequest->id . '/edit')
@@ -244,6 +260,9 @@ class ApprovalRequestController extends Controller
         ]);
         $employees = $this->employeeService->getActive()->get()->load('personal');
         $timeoffs = $this->timeOffService->get();
+        $nextRequest = $request->status === 'pending'
+            ? $this->getNextPendingRequest($request->id)
+            : null;
         return view('approval.request.preview', [
             'title' => '<h1 class="approval-detail-title">' . ucwords(strtolower($request->type->name ?? 'Approval Request')) .  ' - ' . ucwords(strtolower($request->requester->personal->fullname ?? "Unknown Requester")) . '
                 <span class="approval-status ' . $request->status . '">' . ucwords(strtolower($request->status)) . '</span>
@@ -251,7 +270,37 @@ class ApprovalRequestController extends Controller
             'approvalRequest' => $request,
             'employees' => $employees,
             'timeoffs' => $timeoffs,
+            'nextRequest' => $nextRequest,
         ]);
+    }
+
+    private function getNextPendingRequest($excludedRequestId)
+    {
+        $user = auth()->user();
+        $isAdmin = $user && $user->roles->contains(function ($role) {
+            return strtolower($role->name) === 'admin' || (int) $role->id === 1;
+        });
+
+        if ($isAdmin) {
+            return ApprovalRequest::where('status', 'pending')
+                ->where('id', '>', $excludedRequestId)
+                ->orderBy('id')
+                ->first();
+        }
+
+        $employee = Employee::where('user_id', auth()->id())->first();
+        $nextApproval = $employee ? Approval::where('approver_employee_id', $employee->id)
+            ->where('status', 'pending')
+            ->where('show_action', true)
+            ->where('approval_request_id', '>', $excludedRequestId)
+            ->whereHas('approvalRequest', function ($query) {
+                $query->where('status', 'pending');
+            })
+            ->orderBy('approval_request_id')
+            ->orderBy('step_order')
+            ->first() : null;
+
+        return $nextApproval ? $nextApproval->approvalRequest : null;
     }
 
     public function approvalByUser(Request $request)

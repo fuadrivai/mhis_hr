@@ -160,6 +160,12 @@
                                     </li>
                                 @endforeach
                             </ul>
+                            @if ($approvalRequest->status === 'pending' && $nextRequest)
+                                <a href="{{ url('/time/request/' . $nextRequest->id . '/edit') }}"
+                                    class="btn btn-outline-primary btn-block mt-3">
+                                    <i class="fa fa-arrow-right"></i> Next pending request
+                                </a>
+                            @endif
                         @endif
                     </aside>
                 </div>

@@ -73,7 +73,7 @@
         </div>
         <div class="x_content">
             <div class="row">
-                <div class="col-md-6 col-sm-6">
+                <div class="col-md-4 col-sm-6">
                     <div class="form-group">
                         <label for="filter-status">Status</label>
                         <select id="filter-status" class="form-control">
@@ -85,7 +85,18 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6 col-sm-6">
+                <div class="col-md-4 col-sm-6">
+                    <div class="form-group">
+                        <label for="filter-current-step">Current Step</label>
+                        <select id="filter-current-step" class="form-control">
+                            <option value="all">All steps</option>
+                            @foreach ($currentSteps as $step)
+                                <option value="{{ $step }}">Step {{ $step }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
                     <div class="form-group">
                         <label for="filter-branch">Branch</label>
                         <select id="filter-branch" class="form-control select2" style="width: 100%">
@@ -197,6 +208,7 @@
                     type: "GET",
                     data: function(data) {
                         data.status = $('#filter-status').val();
+                        data.current_step = $('#filter-current-step').val();
                         data.branch = $('#filter-branch').val();
                         data.organization = $('#filter-organization').val();
                         data.level = $('#filter-level').val();
@@ -310,10 +322,11 @@
                 ],
             });
 
-            $('#filter-status, #filter-branch, #filter-organization, #filter-level, #filter-position').on('change',
-                function() {
-                    tbldata.ajax.reload();
-                });
+            $('#filter-status, #filter-current-step, #filter-branch, #filter-organization, #filter-level, #filter-position')
+                .on('change',
+                    function() {
+                        tbldata.ajax.reload();
+                    });
         });
 
         $(document).on('click', '.btn-timeline', function() {
@@ -434,24 +447,24 @@
             return `
                 <div class="timeline">
                     ${history.map((item, index) => `
-                                                                                                                                                                                        <div class="timeline-item ${index === 0 ? 'active' : ''}">
-                                                                                                                                                                                            <div class="timeline-marker bg-primary"></div>
-                                                                                                                                                                                            <div class="timeline-content">
-                                                                                                                                                                                                <div class="d-flex justify-content-between align-items-start">
-                                                                                                                                                                                                    <div>
-                                                                                                                                                                                                        <h6 class="mb-1">${item.action || 'Action performed'}</h6>
-                                                                                                                                                                                                        <p class="mb-1 text-muted">${item.note || ''}</p>
-                                                                                                                                                                                                        <small class="text-muted">
-                                                                                                                                                                                                            By: ${item.approver?.personal?.fullname || 'System'}
-                                                                                                                                                                                                        </small>
+                                                                                                                                                                                                <div class="timeline-item ${index === 0 ? 'active' : ''}">
+                                                                                                                                                                                                    <div class="timeline-marker bg-primary"></div>
+                                                                                                                                                                                                    <div class="timeline-content">
+                                                                                                                                                                                                        <div class="d-flex justify-content-between align-items-start">
+                                                                                                                                                                                                            <div>
+                                                                                                                                                                                                                <h6 class="mb-1">${item.action || 'Action performed'}</h6>
+                                                                                                                                                                                                                <p class="mb-1 text-muted">${item.note || ''}</p>
+                                                                                                                                                                                                                <small class="text-muted">
+                                                                                                                                                                                                                    By: ${item.approver?.personal?.fullname || 'System'}
+                                                                                                                                                                                                                </small>
+                                                                                                                                                                                                            </div>
+                                                                                                                                                                                                            <small class="text-muted">
+                                                                                                                                                                                                                ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
+                                                                                                                                                                                                            </small>
+                                                                                                                                                                                                        </div>
                                                                                                                                                                                                     </div>
-                                                                                                                                                                                                    <small class="text-muted">
-                                                                                                                                                                                                        ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
-                                                                                                                                                                                                    </small>
                                                                                                                                                                                                 </div>
-                                                                                                                                                                                            </div>
-                                                                                                                                                                                        </div>
-                                                                                                                                                                                    `).join('')}
+                                                                                                                                                                                            `).join('')}
                 </div>
             `;
         }
