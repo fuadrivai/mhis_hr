@@ -38,7 +38,7 @@ class AttendanceImplement implements AttendanceService
             $attendances->where('date',$_date);
         }
         if ($request->search && $request->search != '') {
-            $attendances->where('full_name', 'like', '%' . $request->search . '%');
+            $attendances->where('fullname', 'like', '%' . $request->search . '%');
         }
 
         if ($request->branch && $request->branch != '') {
