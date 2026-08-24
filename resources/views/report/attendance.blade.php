@@ -32,17 +32,46 @@
 
         .monthly-report-table .employee-column {
             min-width: 220px;
+            width: 220px;
             text-align: left;
         }
 
         .monthly-report-table .sticky-column {
+            position: -webkit-sticky;
             position: sticky;
-            left: 0;
+            left: 0 !important;
+            z-index: 1;
+            background: #fff;
+            box-shadow: 2px 0 4px rgba(0, 0, 0, .08);
+        }
+
+        .monthly-report-table thead .sticky-column {
+            z-index: 3;
+            background: #f1f5f7;
+        }
+
+        #exception-report-table .exception-employee-id-column,
+        #exception-report-table .exception-name-column {
+            position: sticky;
             z-index: 1;
             background: #fff;
         }
 
-        .monthly-report-table thead .sticky-column {
+        #exception-report-table .exception-employee-id-column {
+            left: 0;
+            min-width: 100px;
+            width: 100px;
+        }
+
+        #exception-report-table .exception-name-column {
+            left: 100px;
+            min-width: 150px;
+            width: 150px;
+            box-shadow: 2px 0 4px rgba(0, 0, 0, .08);
+        }
+
+        #exception-report-table thead .exception-employee-id-column,
+        #exception-report-table thead .exception-name-column {
             z-index: 3;
             background: #f1f5f7;
         }
@@ -252,9 +281,8 @@
                                     id="exception-report-table">
                                     <thead>
                                         <tr>
-                                            <th style="min-width: 40px;">No</th>
-                                            <th style="min-width: 100px;">Employee ID</th>
-                                            <th style="min-width: 150px;">Name</th>
+                                            <th class="exception-employee-id-column">Employee ID</th>
+                                            <th class="exception-name-column">Name</th>
                                             <th style="min-width: 150px;">Branch</th>
                                             <th style="min-width: 150px;">Organization</th>
                                             <th style="min-width: 100px;">Level</th>
@@ -429,12 +457,13 @@
                     loadExceptionReport();
                 }
             });
-            $('#month, #branch-filter, #organization-filter, #level-filter, #position-filter').on('change', function() {
-                loadMonthlyReport();
-                if ($('#timeoff-issue-tab').hasClass('active')) {
-                    loadExceptionReport();
-                }
-            });
+            $('#month, #branch-filter, #organization-filter, #level-filter, #position-filter').on('change',
+                function() {
+                    loadMonthlyReport();
+                    if ($('#timeoff-issue-tab').hasClass('active')) {
+                        loadExceptionReport();
+                    }
+                });
             $('#employee-search').on('input', filterEmployees);
             $('#monthly-view-logs').on('click', loadMonthlyLogs);
             loadMonthlyReport();
@@ -721,9 +750,8 @@
             let body = '';
             report.exceptions.forEach(function(exception, index) {
                 body += '<tr>' +
-                    '<td>' + (index + 1) + '</td>' +
-                    '<td>' + escapeHtml(exception.employee_id) + '</td>' +
-                    '<td>' + escapeHtml(exception.employee_name) + '</td>' +
+                    '<td class="exception-employee-id-column">' + escapeHtml(exception.employee_id) + '</td>' +
+                    '<td class="exception-name-column">' + escapeHtml(exception.employee_name) + '</td>' +
                     '<td>' + escapeHtml(exception.branch) + '</td>' +
                     '<td>' + escapeHtml(exception.organization) + '</td>' +
                     '<td>' + escapeHtml(exception.level) + '</td>' +
@@ -770,7 +798,9 @@
             });
             table += '</tbody></table>';
 
-            const blob = new Blob(['\ufeff', table], { type: 'application/vnd.ms-excel' });
+            const blob = new Blob(['\ufeff', table], {
+                type: 'application/vnd.ms-excel'
+            });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'attendance-exceptions-' + report.period.replace(/\s+|-/g, '-').toLowerCase() + '.xls';
