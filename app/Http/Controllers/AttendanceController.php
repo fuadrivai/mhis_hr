@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\AttendanceLog;
 use App\Models\Employee;
 use App\Models\Shift;
+use App\Services\AttendanceService;
 use App\Services\BranchService;
 use App\Services\JobLevelService;
 use App\Services\OrganizationService;
@@ -24,18 +25,21 @@ class AttendanceController extends Controller
     private OrganizationService $organizationService;
     private PositionService $positionService;
     private JobLevelService $jobLevelService;
-    
+    private AttendanceService $attendanceService;
+
     public function __construct(
         BranchService $branchService,
         OrganizationService $organizationService,
         PositionService $positionService,
-        JobLevelService $jobLevelService
+        JobLevelService $jobLevelService,
+        AttendanceService $attendanceService
         )
     {
         $this->branchService = $branchService;
         $this->organizationService = $organizationService;
         $this->positionService = $positionService;
         $this->jobLevelService = $jobLevelService;
+        $this->attendanceService = $attendanceService;
     }
 
     /**
@@ -65,59 +69,7 @@ class AttendanceController extends Controller
     public function attendance(UtilitiesRequest $request)
     {
         
-        $attendances = Attendance::with(['employee.employment','employee.personal','logs']);
-        
-        $user = auth()->user();
-        if ($user && $user->roles->contains('id', 3)) {
-            if ($user->employee && $user->employee->employment) {
-                $branchId = $user->employee->employment->branch_id;
-                $orgId = $user->employee->employment->organization_id;
-                $attendances->whereHas('employee.employment', function ($q) use ($branchId, $orgId) {
-                    $q->where('branch_id', $branchId)
-                      ->where('organization_id', $orgId);
-                });
-            } else {
-                $attendances->where('id', 0);
-            }
-        }
-
-        if ($request->date && $request->date != '') {
-            $_date = Carbon::parse($request->date)->format('Y-m-d');
-            $attendances->where('date',$_date);
-        }
-
-        if ($request->branch && $request->branch != '') {
-            if($request->branch != 'all'){
-                $attendances->whereHas('employee.employment', function ($query) use ($request) {
-                    $query->where('branch_id', $request->branch);
-                });
-            }
-
-        }
-
-        if ($request->organization && $request->organization != '') {
-            if($request->organization != 'all'){
-                $attendances->whereHas('employee.employment', function ($query) use ($request) {
-                    $query->where('organization_id', $request->organization);
-                });
-            }
-        }
-
-        if ($request->position && $request->position != '') {
-            if($request->position != 'all'){
-                $attendances->whereHas('employee.employment', function ($query) use ($request) {
-                    $query->where('job_position_id', $request->position);
-                });
-            }
-        }
-
-        if ($request->level && $request->level != '') {
-            if($request->level != 'all'){
-                $attendances->whereHas('employee.employment', function ($query) use ($request) {
-                    $query->where('job_level_id', $request->level);
-                });
-            }
-        }
+        $attendances = $this->attendanceService->get($request);
 
         if ($request->ajax()) {
             return datatables()->of($attendances)->make(true);

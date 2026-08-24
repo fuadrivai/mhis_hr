@@ -70,6 +70,7 @@ Route::name('api.')->group(function () {
             Route::post('live', [AttendanceApiController::class, 'liveAttendanceGa'])->name('live');
             Route::get('history', [AttendanceApiController::class, 'getAttendaceHistory'])->name('getAttendaceHistory');
             Route::get('history/current', [AttendanceApiController::class, 'getCurrent'])->name('getCurrent');
+            Route::get('all', [AttendanceApiController::class, 'attendance'])->name('attendance');
             Route::resource('/', AttendanceApiController::class)->parameters(['' => 'attendance']);
         });
 

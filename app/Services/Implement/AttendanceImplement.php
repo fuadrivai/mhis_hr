@@ -2,13 +2,13 @@
 
 namespace App\Services\Implement;
 
+use App\Models\Attendance;
 use App\Models\Employee;
 use App\Services\AttendanceService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Exception\ClientException;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 
 use function App\Helpers\getShiftByDate;
 use function App\Helpers\resolveAttendanceDate;
@@ -16,7 +16,62 @@ use function App\Helpers\talentaHeader;
 
 class AttendanceImplement implements AttendanceService
 {
-    function get($request) {}
+    function get($request) {
+        $attendances = Attendance::with(['employee.employment','employee.personal','logs']);
+        
+        $user = auth()->user();
+        if ($user && $user->roles->contains('id', 3)) {
+            if ($user->employee && $user->employee->employment) {
+                $branchId = $user->employee->employment->branch_id;
+                $orgId = $user->employee->employment->organization_id;
+                $attendances->whereHas('employee.employment', function ($q) use ($branchId, $orgId) {
+                    $q->where('branch_id', $branchId)
+                      ->where('organization_id', $orgId);
+                });
+            } else {
+                $attendances->where('id', 0);
+            }
+        }
+
+        if ($request->date && $request->date != '') {
+            $_date = Carbon::parse($request->date)->format('Y-m-d');
+            $attendances->where('date',$_date);
+        }
+
+        if ($request->branch && $request->branch != '') {
+            if($request->branch != 'all'){
+                $attendances->whereHas('employee.employment', function ($query) use ($request) {
+                    $query->where('branch_id', $request->branch);
+                });
+            }
+
+        }
+
+        if ($request->organization && $request->organization != '') {
+            if($request->organization != 'all'){
+                $attendances->whereHas('employee.employment', function ($query) use ($request) {
+                    $query->where('organization_id', $request->organization);
+                });
+            }
+        }
+
+        if ($request->position && $request->position != '') {
+            if($request->position != 'all'){
+                $attendances->whereHas('employee.employment', function ($query) use ($request) {
+                    $query->where('job_position_id', $request->position);
+                });
+            }
+        }
+
+        if ($request->level && $request->level != '') {
+            if($request->level != 'all'){
+                $attendances->whereHas('employee.employment', function ($query) use ($request) {
+                    $query->where('job_level_id', $request->level);
+                });
+            }
+        }
+        return $attendances;
+    }
     function show($id) {}
     function getHistory($request)
     {

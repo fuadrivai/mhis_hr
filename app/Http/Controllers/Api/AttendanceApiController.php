@@ -116,6 +116,12 @@ class AttendanceApiController extends Controller
         return $this->attendanceService->getAttendanceHistory($request);
     }
 
+    function attendance(Request $request)
+    {
+        $attendances = $this->attendanceService->get($request);
+        return response()->json($attendances->paginate(20)->appends($request->query()));
+    }
+
 
     /**
      * Display the specified resource.
