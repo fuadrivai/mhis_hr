@@ -37,8 +37,10 @@ class AttendanceImplement implements AttendanceService
             $_date = Carbon::parse($request->date)->format('Y-m-d');
             $attendances->where('date',$_date);
         }
-        if ($request->search && $request->search != '') {
-            $attendances->where('fullname', 'like', '%' . $request->search . '%');
+        $search = $request->input('search');
+        $search = is_array($search) ? ($search['value'] ?? '') : $search;
+        if ($search !== null && trim((string) $search) !== '') {
+            $attendances->where('fullname', 'like', '%' . trim((string) $search) . '%');
         }
 
         if ($request->branch && $request->branch != '') {
