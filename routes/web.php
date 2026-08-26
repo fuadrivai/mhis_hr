@@ -228,6 +228,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('monitoring/target/{id}', [\App\Http\Controllers\LessonPlanMonitoringController::class, 'showTarget'])->name('employee.lesson-plan.monitoring.show');
             Route::post('monitoring/target/{id}/print', [\App\Http\Controllers\LessonPlanMonitoringController::class, 'printTarget'])->name('employee.lesson-plan.monitoring.print');
             Route::get('monitoring/target/{id}/subject/{subject_id}', [\App\Http\Controllers\LessonPlanMonitoringController::class, 'showSubject'])->name('employee.lesson-plan.monitoring.subject');
+            Route::post('monitoring/target/{id}/notify', [\App\Http\Controllers\LessonPlanMonitoringController::class, 'notifyTarget'])->name('employee.lesson-plan.monitoring.notify');
         });
 
         Route::group(['prefix' => 'assessment'], function () {

@@ -47,8 +47,14 @@
                                     @endif
                                 @endforeach
                             </div>
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label for="whatsapp_numbers"><i class="fa fa-whatsapp"></i> WhatsApp Numbers to Notify (comma-separated, start with 62):</label>
+                                <input type="text" name="whatsapp_numbers" id="whatsapp_numbers" class="form-control" placeholder="e.g. 6281383151326, 6281234567890">
+                                <small class="text-muted">Only used when sending notifications. Messages are sent sequentially to all listed numbers.</small>
+                            </div>
                             <hr>
-                            <button type="submit" class="btn btn-primary"><i class="fa fa-print"></i> Print Selected Categories</button>
+                            <button type="submit" class="btn btn-primary" formaction="{{ route('employee.lesson-plan.monitoring.print', $target->id) }}" formtarget="_blank"><i class="fa fa-print"></i> Print Selected Categories</button>
+                            <button type="submit" class="btn btn-success" formaction="{{ route('employee.lesson-plan.monitoring.notify', $target->id) }}" formtarget="_self"><i class="fa fa-whatsapp"></i> Send WhatsApp Notification</button>
                         </form>
                     </div>
 
