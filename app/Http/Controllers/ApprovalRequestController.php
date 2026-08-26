@@ -53,37 +53,7 @@ class ApprovalRequestController extends Controller
 
     public function dataTable(UtilitiesRequest $request)
     {
-        $approvalRequests = ApprovalRequest::with([
-            'type',
-            'data',
-            'approvals.approver',
-            'approvals.approver.personal',
-            'requester.personal',
-            'requester.employment',
-            'approval_rule'
-        ])->select('approval_requests.*');
-
-        $status = $request->input('status', 'pending');
-        if ($status !== 'all') {
-            $approvalRequests->where('status', $status);
-        }
-
-        if ($request->filled('current_step') && $request->input('current_step') !== 'all') {
-            $approvalRequests->where('current_step', $request->input('current_step'));
-        }
-
-        foreach ([
-            'branch' => 'branch_id',
-            'organization' => 'organization_id',
-            'level' => 'job_level_id',
-            'position' => 'job_position_id',
-        ] as $filter => $column) {
-            if ($request->filled($filter) && $request->input($filter) !== 'all') {
-                $approvalRequests->whereHas('approvals.approver.employment', function ($query) use ($request, $filter, $column) {
-                    $query->where($column, $request->input($filter));
-                });
-            }
-        }
+        $approvalRequests = $this->approvalRequestService->getDataTable($request);
 
         if ($request->ajax()) {
             return datatables()->of($approvalRequests)
@@ -104,25 +74,6 @@ class ApprovalRequestController extends Controller
                 })
                 ->addColumn('end_time', function ($approvalRequest) {
                     return data_get($approvalRequest->data, 'payload.end_time') ?? '--';
-                })
-                ->filter(function ($query) use ($request) {
-                    $keyword = trim((string) $request->input('search.value'));
-
-                    if ($keyword === '') {
-                        return;
-                    }
-
-                    $query->where(function ($searchQuery) use ($keyword) {
-                        $searchQuery
-                            ->whereHas('requester.personal', function ($personalQuery) use ($keyword) {
-                                $personalQuery->where('fullname', 'like', "%{$keyword}%");
-                            })
-                            ->orWhereHas('type', function ($typeQuery) use ($keyword) {
-                                $typeQuery->where('name', 'like', "%{$keyword}%");
-                            })
-                            ->orWhere('status', 'like', "%{$keyword}%")
-                            ->orWhere('current_step', 'like', "%{$keyword}%");
-                    });
                 })
                 ->make(true);
         }

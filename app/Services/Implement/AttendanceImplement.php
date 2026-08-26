@@ -9,6 +9,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Exception\ClientException;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 use function App\Helpers\getShiftByDate;
 use function App\Helpers\resolveAttendanceDate;
@@ -19,8 +20,10 @@ class AttendanceImplement implements AttendanceService
     function get($request) {
         $attendances = Attendance::with(['employee.employment','employee.personal','logs']);
         
-        $user = auth()->user();
-        if ($user && $user->roles->contains('id', 3)) {
+        $user = Auth::guard('api')->user() ?? auth()->user();
+        $roleNames = $user ? $user->roles->pluck('name')->map(fn($name) => strtolower($name)) : collect();
+        if ($roleNames->contains('admin')) {
+        } elseif ($roleNames->contains('management')) {
             if ($user->employee && $user->employee->employment) {
                 $branchId = $user->employee->employment->branch_id;
                 $orgId = $user->employee->employment->organization_id;
@@ -31,6 +34,8 @@ class AttendanceImplement implements AttendanceService
             } else {
                 $attendances->where('id', 0);
             }
+        } else {
+            throw new \Exception('Unauthorized access: User does not have the required role.');
         }
 
         if ($request->date && $request->date != '') {
@@ -49,7 +54,6 @@ class AttendanceImplement implements AttendanceService
                     $query->where('branch_id', $request->branch);
                 });
             }
-
         }
 
         if ($request->organization && $request->organization != '') {

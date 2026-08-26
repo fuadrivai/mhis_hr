@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\BranchApiController;
 use App\Http\Controllers\Api\EmployeeApiController;
 use App\Http\Controllers\Api\GsheetLinkApiController;
 use App\Http\Controllers\Api\JobLevelApiController;
+use App\Http\Controllers\Api\LeaveAllocationApiController;
 use App\Http\Controllers\Api\LiveAbsentApiController;
 use App\Http\Controllers\Api\OrganizationApiController;
 use App\Http\Controllers\Api\PayslipApiController;
@@ -108,6 +109,7 @@ Route::name('api.')->group(function () {
         });
 
         Route::group(['prefix' => 'time'], function () {
+                Route::get('request/pagination', [ApprovalRequestApiController::class, 'getAllRequest']);
                 Route::get('request/datatable', [ApprovalRequestApiController::class, 'dataTable']);
                 Route::get('request/{id}/history', [ApprovalRequestApiController::class, 'history']);
                 Route::get('request/{id}/approver', [ApprovalRequestApiController::class, 'approver']);
@@ -115,6 +117,7 @@ Route::name('api.')->group(function () {
                 Route::get('request/approval', [ApprovalRequestApiController::class, 'getApprovalByUser']);
                 Route::post('request/action', [ApprovalRequestApiController::class, 'action']);
                 Route::post('request/cancel/{id}', [ApprovalRequestApiController::class, 'cancel']);
+                Route::get('leave/balance/employee/{employeeId}', [LeaveAllocationApiController::class, 'getActiveByEmployeeId'])->name('leave.balance.employee');
                 Route::resource('request', ApprovalRequestApiController::class);
             });
     });

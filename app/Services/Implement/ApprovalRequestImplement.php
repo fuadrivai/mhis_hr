@@ -45,6 +45,66 @@ class ApprovalRequestImplement implements ApprovalRequestService{
         }
     }
 
+    public function getDataTable($request)
+    {
+        $approvalRequests = ApprovalRequest::with([
+            'type',
+            'data',
+            'approvals.approver',
+            'approvals.approver.personal',
+            'requester.personal',
+            'requester.employment',
+            'approval_rule',
+        ])->select('approval_requests.*');
+
+        $status = $request->input('status', 'pending');
+        if ($status !== 'all') {
+            $approvalRequests->where('status', $status);
+        }
+
+        if ($request->filled('current_step') && $request->input('current_step') !== 'all') {
+            $approvalRequests->where('current_step', $request->input('current_step'));
+        }
+
+        foreach ([
+            'branch' => 'branch_id',
+            'organization' => 'organization_id',
+            'level' => 'job_level_id',
+            'position' => 'job_position_id',
+        ] as $filter => $column) {
+            if ($request->filled($filter) && $request->input($filter) !== 'all') {
+                $approvalRequests->whereHas('approvals.approver.employment', function ($query) use ($request, $filter, $column) {
+                    $query->where($column, $request->input($filter));
+                });
+            }
+        }
+
+        $search = $request->input('search');
+        $keyword = is_array($search) ? ($search['value'] ?? '') : $search;
+        $keyword = trim((string) $keyword);
+        if ($keyword !== '') {
+            $approvalRequests->where(function ($searchQuery) use ($keyword) {
+                $searchQuery
+                    ->whereHas('requester.personal', function ($personalQuery) use ($keyword) {
+                        $personalQuery->where('fullname', 'like', "%{$keyword}%");
+                    })
+                    ->orWhereHas('type', function ($typeQuery) use ($keyword) {
+                        $typeQuery->where('name', 'like', "%{$keyword}%");
+                    })
+                    ->orWhere('status', 'like', "%{$keyword}%")
+                    ->orWhere('current_step', 'like', "%{$keyword}%");
+            });
+        }
+        $requesterName = trim((string) $request->input('requester_name'));
+        if ($requesterName !== '') {
+            $approvalRequests->whereHas('requester.personal', function ($query) use ($requesterName) {
+                $query->where('fullname', 'like', "%{$requesterName}%");
+            });
+        }
+
+        return $approvalRequests;
+    }
+
     public function show($id)
     {
         return ApprovalRequest::with([

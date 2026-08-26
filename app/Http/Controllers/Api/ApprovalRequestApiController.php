@@ -109,4 +109,10 @@ class ApprovalRequestApiController extends Controller
         $this->approvalRequestService->action($request);
         return redirect('/timeoff/action');
     }
+
+    public function getAllRequest(Request $request)
+    {
+        $requests = $this->approvalRequestService->getDataTable($request);
+         return response()->json($requests->paginate(20)->appends($request->query()));
+    }
 }

@@ -6,7 +6,9 @@ use App\Services\AcademicYearService;
 use App\Services\ApprovalRequestService;
 use App\Services\Implement\AcademicYearImplement;
 use App\Services\Implement\ApprovalRequestImplement;
+use App\Services\Implement\LeaveAllocationImplement;
 use App\Services\Implement\RoleImplement;
+use App\Services\LeaveAllocationService;
 use App\Services\RoleService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         ApprovalRequestService::class => ApprovalRequestImplement::class,
         AcademicYearService::class => AcademicYearImplement::class,
         RoleService::class => RoleImplement::class,
+        LeaveAllocationService::class => LeaveAllocationImplement::class,
     ];
 
     public function register()
