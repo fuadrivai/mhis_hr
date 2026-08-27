@@ -3,6 +3,7 @@
 namespace App\Services\Implement;
 
 use App\Models\Attendance;
+use App\Models\Cutoff;
 use App\Models\Employee;
 use App\Services\AttendanceService;
 use GuzzleHttp\Client;
@@ -355,13 +356,24 @@ class AttendanceImplement implements AttendanceService
             throw new \Exception('Month and year are required');
         }
 
-        $attendances = $employee->attendances()->whereYear('date', $year)->whereMonth('date', $month)->with('logs')->get();
+        $cutoffDay = Cutoff::where('is_active', true)->value('cutoff_day');
+        $periodEnd = Carbon::create($year, $month, 1)->endOfMonth();
+        $periodStart = $periodEnd->copy()->startOfMonth();
 
-        $start = Carbon::create($year, $month, 1);
-        $length = $start->daysInMonth;
+        if ($cutoffDay !== null) {
+            $cutoffDay = min((int) $cutoffDay, $periodEnd->daysInMonth);
+            $periodEnd->day($cutoffDay);
+            $periodStart = $periodEnd->copy()->subMonthNoOverflow()->addDay();
+        }
+
+        $attendances = $employee->attendances()
+            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+            ->with('logs')
+            ->get();
+
         $period = collect();
-        for ($i = 0; $i < $length; $i++) {
-            $period->push($start->copy()->addDays($i)->toDateString());
+        for ($date = $periodStart->copy(); $date->lte($periodEnd); $date->addDay()) {
+            $period->push($date->toDateString());
         }
 
         $tempAttendance = $attendances->keyBy(fn($attendance) => $attendance->date->toDateString());
@@ -387,7 +399,9 @@ class AttendanceImplement implements AttendanceService
                     'employee_id' => $employee->id,
                     'user_id' => $employee->user_id,
                     'fullname' => $employee->personal->fullname ?? null,
-                    'shift_name' => $employee->activeSchedule->schedule_name ?? '-',
+                    'shift_name' => $shiftForToday instanceof \Illuminate\Http\JsonResponse
+                        ? '-'
+                        : ($shiftForToday->name ?? '-'),
                     'holiday' => $holiday,
                     'schedule_in' =>  $resolved['schedule_in'] ?? null,
                     'schedule_out' =>  $resolved['schedule_out'] ?? null,
@@ -397,11 +411,11 @@ class AttendanceImplement implements AttendanceService
         }
 
         $approvalRequests = $employee->requests()->where('status', 'approved')
-                            ->whereHas('data', function ($approvalRequestDataQuery) use ($month, $year) {
-                                $approvalRequestDataQuery->where(function ($dateQuery) use ($month, $year) {
+                            ->whereHas('data', function ($approvalRequestDataQuery) use ($month, $year, $periodStart, $periodEnd) {
+                                $approvalRequestDataQuery->where(function ($dateQuery) use ($month, $year, $periodStart, $periodEnd) {
                                     if ($month !== null && $year !== null) {
-                                        $periodStart = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString();
-                                        $periodEnd = \Carbon\Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+                                        $periodStart = $periodStart->toDateString();
+                                        $periodEnd = $periodEnd->toDateString();
                                         $dateQuery->whereRaw(
                                             "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) <= ?",
                                             [$periodEnd]
@@ -460,5 +474,92 @@ class AttendanceImplement implements AttendanceService
         });
         
         return $attendances->sortBy('date')->values();
+    }
+
+    function getCutoffDate($request)
+    {
+        $cutoff = Cutoff::where('is_active', true)->first();
+        if (!$cutoff) {
+            throw new \Exception('Active cutoff not found');
+        }
+        return $cutoff->only(['cutoff_day', 'is_active']);
+    }
+
+    function getAttendanceSummary($request){
+        $payload = is_array($request) ? $request : $request->all();
+        $userId = data_get($payload, 'user.id') ?? auth()->id();
+        if (!$userId) {
+            throw new \Exception('User ID is required');
+        }
+
+        $employee = Employee::with('activeSchedule.schedule.details.shift')
+            ->where('user_id', $userId)
+            ->first();
+        if (!$employee) {
+            throw new \Exception('Employee not found for the given user ID');
+        }
+
+        $month = (int) data_get($payload, 'month', now()->month);
+        $year = (int) data_get($payload, 'year', now()->year);
+        $periodEnd = Carbon::create($year, $month, 1)->endOfMonth();
+        $periodStart = $periodEnd->copy()->startOfMonth();
+        $cutoffDay = Cutoff::where('is_active', true)->value('cutoff_day');
+
+        if ($cutoffDay !== null) {
+            $periodEnd->day(min((int) $cutoffDay, $periodEnd->daysInMonth));
+            $periodStart = $periodEnd->copy()->subMonthNoOverflow()->addDay();
+        }
+
+        $attendances = $employee->attendances()
+            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+            ->with('approvalRequests')
+            ->get()
+            ->keyBy(fn ($attendance) => $attendance->date->toDateString());
+
+        $summary = array_fill_keys([
+            'late_clockin', 'early_clockout', 'absent', 'no_clockin', 'no_clockout',
+            'dayoff', 'on_time', 'timeoff', 'invalid', 'next_workdays',
+        ], 0);
+
+        for ($date = $periodStart->copy(); $date->lte($periodEnd); $date->addDay()) {
+            $attendance = $attendances->get($date->toDateString());
+            $shift = $employee->activeSchedule ? getShiftByDate($employee, $date) : null;
+            $isDayOff = $shift instanceof \Illuminate\Http\JsonResponse || (bool) data_get($shift, 'holiday', 0);
+            $hasTimeoff = $attendance && $attendance->approvalRequests->contains('status', 'approved');
+
+            $summary['timeoff'] += (int) $hasTimeoff;
+            if ($isDayOff) {
+                $summary['dayoff']++;
+            } elseif ($date->isFuture()) {
+                $summary['next_workdays']++;
+            } elseif ($hasTimeoff) {
+                continue;
+            } elseif (!$attendance || $attendance->status === 'absent') {
+                $summary['absent']++;
+            } elseif ($attendance->status === 'invalid') {
+                $summary['invalid']++;
+            } elseif (!$attendance->check_in) {
+                $summary['no_clockin']++;
+            } elseif (!$attendance->check_out) {
+                $summary['no_clockout']++;
+            } elseif ($attendance->check_out->lt($attendance->check_in)) {
+                $summary['invalid']++;
+            } else {
+                $isLate = $attendance->schedule_in && $attendance->check_in->format('H:i:s') > $attendance->schedule_in;
+                $isEarly = $attendance->schedule_out && $attendance->check_out->format('H:i:s') < $attendance->schedule_out;
+                $summary['late_clockin'] += (int) $isLate;
+                $summary['early_clockout'] += (int) $isEarly;
+                $summary['on_time'] += (int) (!$isLate && !$isEarly);
+            }
+        }
+
+        return [
+            'period' => [
+                'start' => $periodStart->toDateString(),
+                'end' => $periodEnd->toDateString(),
+                'cutoff_day' => $cutoffDay,
+            ],
+            'totals' => $summary,
+        ];
     }
 }

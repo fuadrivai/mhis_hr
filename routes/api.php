@@ -70,8 +70,10 @@ Route::name('api.')->group(function () {
             Route::post('clockout', [AttendanceApiController::class, 'clockOut'])->name('clockout');
             Route::post('live', [AttendanceApiController::class, 'liveAttendanceGa'])->name('live');
             Route::get('history', [AttendanceApiController::class, 'getAttendaceHistory'])->name('getAttendaceHistory');
+            Route::get('summary/totals', [AttendanceApiController::class, 'getAttendanceSummary'])->name('summary-totals');
             Route::get('history/current', [AttendanceApiController::class, 'getCurrent'])->name('getCurrent');
             Route::get('all', [AttendanceApiController::class, 'attendance'])->name('attendance');
+            Route::get('cutoff', [AttendanceApiController::class, 'getCutoffDate'])->name('cutoff-date');
             Route::resource('/', AttendanceApiController::class)->parameters(['' => 'attendance']);
         });
 

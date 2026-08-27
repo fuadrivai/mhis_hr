@@ -9,12 +9,14 @@ interface AttendanceService
     function liveAttendanceList($request);
     function getHistory($request);
     function getSummaryReport($request);
+    function getAttendanceSummary($request);
     function show($id);
     function post($request);
     function postAttendance($request);
     function put($request);
     function delete($id);
     function getAttendanceHistory($request);
+    function getCutoffDate($request);
 
     function mekariOauth2();
 }

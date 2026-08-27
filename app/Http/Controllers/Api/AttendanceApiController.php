@@ -116,6 +116,11 @@ class AttendanceApiController extends Controller
         return $this->attendanceService->getAttendanceHistory($request);
     }
 
+    function getAttendanceSummary(Request $request)
+    {
+        return response()->json($this->attendanceService->getAttendanceSummary($request));
+    }
+
     function attendance(Request $request)
     {
         $attendances = $this->attendanceService->get($request);
@@ -155,5 +160,11 @@ class AttendanceApiController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function getCutoffDate(Request $request)
+    {
+        $cutoffDate = $this->attendanceService->getCutoffDate($request);
+        return response()->json($cutoffDate);
     }
 }

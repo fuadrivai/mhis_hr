@@ -43,6 +43,7 @@ class ApprovalRequestController extends Controller
             'organizations' => Organization::orderBy('name')->get(),
             'levels' => JobLevel::orderBy('name')->get(),
             'positions' => Position::orderBy('name')->get(),
+            'timeoffs' => $this->timeOffService->get(),
             'currentSteps' => ApprovalStep::query()
                 ->select('step_order')
                 ->distinct()
@@ -262,6 +263,7 @@ class ApprovalRequestController extends Controller
             'organizations' => Organization::orderBy('name')->get(),
             'levels' => JobLevel::orderBy('name')->get(),
             'positions' => Position::orderBy('name')->get(),
+            'timeoffs' => $this->timeOffService->get(),
         ]);
     }
 
@@ -282,17 +284,55 @@ class ApprovalRequestController extends Controller
             $approvals->where('status', $status);
         }
 
+        $timeoffId = $request->input('timeoff_id');
+        if ($timeoffId && $timeoffId !== 'all') {
+            $approvals->whereHas('approvalRequest', function ($query) use ($timeoffId) {
+                $query->where('timeoff_id', $timeoffId);
+            });
+        }
+
         foreach ([
             'branch' => 'branch_id',
             'organization' => 'organization_id',
             'level' => 'job_level_id',
             'position' => 'job_position_id',
         ] as $filter => $column) {
-            if ($request->filled($filter) && $request->input($filter) !== 'all') {
-                $approvals->whereHas('approvalRequest.requester.employment', function ($query) use ($request, $filter, $column) {
-                    $query->where($column, $request->input($filter));
+            $values = array_values(array_filter((array) $request->input($filter, []), function ($value) {
+                return $value !== '' && $value !== 'all';
+            }));
+
+            if ($values) {
+                $approvals->whereHas('approvalRequest.requester.employment', function ($query) use ($column, $values) {
+                    $query->whereIn($column, $values);
                 });
             }
+        }
+
+        $requesterName = trim((string) $request->input('requester_name'));
+        if ($requesterName !== '') {
+            $approvals->whereHas('approvalRequest.requester.personal', function ($query) use ($requesterName) {
+                $query->where('fullname', 'like', "%{$requesterName}%");
+            });
+        }
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        if ($startDate || $endDate) {
+            $approvals->whereHas('approvalRequest.data', function ($query) use ($startDate, $endDate) {
+                if ($startDate) {
+                    $query->whereRaw(
+                        "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date'))) >= ?",
+                        [$startDate]
+                    );
+                }
+
+                if ($endDate) {
+                    $query->whereRaw(
+                        "JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')) <= ?",
+                        [$endDate]
+                    );
+                }
+            });
         }
 
         if ($request->ajax()) {

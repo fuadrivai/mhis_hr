@@ -19,6 +19,7 @@ use App\Services\AcademicYearService;
 use App\Services\ApprovalEngine;
 use App\Services\ApprovalRequestService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
@@ -47,6 +48,12 @@ class ApprovalRequestImplement implements ApprovalRequestService{
 
     public function getDataTable($request)
     {
+        $user = Auth::guard('api')->user() ?? auth()->user();
+        $roleNames = $user ? $user->roles->pluck('name')->map(fn($name) => strtolower($name)) : collect();
+        if (!$user || !$roleNames->contains('admin')) {
+            throw new \Exception('Unauthorized access: User does not have the required role.');
+        }
+
         $approvalRequests = ApprovalRequest::with([
             'type',
             'data',
@@ -62,6 +69,11 @@ class ApprovalRequestImplement implements ApprovalRequestService{
             $approvalRequests->where('status', $status);
         }
 
+        $timeoffId = $request->input('timeoff_id');
+        if ($timeoffId && $timeoffId !== 'all') {
+            $approvalRequests->where('timeoff_id', $timeoffId);
+        }
+
         if ($request->filled('current_step') && $request->input('current_step') !== 'all') {
             $approvalRequests->where('current_step', $request->input('current_step'));
         }
@@ -72,33 +84,41 @@ class ApprovalRequestImplement implements ApprovalRequestService{
             'level' => 'job_level_id',
             'position' => 'job_position_id',
         ] as $filter => $column) {
-            if ($request->filled($filter) && $request->input($filter) !== 'all') {
-                $approvalRequests->whereHas('approvals.approver.employment', function ($query) use ($request, $filter, $column) {
-                    $query->where($column, $request->input($filter));
+            $values = array_values(array_filter((array) $request->input($filter, []), function ($value) {
+                return $value !== '' && $value !== 'all';
+            }));
+
+            if ($values) {
+                $approvalRequests->whereHas('requester.employment', function ($query) use ($column, $values) {
+                    $query->whereIn($column, $values);
                 });
             }
         }
 
-        $search = $request->input('search');
-        $keyword = is_array($search) ? ($search['value'] ?? '') : $search;
-        $keyword = trim((string) $keyword);
-        if ($keyword !== '') {
-            $approvalRequests->where(function ($searchQuery) use ($keyword) {
-                $searchQuery
-                    ->whereHas('requester.personal', function ($personalQuery) use ($keyword) {
-                        $personalQuery->where('fullname', 'like', "%{$keyword}%");
-                    })
-                    ->orWhereHas('type', function ($typeQuery) use ($keyword) {
-                        $typeQuery->where('name', 'like', "%{$keyword}%");
-                    })
-                    ->orWhere('status', 'like', "%{$keyword}%")
-                    ->orWhere('current_step', 'like', "%{$keyword}%");
-            });
-        }
         $requesterName = trim((string) $request->input('requester_name'));
         if ($requesterName !== '') {
             $approvalRequests->whereHas('requester.personal', function ($query) use ($requesterName) {
                 $query->where('fullname', 'like', "%{$requesterName}%");
+            });
+        }
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        if ($startDate || $endDate) {
+            $approvalRequests->whereHas('data', function ($query) use ($startDate, $endDate) {
+                if ($startDate) {
+                    $query->whereRaw(
+                        "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date'))) >= ?",
+                        [$startDate]
+                    );
+                }
+
+                if ($endDate) {
+                    $query->whereRaw(
+                        "JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')) <= ?",
+                        [$endDate]
+                    );
+                }
             });
         }
 

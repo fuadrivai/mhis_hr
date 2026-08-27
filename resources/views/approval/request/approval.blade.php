@@ -73,7 +73,13 @@
         </div>
         <div class="x_content">
             <div class="row">
-                <div class="col-md-6 col-sm-6">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="filter-requester-name">Search requester</label>
+                        <input id="filter-requester-name" type="search" class="form-control" placeholder="Requester name">
+                    </div>
+                </div>
+                <div class="col-md-6">
                     <div class="form-group">
                         <label for="filter-status">Status</label>
                         <select id="filter-status" class="form-control">
@@ -85,10 +91,35 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6 col-sm-6">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="filter-timeoff">Time off type</label>
+                        <select id="filter-timeoff" class="form-control select2" style="width: 100%">
+                            <option value="all">All time off types</option>
+                            @foreach ($timeoffs as $timeoff)
+                                <option value="{{ $timeoff->id }}">{{ $timeoff->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="filter-start-date">Start date from data</label>
+                        <input readonly id="filter-start-date" type="text" class="form-control datepicker"
+                            autocomplete="off">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="filter-end-date">End date from data</label>
+                        <input readonly id="filter-end-date" type="text" class="form-control datepicker"
+                            autocomplete="off">
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="form-group">
                         <label for="filter-branch">Branch</label>
-                        <select id="filter-branch" class="form-control select2" style="width: 100%">
+                        <select id="filter-branch" class="form-control select2" multiple="multiple" style="width: 100%">
                             <option value="all">All branches</option>
                             @foreach ($branches as $branch)
                                 <option value="{{ $branch->id }}">{{ $branch->name }}</option>
@@ -96,10 +127,11 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4 col-sm-6">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label for="filter-organization">Organization</label>
-                        <select id="filter-organization" class="form-control select2" style="width: 100%">
+                        <select id="filter-organization" class="form-control select2" multiple="multiple"
+                            style="width: 100%">
                             <option value="all">All organizations</option>
                             @foreach ($organizations as $organization)
                                 <option value="{{ $organization->id }}">{{ $organization->name }}</option>
@@ -107,10 +139,10 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4 col-sm-6">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label for="filter-level">Level</label>
-                        <select id="filter-level" class="form-control select2" style="width: 100%">
+                        <select id="filter-level" class="form-control select2" multiple="multiple" style="width: 100%">
                             <option value="all">All levels</option>
                             @foreach ($levels as $level)
                                 <option value="{{ $level->id }}">{{ $level->name }}</option>
@@ -118,10 +150,10 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4 col-sm-6">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label for="filter-position">Position</label>
-                        <select id="filter-position" class="form-control select2" style="width: 100%">
+                        <select id="filter-position" class="form-control select2" multiple="multiple" style="width: 100%">
                             <option value="all">All positions</option>
                             @foreach ($positions as $position)
                                 <option value="{{ $position->id }}">{{ $position->name }}</option>
@@ -188,18 +220,53 @@
 
     <script>
         $(document).ready(function() {
+            const $startDate = $('#filter-start-date');
+            const $endDate = $('#filter-end-date');
+
+            $startDate.datepicker({
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                todayHighlight: true
+            });
+
+            $endDate.datepicker({
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                todayHighlight: true
+            });
+
+            $startDate.on('changeDate', function() {
+                $endDate.datepicker('clearDates');
+                $endDate.datepicker('setStartDate', $startDate.datepicker('getDate'));
+            });
+
+            $endDate.on('changeDate', function() {
+                const startDate = $startDate.datepicker('getDate');
+                const endDate = $endDate.datepicker('getDate');
+
+                if (startDate && endDate < startDate) {
+                    $endDate.datepicker('clearDates');
+                    window.alert('End date cannot be earlier than start date.');
+                }
+            });
+
             tbldata = $("#tbl-datatable").DataTable({
                 processing: true,
                 serverSide: true,
+                searching: false,
                 ajax: {
                     url: "/time/approval/datatable",
                     type: "GET",
                     data: function(data) {
                         data.status = $('#filter-status').val();
-                        data.branch = $('#filter-branch').val();
-                        data.organization = $('#filter-organization').val();
-                        data.level = $('#filter-level').val();
-                        data.position = $('#filter-position').val();
+                        data.requester_name = $('#filter-requester-name').val();
+                        data.timeoff_id = $('#filter-timeoff').val();
+                        data.start_date = $('#filter-start-date').val();
+                        data.end_date = $('#filter-end-date').val();
+                        data.branch = $('#filter-branch').val() || [];
+                        data.organization = $('#filter-organization').val() || [];
+                        data.level = $('#filter-level').val() || [];
+                        data.position = $('#filter-position').val() || [];
                     }
                 },
                 pageLength: 25,
@@ -290,10 +357,15 @@
                 ],
             });
 
-            $('#filter-status, #filter-branch, #filter-organization, #filter-level, #filter-position').on('change',
-                function() {
-                    tbldata.ajax.reload();
-                });
+            $('#filter-status, #filter-timeoff, #filter-start-date, #filter-end-date, #filter-branch, #filter-organization, #filter-level, #filter-position')
+                .on('change',
+                    function() {
+                        tbldata.ajax.reload();
+                    });
+
+            $('#filter-requester-name').on('input', function() {
+                tbldata.ajax.reload();
+            });
         });
 
         $(document).on('click', '.btn-timeline', function() {
@@ -414,24 +486,24 @@
             return `
                 <div class="timeline">
                     ${history.map((item, index) => `
-                                                                                                                                                            <div class="timeline-item ${index === 0 ? 'active' : ''}">
-                                                                                                                                                                <div class="timeline-marker bg-primary"></div>
-                                                                                                                                                                <div class="timeline-content">
-                                                                                                                                                                    <div class="d-flex justify-content-between align-items-start">
-                                                                                                                                                                        <div>
-                                                                                                                                                                            <h6 class="mb-1">${item.action || 'Action performed'}</h6>
-                                                                                                                                                                            <p class="mb-1 text-muted">${item.note || ''}</p>
-                                                                                                                                                                            <small class="text-muted">
-                                                                                                                                                                                By: ${item.approver?.personal?.fullname || 'System'}
-                                                                                                                                                                            </small>
-                                                                                                                                                                        </div>
-                                                                                                                                                                        <small class="text-muted">
-                                                                                                                                                                            ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
-                                                                                                                                                                        </small>
-                                                                                                                                                                    </div>
-                                                                                                                                                                </div>
-                                                                                                                                                            </div>
-                                                                                                                                                        `).join('')}
+                                                                                                                                                                                    <div class="timeline-item ${index === 0 ? 'active' : ''}">
+                                                                                                                                                                                        <div class="timeline-marker bg-primary"></div>
+                                                                                                                                                                                        <div class="timeline-content">
+                                                                                                                                                                                            <div class="d-flex justify-content-between align-items-start">
+                                                                                                                                                                                                <div>
+                                                                                                                                                                                                    <h6 class="mb-1">${item.action || 'Action performed'}</h6>
+                                                                                                                                                                                                    <p class="mb-1 text-muted">${item.note || ''}</p>
+                                                                                                                                                                                                    <small class="text-muted">
+                                                                                                                                                                                                        By: ${item.approver?.personal?.fullname || 'System'}
+                                                                                                                                                                                                    </small>
+                                                                                                                                                                                                </div>
+                                                                                                                                                                                                <small class="text-muted">
+                                                                                                                                                                                                    ${moment(item.created_at).format('DD MMM YYYY HH:mm')}
+                                                                                                                                                                                                </small>
+                                                                                                                                                                                            </div>
+                                                                                                                                                                                        </div>
+                                                                                                                                                                                    </div>
+                                                                                                                                                                                `).join('')}
                 </div>
             `;
         }
