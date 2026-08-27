@@ -61,7 +61,7 @@ class AuthImplement implements AuthService
 
             return response()->json([
                 'status' => 'success',
-                'user' => User::where('id', $user->id)->first(),
+                'user' => User::with('roles')->where('id', $user->id)->first(),
                 'authorization' => [
                     'token' => 'bearer ' . $token,
                     'type' => 'bearer',

@@ -28,7 +28,7 @@ class EmployeeImplement implements EmployeeService
         $perPage = (int) ($request->input('perpage', $request->input('per_page', 10)));
         $perPage = max(1, min($perPage, 100));
 
-        $query = Employee::with(['user', 'personal', 'employment', 'activeSchedule']);
+        $query = Employee::with(['user.roles', 'personal', 'employment', 'activeSchedule']);
 
         $isActive = $request->input('is_active');
         $includeInactive = filter_var($request->input('include_inactive', false), FILTER_VALIDATE_BOOLEAN);
