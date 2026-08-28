@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Services\AcademicYearService;
+use App\Services\AdmissionService;
 use App\Services\ApprovalRequestService;
 use App\Services\Implement\AcademicYearImplement;
+use App\Services\Implement\AdmissionImplement;
 use App\Services\Implement\ApprovalRequestImplement;
 use App\Services\Implement\LeaveAllocationImplement;
 use App\Services\Implement\RoleImplement;
@@ -29,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
         AcademicYearService::class => AcademicYearImplement::class,
         RoleService::class => RoleImplement::class,
         LeaveAllocationService::class => LeaveAllocationImplement::class,
+        AdmissionService::class => AdmissionImplement::class,
     ];
 
     public function register()

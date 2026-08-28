@@ -28,6 +28,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\KpiTemplateController;
 use App\Http\Controllers\EmployeeKpiController;
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\AdmissionController;
 use App\Http\Controllers\AnnouncementCategoryController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\LeaveAllocationController;
@@ -259,6 +260,15 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('monitoring/target/{id}', [\App\Http\Controllers\LessonPlanMonitoringController::class, 'showTarget'])->name('employee.lesson-plan.monitoring.show');
             Route::post('monitoring/target/{id}/print', [\App\Http\Controllers\LessonPlanMonitoringController::class, 'printTarget'])->name('employee.lesson-plan.monitoring.print');
             Route::get('monitoring/target/{id}/subject/{subject_id}', [\App\Http\Controllers\LessonPlanMonitoringController::class, 'showSubject'])->name('employee.lesson-plan.monitoring.subject');
+        });
+        Route::group(['prefix' => 'admission'], function () {
+            Route::get('school-visit', [AdmissionController::class, 'index'])->name('admission.school-visit');
+            Route::get('enrolment', [AdmissionController::class, 'index'])->name('admission.enrolment');
+            Route::get('observation', [AdmissionController::class, 'index'])->name('admission.observation');
+            Route::get('academic-year', [AdmissionController::class, 'academicYear'])->name('admission.academic-year');
+            Route::get('branch', [AdmissionController::class, 'branch'])->name('admission.branch');
+            Route::get('level/branch/{branchId}', [AdmissionController::class, 'levelByBranch'])->name('admission.level.branch');
+            Route::get('grade/level/{levelId}', [AdmissionController::class, 'gradeByLevel'])->name('admission.grade.level');
         });
 
         Route::group(['prefix' => 'assessment'], function () {

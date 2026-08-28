@@ -166,7 +166,6 @@
                                         @endif
                                     </ul>
                                 </li>
-
                                 @if ($isAdmin || $isRole3)
                                     <li class={{ Request::is('admission*') ? 'active' : '' }}><a><i
                                                 class="fa fa-money"></i>
@@ -176,7 +175,7 @@
                                             <li><a>Activities<span class="fa fa-chevron-down"></span></a>
                                                 <ul class="nav child_menu">
                                                     <li><a href="/school-visit">School Visit</a></li>
-                                                    <li><a href="/enrolment">Enrolment</a></li>
+                                                    <li><a href="/admission/enrolment">Enrolment</a></li>
                                                     <li><a href="/observation">Observation</a></li>
                                                 </ul>
                                             </li>
