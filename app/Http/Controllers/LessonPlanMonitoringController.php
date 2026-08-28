@@ -250,4 +250,233 @@ class LessonPlanMonitoringController extends Controller
 
         return view('employee.lesson_plan.monitoring.subject', compact('title', 'target', 'subject', 'details'));
     }
+
+    public function notifyTarget(Request $request, $id)
+    {
+        $employeeId = auth()->user()->employee->id ?? null;
+
+        if (!$employeeId) {
+            return redirect()->back()->with('error', 'Employee record not found.');
+        }
+
+        $target = LessonPlanTarget::with('months')->findOrFail($id);
+
+        $monitorRoles = SubjectCategoryMonitor::where('employee_id', $employeeId)->get();
+        if ($monitorRoles->isEmpty()) {
+            return redirect()->back()->with('error', 'You do not have access to monitor lesson plans.');
+        }
+
+        $monitoredCategoryIds = $monitorRoles->pluck('subject_category_id')->toArray();
+        $selectedCategories = $request->input('category_ids', []);
+        
+        if (!empty($selectedCategories)) {
+            $monitoredCategoryIds = array_intersect($monitoredCategoryIds, $selectedCategories);
+        }
+
+        if (empty($monitoredCategoryIds)) {
+            return redirect()->back()->with('error', 'No categories selected to notify.');
+        }
+
+        $whatsappNumbersInput = $request->input('whatsapp_numbers');
+        if (empty($whatsappNumbersInput)) {
+            return redirect()->back()->with('error', 'Please provide at least one WhatsApp number.');
+        }
+
+        $rawNumbers = array_filter(array_map('trim', explode(',', $whatsappNumbersInput)));
+        $validNumbers = [];
+        foreach ($rawNumbers as $num) {
+            $num = preg_replace('/[^0-9]/', '', $num);
+            if (substr($num, 0, 2) === '62') {
+                $validNumbers[] = $num;
+            } elseif (substr($num, 0, 1) === '0') {
+                $validNumbers[] = '62' . substr($num, 1);
+            }
+        }
+
+        if (empty($validNumbers)) {
+            return redirect()->back()->with('error', 'No valid Indonesian WhatsApp numbers found (must start with 62 or 0).');
+        }
+
+        $employeeSubjects = \App\Models\EmployeeSubject::with(['employee.user', 'subject.subjectCategory', 'schoolClass'])
+            ->whereHas('subject', function($q) use ($monitoredCategoryIds) {
+                $q->whereIn('subject_category_id', $monitoredCategoryIds);
+            })
+            ->get();
+
+        $submissions = LessonPlanSubmission::with(['lessonPlanTargetMonth'])
+            ->whereHas('lessonPlanTargetMonth', function($q) use ($id) {
+                $q->where('lesson_plan_target_id', $id);
+            })
+            ->whereIn('employee_subject_id', $employeeSubjects->pluck('id'))
+            ->get();
+
+        $expectedSubmissionsPerES = $target->months->sum(function($month) {
+            return $month->has_5_weeks ? 5 : 4;
+        });
+
+        $teachersNotAchieved = [];
+        $approversPending = [];
+
+        $subjectIds = $employeeSubjects->pluck('subject_id')->unique();
+        $classIds = $employeeSubjects->pluck('school_class_id')->unique()->filter();
+        
+        $approversQuery = \App\Models\SubjectCategoryApprover::with('employee.user')
+            ->whereIn('subject_id', $subjectIds);
+            
+        if ($classIds->isNotEmpty()) {
+            $approversQuery->where(function($q) use ($classIds) {
+                $q->whereIn('school_class_id', $classIds)
+                  ->orWhereNull('school_class_id');
+            });
+        }
+        $approvers = $approversQuery->get();
+
+        foreach ($employeeSubjects as $es) {
+            $teacherName = $es->employee->user->name ?? 'Unknown Teacher';
+            $subjectName = $es->subject->name ?? 'Unknown Subject';
+            $className = $es->schoolClass->name ?? '';
+            $catName = $es->subject->subjectCategory->name ?? 'Unknown Category';
+            $subjectDisplay = $subjectName . ' (' . $className . ')';
+
+            $esSubmissions = $submissions->where('employee_subject_id', $es->id);
+            
+            $approvedCount = $esSubmissions->where('status', 'approved')->count();
+            $submittedCount = $esSubmissions->where('status', 'submitted')->count();
+            $revisionCount = $esSubmissions->where('status', 'need_revision')->count();
+            
+            $missingCount = $expectedSubmissionsPerES - ($approvedCount + $submittedCount + $revisionCount);
+            if ($missingCount < 0) $missingCount = 0;
+
+            if ($missingCount > 0 || $revisionCount > 0) {
+                if (!isset($teachersNotAchieved[$catName])) {
+                    $teachersNotAchieved[$catName] = [];
+                }
+                if (!isset($teachersNotAchieved[$catName][$teacherName])) {
+                    $teachersNotAchieved[$catName][$teacherName] = [];
+                }
+                $details = [];
+                if ($missingCount > 0) $details[] = "Not Submitted: $missingCount";
+                if ($revisionCount > 0) $details[] = "Need Revision: $revisionCount";
+                
+                $teachersNotAchieved[$catName][$teacherName][] = $subjectDisplay . " - " . implode(', ', $details);
+            }
+
+            foreach ($esSubmissions->where('status', 'submitted') as $sub) {
+                $level = $sub->current_approval_level;
+                $approver = $approvers->where('subject_id', $es->subject_id)
+                                      ->where('school_class_id', $es->school_class_id)
+                                      ->where('level', $level)
+                                      ->first();
+                
+                // Fallback to null school_class_id if exact match not found
+                if (!$approver) {
+                    $approver = $approvers->where('subject_id', $es->subject_id)
+                                          ->where('school_class_id', null)
+                                          ->where('level', $level)
+                                          ->first();
+                }
+                
+                if ($approver && $approver->employee && $approver->employee->user) {
+                    $approverName = $approver->employee->user->name;
+                    $monthName = $sub->lessonPlanTargetMonth->month_name ?? '';
+                    $weekName = $sub->week_number;
+                    
+                    if (!isset($approversPending[$catName])) {
+                        $approversPending[$catName] = [];
+                    }
+                    if (!isset($approversPending[$catName][$approverName])) {
+                        $approversPending[$catName][$approverName] = [];
+                    }
+                    
+                    $approversPending[$catName][$approverName][] = "Teacher: $teacherName, Subject: $subjectDisplay, Month: $monthName, Week: $weekName";
+                }
+            }
+        }
+
+        $messageText = "*Lesson Plan Monitoring Report*\n";
+        $messageText .= "Target: " . $target->title . "\n\n";
+        
+        $messageText .= "*Teachers Not Achieved (Revision / Not Submitted):*\n";
+        if (empty($teachersNotAchieved)) {
+            $messageText .= "- All achieved.\n";
+        } else {
+            foreach ($teachersNotAchieved as $catName => $teachers) {
+                $messageText .= "\n*[{$catName}]*\n";
+                foreach ($teachers as $teacher => $subjects) {
+                    $messageText .= "• *$teacher*\n";
+                    foreach ($subjects as $subj) {
+                        $messageText .= "   - $subj\n";
+                    }
+                }
+            }
+        }
+
+        $messageText .= "\n*Pending Approvals (Submitted but not reviewed):*\n";
+        if (empty($approversPending)) {
+            $messageText .= "- No pending approvals.\n";
+        } else {
+            foreach ($approversPending as $catName => $approversList) {
+                $messageText .= "\n*[{$catName}]*\n";
+                foreach ($approversList as $approver => $items) {
+                    $messageText .= "• *$approver*\n";
+                    foreach ($items as $item) {
+                        $messageText .= "   - $item\n";
+                    }
+                }
+            }
+        }
+
+        $maxLength = 5000;
+        $messages = [];
+        
+        if (strlen($messageText) > $maxLength) {
+            $lines = explode("\n", $messageText);
+            $currentMessage = "";
+            $part = 1;
+            foreach ($lines as $line) {
+                if (strlen($currentMessage) + strlen($line) + 1 > $maxLength) {
+                    $messages[] = $currentMessage . "\n_(Continued in next message)_";
+                    $part++;
+                    $currentMessage = "*Lesson Plan Monitoring Report (Part $part)*\n" . $line . "\n";
+                } else {
+                    $currentMessage .= $line . "\n";
+                }
+            }
+            if (!empty(trim($currentMessage))) {
+                $messages[] = $currentMessage;
+            }
+        } else {
+            $messages[] = $messageText;
+        }
+
+        foreach ($validNumbers as $targetNumber) {
+            foreach ($messages as $msg) {
+                $data = [
+                    'api_key' => '7bd77f56d1e7fc38a07739594d0b4b7c0f0e594c',
+                    'sender'  => '325293',
+                    'number'  => $targetNumber,
+                    'message' => $msg
+                ];
+
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                  CURLOPT_URL => "https://mhisnetshield.us/apiv2/send-message.php",
+                  CURLOPT_RETURNTRANSFER => true,
+                  CURLOPT_ENCODING => "",
+                  CURLOPT_MAXREDIRS => 10,
+                  CURLOPT_TIMEOUT => 0,
+                  CURLOPT_FOLLOWLOCATION => true,
+                  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                  CURLOPT_CUSTOMREQUEST => "POST",
+                  CURLOPT_POSTFIELDS => json_encode($data)
+                ));
+
+                $response = curl_exec($curl);
+                curl_close($curl);
+            }
+        }
+
+        return redirect()->back()->with('success', 'WhatsApp Notification sent successfully!');
+    }
 }
+
