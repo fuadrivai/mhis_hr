@@ -34,4 +34,9 @@ return [
         'url' => env('FACERECOGNITION_API_URL'),
     ],
 
+    'admission' => [
+        'url' => env('ADMISSION_API_URL'),
+        'service_token' => env('ADMISSION_SERVICE_TOKEN'),
+    ],
+
 ];
