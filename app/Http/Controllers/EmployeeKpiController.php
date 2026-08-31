@@ -129,6 +129,7 @@ class EmployeeKpiController extends Controller
 
         // Generate JSON Payload
         $payload = [
+            "creator_email" => auth()->user()->email ?? null,
             "employee_email" => $employee->personal->email,
             "employee_id" => $employee->employment->employee_id ?? $employee->id,
             "employee_name" => $employee->personal->fullname,
@@ -277,6 +278,7 @@ class EmployeeKpiController extends Controller
 
         // Generate JSON Payload
         $payload = [
+            "creator_email" => auth()->user()->email ?? null,
             "employee_email" => $employee->personal->email,
             "employee_id" => $employee->employment->employee_id ?? $employee->id,
             "employee_name" => $employee->personal->fullname,
