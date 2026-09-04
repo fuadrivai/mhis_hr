@@ -2,7 +2,12 @@ $(document).ajaxStop($.unblockUI);
 $(document).ready(function () {
     $(".select2").select2({});
     $(".select2").on("select2:open", function () {
-        $("input.select2-search__field")[0].focus();
+        const select2 = $(this).data("select2");
+        const $search = select2.selection.$search || select2.dropdown.$search;
+
+        if ($search && $search.length) {
+            $search[0].focus();
+        }
     });
 
     $(".number2").on("keyup", function (event) {
