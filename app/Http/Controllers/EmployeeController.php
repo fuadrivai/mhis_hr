@@ -549,10 +549,6 @@ class EmployeeController extends Controller
 
     public function kpiMonitoring(Request $request)
     {
-        if (!auth()->user()->hasRole('admin')) {
-            abort(403, 'Unauthorized action.');
-        }
-
         $activeYear = \App\Models\AcademicYear::where('is_active', true)->first();
         
         $query = Employee::select('employees.*')->with(['user', 'personal', 'employment', 'kpis' => function($q) use ($activeYear) {
@@ -564,7 +560,19 @@ class EmployeeController extends Controller
             'asc'
         );
 
-
+        $user = auth()->user();
+        if ($user && $user->roles->contains('id', 3)) {
+            if ($user->employee && $user->employee->employment) {
+                $branchId = $user->employee->employment->branch_id;
+                $orgId = $user->employee->employment->organization_id;
+                $query->whereHas('employment', function ($q) use ($branchId, $orgId) {
+                    $q->where('branch_id', $branchId)
+                      ->where('organization_id', $orgId);
+                });
+            } else {
+                $query->where('id', 0);
+            }
+        }
 
         if ($request->organization && $request->organization != "all") {
             $query->whereHas('employment', function ($q) use ($request) {
@@ -594,6 +602,22 @@ class EmployeeController extends Controller
             $query->whereHas('employment', function ($q) use ($request) {
                 $q->where('employment_status', $request->status);
             });
+        }
+
+        if ($request->has_kpi && $request->has_kpi != "all") {
+            if ($request->has_kpi == 'yes') {
+                $query->whereHas('kpis', function($q) use ($activeYear) {
+                    if ($activeYear) {
+                        $q->where('academic_year', $activeYear->name);
+                    }
+                });
+            } elseif ($request->has_kpi == 'no') {
+                $query->whereDoesntHave('kpis', function($q) use ($activeYear) {
+                    if ($activeYear) {
+                        $q->where('academic_year', $activeYear->name);
+                    }
+                });
+            }
         }
 
         if ($request->ajax()) {

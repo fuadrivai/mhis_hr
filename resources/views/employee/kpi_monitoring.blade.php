@@ -87,6 +87,16 @@
                             </select>
                         </div>
                     </div>
+                    <div class="col-md-3">
+                        <div class="form-group employee-field">
+                            <label class="employee-field-label" for="">Has KPI</label>
+                            <select name="has_kpi" id="has_kpi" class="select2 form-control">
+                                <option value="all">All</option>
+                                <option value="yes">Yes</option>
+                                <option value="no">No</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -157,6 +167,7 @@
                         d.level = $('#level').val();
                         d.branch = $('#branch').val();
                         d.status = $('#status').val();
+                        d.has_kpi = $('#has_kpi').val();
                     }
                 },
                 columns: [{
@@ -248,7 +259,7 @@
                 tblUser.search(this.value).draw();
             });
 
-            $('#organization, #position, #level, #branch, #status').on('change', function() {
+            $('#organization, #position, #level, #branch, #status, #has_kpi').on('change', function() {
                 tblUser.draw();
             });
 
