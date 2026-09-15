@@ -63,7 +63,7 @@
         </div>
         <div class="">
             <h2>{{ $data->personal->fullname }}</h2>
-            <h6>{{ $data->employment->job_position_name }}</h6>
+            <h6>{{ $data->employment->job_position->name }}</h6>
             @if ($data->employment->status == 1)
                 <h6><span class="badge badge-success">Active Employee</span></h6>
             @else
