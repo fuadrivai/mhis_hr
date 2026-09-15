@@ -14,4 +14,9 @@ class WhatsappChatter extends Model
     {
         return $this->belongsTo(Employee::class);
     }
+
+    public function tags()
+    {
+        return $this->belongsToMany(WhatsappTag::class, 'chatter_whatsapp_tag');
+    }
 }

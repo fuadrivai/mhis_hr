@@ -18,7 +18,8 @@ class WhatsappChatController extends Controller
         }
 
         $title = "WhatsApp Chat";
-        return view('whatsapp.chat', compact('title'));
+        $tags = \App\Models\WhatsappTag::all();
+        return view('whatsapp.chat', compact('title', 'tags'));
     }
 
     public function monitoring()
@@ -35,8 +36,8 @@ class WhatsappChatController extends Controller
 
     public function getContacts()
     {
-        $isWhatsappChatter = \App\Models\WhatsappChatter::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
-        if (!$isWhatsappChatter) {
+        $chatter = \App\Models\WhatsappChatter::with('tags')->where('employee_id', auth()->user()->employee->id ?? 0)->first();
+        if (!$chatter) {
             return response()->json(['status' => false, 'message' => 'Unauthorized']);
         }
 
@@ -50,7 +51,49 @@ class WhatsappChatController extends Controller
             'nomor' => $setting->number
         ]);
 
-        return $response->json();
+        $resJson = $response->json();
+
+        if (isset($resJson['status']) && $resJson['status'] == true && isset($resJson['data'])) {
+            $chatterTagIds = $chatter->is_all_tags ? [] : $chatter->tags->pluck('id')->toArray();
+            $contactTags = \App\Models\WhatsappContactTag::with('tag')->get()->groupBy('contact_number');
+            $contactStates = \App\Models\WhatsappContactState::all()->keyBy('contact_number');
+
+            $filteredData = [];
+            foreach ($resJson['data'] as $contact) {
+                $number = $contact['number'];
+                $ctags = isset($contactTags[$number]) ? $contactTags[$number]->pluck('tag')->toArray() : [];
+                $ctagIds = array_column($ctags, 'id');
+
+                // Filter by chatter tags if not "All"
+                if (!$chatter->is_all_tags) {
+                    if (empty(array_intersect($chatterTagIds, $ctagIds))) {
+                        continue;
+                    }
+                }
+
+                $contact['tags'] = $ctags;
+
+                // Red dot logic: cached in WhatsappContactState
+                $contact['unread'] = false;
+                $contact['check_unread'] = false;
+                
+                if (isset($contact['last_msg_timestamp'])) {
+                    $ts = (string)$contact['last_msg_timestamp'];
+                    $state = $contactStates[$number] ?? null;
+                    
+                    if ($state && $state->api_last_msg_timestamp === $ts) {
+                        $contact['unread'] = (bool)$state->is_unread;
+                    } else {
+                        $contact['check_unread'] = true;
+                    }
+                }
+
+                $filteredData[] = $contact;
+            }
+            $resJson['data'] = $filteredData;
+        }
+
+        return response()->json($resJson);
     }
 
     public function getMessages(Request $request)
@@ -112,12 +155,47 @@ class WhatsappChatController extends Controller
 
         $request->validate([
             'number' => 'required',
-            'message' => 'required'
         ]);
 
         $setting = WhatsappSetting::first();
         if (!$setting) {
             return response()->json(['status' => false, 'message' => 'WhatsApp settings not configured']);
+        }
+
+        if ($request->hasFile('media')) {
+            $file = $request->file('media');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/whatsapp_media'), $filename);
+            
+            $url = asset('uploads/whatsapp_media/' . $filename);
+            $caption = $request->message ?? '';
+            
+            $response = Http::asForm()->post('https://mhisnetshield.us/apiv2/send-media.php', [
+                'api_key' => $setting->api_key,
+                'sender' => $setting->number,
+                'number' => $request->number,
+                'caption' => $caption,
+                'url' => $url,
+                'ex' => strtolower($file->getClientOriginalExtension()),
+                'filename' => $filename
+            ]);
+            
+            $resJson = $response->json();
+            
+            if (isset($resJson['status']) && $resJson['status'] == true) {
+                WhatsappReplyLog::create([
+                    'employee_id' => auth()->user()->employee->id ?? null,
+                    'contact_number' => $request->number,
+                    'message' => '[Media: ' . $filename . '] ' . $caption
+                ]);
+            }
+            
+            return $resJson;
+        }
+
+        // Standard text message
+        if (empty($request->message)) {
+            return response()->json(['status' => false, 'message' => 'Message is required if no media is attached']);
         }
 
         $response = Http::asForm()->post('https://mhisnetshield.us/apiv2/send-message.php', [
@@ -139,5 +217,74 @@ class WhatsappChatController extends Controller
         }
 
         return $resJson;
+    }
+
+    public function setContactTag(Request $request)
+    {
+        $isWhatsappChatter = \App\Models\WhatsappChatter::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
+        if (!$isWhatsappChatter) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized']);
+        }
+
+        $request->validate([
+            'number' => 'required',
+            'tags' => 'array'
+        ]);
+        
+        $tags = $request->input('tags', []);
+        
+        \App\Models\WhatsappContactTag::where('contact_number', $request->number)->delete();
+        foreach ($tags as $tagId) {
+            \App\Models\WhatsappContactTag::create([
+                'contact_number' => $request->number,
+                'whatsapp_tag_id' => $tagId
+            ]);
+        }
+        
+        return response()->json(['status' => true, 'message' => 'Tags updated successfully']);
+    }
+
+    public function checkUnread(Request $request)
+    {
+        $number = $request->input('number');
+        $ts = $request->input('ts');
+        
+        $setting = WhatsappSetting::first();
+        if (!$setting || !$number) return response()->json(['status' => false]);
+        
+        $response = Http::get('https://mhisnetshield.us/apiv2/get_message.php', [
+            'api_key' => $setting->api_key,
+            'nomor' => $setting->number,
+            'm_from' => $number
+        ]);
+        
+        $resJson = $response->json();
+        $unread = false;
+        
+        if (isset($resJson['status']) && $resJson['status'] == true && isset($resJson['data'])) {
+            $messages = $resJson['data'];
+            if (count($messages) > 0) {
+                $lastMsg = end($messages);
+                if (!isset($lastMsg['from_me']) || ($lastMsg['from_me'] !== "true" && $lastMsg['from_me'] !== true)) {
+                    $unread = true;
+                }
+            }
+        }
+        
+        \App\Models\WhatsappContactState::updateOrCreate(
+            ['contact_number' => $number],
+            ['api_last_msg_timestamp' => $ts, 'is_unread' => $unread]
+        );
+        
+        return response()->json(['status' => true, 'unread' => $unread]);
+    }
+
+    public function markRead(Request $request)
+    {
+        $number = $request->input('number');
+        if ($number) {
+            \App\Models\WhatsappContactState::where('contact_number', $number)->update(['is_unread' => false]);
+        }
+        return response()->json(['status' => true]);
     }
 }

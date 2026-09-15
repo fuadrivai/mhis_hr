@@ -112,6 +112,9 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::delete('whatsapp/monitor/{id}', [WhatsappSettingController::class, 'destroyMonitor'])->name('whatsapp.monitor.destroy');
             Route::post('whatsapp/chatter', [WhatsappSettingController::class, 'storeChatter'])->name('whatsapp.chatter.store');
             Route::delete('whatsapp/chatter/{id}', [WhatsappSettingController::class, 'destroyChatter'])->name('whatsapp.chatter.destroy');
+            Route::post('whatsapp/tag', [WhatsappSettingController::class, 'storeTag'])->name('whatsapp.tag.store');
+            Route::put('whatsapp/tag/{id}', [WhatsappSettingController::class, 'updateTag'])->name('whatsapp.tag.update');
+            Route::delete('whatsapp/tag/{id}', [WhatsappSettingController::class, 'destroyTag'])->name('whatsapp.tag.destroy');
             Route::resource('bank', BankController::class);
             Route::resource('religion', ReligionController::class);
             Route::resource('level', JobLevelController::class);
@@ -289,6 +292,9 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('api/contacts', [WhatsappChatController::class, 'getContacts']);
             Route::get('api/messages', [WhatsappChatController::class, 'getMessages']);
             Route::post('api/send', [WhatsappChatController::class, 'sendMessage']);
+            Route::post('api/contacts/tags', [WhatsappChatController::class, 'setContactTag']);
+            Route::get('api/check-unread', [WhatsappChatController::class, 'checkUnread']);
+            Route::post('api/mark-read', [WhatsappChatController::class, 'markRead']);
         });
 
         Route::resource('signature', SignatureController::class);
