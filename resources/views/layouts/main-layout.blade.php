@@ -65,7 +65,15 @@
                                 <?php
                                 $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->roles->contains('id', 1);
                                 $isRole3 = auth()->user()->roles->contains('id', 3);
+                                $isWhatsappChatter = \App\Models\WhatsappChatter::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
+                                $isWhatsappMonitor = \App\Models\WhatsappMonitor::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
                                 ?>
+
+                                @if ($isWhatsappChatter)
+                                    <li class={{ Request::is('whatsapp/chat*') ? 'current-page' : '' }}>
+                                        <a href="{{ route('whatsapp.chat') }}"><i class="fa fa-whatsapp"></i> WhatsApp Chat </a>
+                                    </li>
+                                @endif
 
                                 @if ($isAdmin || $isRole3)
                                     <li class={{ Request::is('announcement*') ? 'active' : '' }}><a><i
@@ -167,6 +175,12 @@
                                     </ul>
                                 </li>
 
+                                @if ($isWhatsappMonitor)
+                                    <li class={{ Request::is('whatsapp/monitoring*') ? 'current-page' : '' }}>
+                                        <a href="{{ route('whatsapp.monitoring') }}"><i class="fa fa-eye"></i> WhatsApp Monitoring </a>
+                                    </li>
+                                @endif
+
                                 {{-- @if ($isAdmin)
                                     <li class={{ Request::is('time*') ? 'active' : '' }}><a><i
                                                 class="fa fa-file-text"></i>
@@ -189,6 +203,7 @@
                                                 <ul class="nav child_menu">
                                                     @if ($isAdmin)
                                                         <li><a href="/setting/branch">Branch</a></li>
+                                                        <li><a href="{{ route('whatsapp.setting.index') }}">WhatsApp Settings</a></li>
                                                         <li><a href="/setting/organization">Organization</a></li>
                                                         <li><a href="/setting/position">Job Position</a></li>
                                                         <li><a href="/setting/level">Job Level</a></li>
