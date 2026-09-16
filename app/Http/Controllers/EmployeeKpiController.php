@@ -53,6 +53,10 @@ class EmployeeKpiController extends Controller
 
     public function store(Request $request, $id)
     {
+        if (auth()->user() && auth()->user()->roles->contains('name', 'User')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $request->validate([
             'managerial_targets' => 'nullable|array',
             'tal_targets' => 'nullable|array',
@@ -195,16 +199,34 @@ class EmployeeKpiController extends Controller
 
     public function edit($kpi_id)
     {
+        if (auth()->user() && auth()->user()->roles->contains('name', 'User')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $kpi = EmployeeKpi::with(['targets.subTargets', 'employee.personal', 'employee.employment.job_position'])->findOrFail($kpi_id);
         $this->checkEmployeeAccess($kpi->employee);
         $title = "Edit Employee KPI";
         $data = $kpi->employee;
         
-        return view('employee.kpi.edit', compact('kpi', 'title', 'data'));
+        $user = auth()->user();
+        $query = KpiTemplate::with('targets.subTargets');
+        if ($user && $user->roles->contains('id', 3)) {
+            $query->where(function($q) use ($user) {
+                $q->where('created_by', $user->id)
+                  ->orWhere('is_public', 1);
+            });
+        }
+        $templates = $query->get();
+        
+        return view('employee.kpi.edit', compact('kpi', 'title', 'data', 'templates'));
     }
 
     public function update(Request $request, $kpi_id)
     {
+        if (auth()->user() && auth()->user()->roles->contains('name', 'User')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $request->validate([
             'managerial_targets' => 'nullable|array',
             'tal_targets' => 'nullable|array',
@@ -284,6 +306,8 @@ class EmployeeKpiController extends Controller
             "employee_name" => $employee->personal->fullname,
             "academic_year" => $kpi->academic_year,
             "reprimand_deduction_percentage" => (float) $kpi->reprimand_deduction_percentage,
+            "managerial_file_url" => $kpi->managerial_file_url,
+            "tal_file_url" => $kpi->tal_file_url,
             "managerial_targets" => [],
             "tal_targets" => []
         ];
@@ -344,6 +368,10 @@ class EmployeeKpiController extends Controller
 
     public function destroy($kpi_id)
     {
+        if (auth()->user() && auth()->user()->roles->contains('name', 'User')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $kpi = EmployeeKpi::with(['targets.subTargets', 'employee.employment'])->findOrFail($kpi_id);
         $this->checkEmployeeAccess($kpi->employee);
         
@@ -504,6 +532,10 @@ class EmployeeKpiController extends Controller
 
     public function saveScore(Request $request, $kpi_id)
     {
+        if (auth()->user() && auth()->user()->roles->contains('name', 'User')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $request->validate([
             'final_score' => 'required|numeric'
         ]);

@@ -19,9 +19,11 @@
                     <li class="nav-item">
                         <a class="nav-link active" id="history-tab" data-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="true">KPI History</a>
                     </li>
+                    @if(!auth()->user()->roles->contains('name', 'User'))
                     <li class="nav-item">
                         <a class="nav-link" id="assign-tab" data-toggle="tab" href="#assign" role="tab" aria-controls="assign" aria-selected="false">Assign New KPI</a>
                     </li>
+                    @endif
                 </ul>
                 <div class="tab-content" id="myTabContent">
                     <div class="tab-pane fade show active" id="history" role="tabpanel" aria-labelledby="history-tab">
@@ -59,12 +61,14 @@
                                     <td>{{ $kpi->created_at->format('Y-m-d H:i') }}</td>
                                     <td>
                                         <a href="{{ route('employee.kpi.calculate', $kpi->id) }}" class="btn btn-info btn-sm"><i class="fa fa-calculator"></i> Calculate</a>
+                                        @if(!auth()->user()->roles->contains('name', 'User'))
                                         <a href="{{ route('employee.kpi.edit', $kpi->id) }}" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i> Edit</a>
                                         <form action="{{ route('employee.kpi.destroy', $kpi->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this KPI?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Delete</button>
                                         </form>
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty
@@ -76,6 +80,7 @@
                         </table>
                     </div>
                     
+                    @if(!auth()->user()->roles->contains('name', 'User'))
                     <div class="tab-pane fade" id="assign" role="tabpanel" aria-labelledby="assign-tab">
                         <form action="{{ route('employee.kpi.store', $data->id) }}" method="POST" class="mt-3">
                             @csrf
@@ -113,6 +118,7 @@
                             <button type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Save & Dispatch to API</button>
                         </form>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

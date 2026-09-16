@@ -26,6 +26,18 @@
                         <label>Academic Year</label>
                         <input type="text" class="form-control" value="{{ $kpi->academic_year }}" readonly>
                     </div>
+                    <div class="form-group">
+                        <label>Use Template (Optional)</label>
+                        <select id="template-selector" class="form-control">
+                            <option value="">-- Custom (No Template) --</option>
+                            @if(isset($templates))
+                                @foreach($templates as $template)
+                                    <option value="{{ $template->id }}">{{ $template->name }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <small class="form-text text-muted">Warning: Selecting a template will override your current targets in the form below.</small>
+                    </div>
 
                     <hr>
                     <h4>Managerial Skills</h4>
@@ -51,6 +63,36 @@
     let mIndex = 0;
     let tIndex = 0;
     const kpiData = @json($kpi);
+    const templatesData = @json($templates ?? []);
+
+    $('#template-selector').on('change', function() {
+        const tplId = $(this).val();
+        $('#managerial-container').empty();
+        $('#tal-container').empty();
+        mIndex = 0;
+        tIndex = 0;
+
+        if(!tplId) {
+            return;
+        }
+
+        const tpl = templatesData.find(t => t.id == tplId);
+        if(tpl) {
+            tpl.targets.forEach(target => {
+                if(target.type === 'managerial') {
+                    const currentIndex = mIndex;
+                    addManagerialTarget(target.name, target.target_score, target.weight);
+                    if(target.sub_targets && target.sub_targets.length > 0) {
+                        target.sub_targets.forEach(sub => {
+                            addManagerialSubTarget(currentIndex, sub.name, sub.target_score, sub.weight);
+                        });
+                    }
+                } else if (target.type === 'tal') {
+                    addTalTarget(target.name, target.target_score, target.weight);
+                }
+            });
+        }
+    });
 
     $(document).ready(function() {
         if(kpiData && kpiData.targets) {

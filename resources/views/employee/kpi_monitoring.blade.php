@@ -107,16 +107,17 @@
                 <h2>KPI Monitoring - Active Academic Year: {{ $activeYear ? $activeYear->name : 'None' }}</h2>
                 <ul class="nav navbar-right panel_toolbox">
                     <li>
-                        <a href="{{ url('/employee') }}" class="btn btn-secondary btn-sm"><i class="fa fa-arrow-left"></i> Back to Employee List</a>
+                        <a href="{{ url('/employee') }}" class="btn btn-secondary btn-sm"><i class="fa fa-arrow-left"></i>
+                            Back to Employee List</a>
                     </li>
                 </ul>
                 <div class="clearfix"></div>
             </div>
             <div class="x_content">
-                @if($errors->any())
+                @if ($errors->any())
                     <div class="alert alert-danger">
                         <ul class="mb-0">
-                            @foreach($errors->all() as $error)
+                            @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
                         </ul>
@@ -124,7 +125,8 @@
                 @endif
                 <div class="row">
                     <div class="col-sm-12">
-                        <table id="tbl-kpi-monitoring" class="table table-striped table-bordered table-sm" style="width: 100%">
+                        <table id="tbl-kpi-monitoring" class="table table-striped table-bordered table-sm"
+                            style="width: 100%">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -156,8 +158,8 @@
                 processing: true,
                 serverSide: true,
                 dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'>>" +
-                     "<'row'<'col-sm-12'tr>>" +
-                     "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                    "<'row'<'col-sm-12'tr>>" +
+                    "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
                 ajax: {
                     url: "{{ route('employee.kpi-monitoring') }}",
                     type: "GET",
@@ -183,15 +185,24 @@
                     },
                     {
                         data: "employment.branch_name",
-                        defaultContent: "--"
+                        defaultContent: "--",
+                        mRender: function(data, type, full) {
+                            return full.employment.branch.name ?? '--';
+                        }
                     },
                     {
                         data: "employment.organization_name",
-                        defaultContent: "--"
+                        defaultContent: "--",
+                        mRender: function(data, type, full) {
+                            return full.employment.organization.name ?? '--';
+                        }
                     },
                     {
                         data: "employment.job_position_name",
-                        defaultContent: "--"
+                        defaultContent: "--",
+                        mRender: function(data, type, full) {
+                            return full.employment.job_position.name ?? '--';
+                        }
                     },
                     {
                         data: "kpis",
@@ -201,7 +212,8 @@
                         orderable: false,
                         mRender: function(data, type, full) {
                             if (data && data.length > 0) {
-                                let score = data[0].final_score !== null ? data[0].final_score : 'N/A';
+                                let score = data[0].final_score !== null ? data[0].final_score :
+                                    'N/A';
                                 let badgeColor = 'secondary';
                                 if (score !== 'N/A') {
                                     if (score >= 90) badgeColor = 'success';
