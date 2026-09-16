@@ -53,6 +53,10 @@ class EmployeeKpiController extends Controller
 
     public function store(Request $request, $id)
     {
+        if (auth()->user() && auth()->user()->roles->contains('name', 'User')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $request->validate([
             'managerial_targets' => 'nullable|array',
             'tal_targets' => 'nullable|array',
@@ -195,6 +199,10 @@ class EmployeeKpiController extends Controller
 
     public function edit($kpi_id)
     {
+        if (auth()->user() && auth()->user()->roles->contains('name', 'User')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $kpi = EmployeeKpi::with(['targets.subTargets', 'employee.personal', 'employee.employment.job_position'])->findOrFail($kpi_id);
         $this->checkEmployeeAccess($kpi->employee);
         $title = "Edit Employee KPI";
@@ -205,6 +213,10 @@ class EmployeeKpiController extends Controller
 
     public function update(Request $request, $kpi_id)
     {
+        if (auth()->user() && auth()->user()->roles->contains('name', 'User')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $request->validate([
             'managerial_targets' => 'nullable|array',
             'tal_targets' => 'nullable|array',
@@ -344,6 +356,10 @@ class EmployeeKpiController extends Controller
 
     public function destroy($kpi_id)
     {
+        if (auth()->user() && auth()->user()->roles->contains('name', 'User')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $kpi = EmployeeKpi::with(['targets.subTargets', 'employee.employment'])->findOrFail($kpi_id);
         $this->checkEmployeeAccess($kpi->employee);
         
@@ -504,6 +520,10 @@ class EmployeeKpiController extends Controller
 
     public function saveScore(Request $request, $kpi_id)
     {
+        if (auth()->user() && auth()->user()->roles->contains('name', 'User')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $request->validate([
             'final_score' => 'required|numeric'
         ]);
