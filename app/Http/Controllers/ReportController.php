@@ -127,8 +127,8 @@ class ReportController extends Controller
     private function reportPeriod(Carbon $month): array
     {
         $cutoff = Cutoff::where('is_active', true)->firstOrFail();
-        $endDate = $month->copy()->day((int) $cutoff->cutoff_day);
-        $startDate = $endDate->copy()->subMonth()->addDay();
+        $endDate = $month->copy()->day(min((int) $cutoff->cutoff_day, $month->daysInMonth));
+        $startDate = $endDate->copy()->subMonthNoOverflow()->addDay();
 
         return [$startDate, $endDate, $cutoff];
     }
@@ -243,8 +243,8 @@ class ReportController extends Controller
             $from = data_get($payload, 'start_date') ?? data_get($payload, 'date');
             $to = data_get($payload, 'end_date') ?? $from;
             if (!$from || !$to) continue;
-            $current = Carbon::parse($from)->startOfDay()->max($start);
-            $last = Carbon::parse($to)->startOfDay()->min($end);
+            $current = Carbon::parse($from)->startOfDay()->max($start->copy());
+            $last = Carbon::parse($to)->startOfDay()->min($end->copy());
             while ($current->lte($last)) {
                 $map[$request->requester_employee_id . '|' . $current->toDateString()] = [
                     'type' => optional($request->type)->name ?? 'Timeoff',

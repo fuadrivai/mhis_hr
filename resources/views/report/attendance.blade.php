@@ -478,12 +478,17 @@
             if (!month) return;
             setMonthlyReportLoading(true);
             $('#monthly-report-content, #monthly-report-empty').addClass('d-none');
-            $.getJSON('{{ route('report.attendance.monthly') }}', {
-                month: month,
-                branch: $('#branch-filter').val(),
-                organization: $('#organization-filter').val(),
-                level: $('#level-filter').val(),
-                position: $('#position-filter').val()
+            $.ajax({
+                url: '{{ route('report.attendance.monthly') }}',
+                data: {
+                    month: month,
+                    branch: $('#branch-filter').val(),
+                    organization: $('#organization-filter').val(),
+                    level: $('#level-filter').val(),
+                    position: $('#position-filter').val()
+                },
+                dataType: 'json',
+                cache: false
             }).done(renderMonthlyReport).fail(function() {
                 sweetAlert('Error', 'Unable to load monthly attendance.', 'error');
             }).always(function() {
@@ -717,12 +722,17 @@
             if (!month) return;
             setExceptionReportLoading(true);
             $('#exception-report-content, #exception-report-empty, #exception-period').addClass('d-none');
-            $.getJSON('{{ route('report.attendance.exception') }}', {
-                month: month,
-                branch: $('#branch-filter').val(),
-                organization: $('#organization-filter').val(),
-                level: $('#level-filter').val(),
-                position: $('#position-filter').val()
+            $.ajax({
+                url: '{{ route('report.attendance.exception') }}',
+                data: {
+                    month: month,
+                    branch: $('#branch-filter').val(),
+                    organization: $('#organization-filter').val(),
+                    level: $('#level-filter').val(),
+                    position: $('#position-filter').val()
+                },
+                dataType: 'json',
+                cache: false
             }).done(renderExceptionReport).fail(function() {
                 sweetAlert('Error', 'Unable to load exception report.', 'error');
             }).always(function() {
