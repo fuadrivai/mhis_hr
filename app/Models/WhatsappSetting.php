@@ -9,4 +9,8 @@ class WhatsappSetting extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+
+    protected $casts = [
+        'working_days' => 'array',
+    ];
 }

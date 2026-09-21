@@ -24,6 +24,28 @@
                         <input type="text" name="number" required="required" class="form-control" value="{{ $setting->number ?? '' }}">
                     </div>
                 </div>
+                <div class="form-group row">
+                    <label class="col-form-label col-md-3 col-sm-3 label-align">Working Hours</label>
+                    <div class="col-md-3 col-sm-3">
+                        <input type="time" name="working_hour_start" class="form-control" value="{{ $setting && $setting->working_hour_start ? \Carbon\Carbon::parse($setting->working_hour_start)->format('H:i') : '' }}" title="Start Time">
+                    </div>
+                    <div class="col-md-3 col-sm-3">
+                        <input type="time" name="working_hour_end" class="form-control" value="{{ $setting && $setting->working_hour_end ? \Carbon\Carbon::parse($setting->working_hour_end)->format('H:i') : '' }}" title="End Time">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-form-label col-md-3 col-sm-3 label-align">Working Days</label>
+                    <div class="col-md-6 col-sm-6 pt-2">
+                        @php $working_days = $setting && is_array($setting->working_days) ? $setting->working_days : []; @endphp
+                        <label class="mr-2"><input type="checkbox" name="working_days[]" value="1" {{ in_array('1', $working_days) ? 'checked' : '' }}> Mon</label>
+                        <label class="mr-2"><input type="checkbox" name="working_days[]" value="2" {{ in_array('2', $working_days) ? 'checked' : '' }}> Tue</label>
+                        <label class="mr-2"><input type="checkbox" name="working_days[]" value="3" {{ in_array('3', $working_days) ? 'checked' : '' }}> Wed</label>
+                        <label class="mr-2"><input type="checkbox" name="working_days[]" value="4" {{ in_array('4', $working_days) ? 'checked' : '' }}> Thu</label>
+                        <label class="mr-2"><input type="checkbox" name="working_days[]" value="5" {{ in_array('5', $working_days) ? 'checked' : '' }}> Fri</label>
+                        <label class="mr-2"><input type="checkbox" name="working_days[]" value="6" {{ in_array('6', $working_days) ? 'checked' : '' }}> Sat</label>
+                        <label class="mr-2"><input type="checkbox" name="working_days[]" value="0" {{ in_array('0', $working_days) ? 'checked' : '' }}> Sun</label>
+                    </div>
+                </div>
                 <div class="ln_solid"></div>
                 <div class="form-group row">
                     <div class="col-md-6 col-sm-6 offset-md-3">

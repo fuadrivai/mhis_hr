@@ -27,13 +27,18 @@ class WhatsappSettingController extends Controller
         $request->validate([
             'api_key' => 'required',
             'number' => 'required',
+            'working_hour_start' => 'nullable|date_format:H:i',
+            'working_hour_end' => 'nullable|date_format:H:i',
+            'working_days' => 'nullable|array',
         ]);
 
+        $data = $request->only('api_key', 'number', 'working_hour_start', 'working_hour_end', 'working_days');
+        
         $setting = WhatsappSetting::first();
         if ($setting) {
-            $setting->update($request->only('api_key', 'number'));
+            $setting->update($data);
         } else {
-            WhatsappSetting::create($request->only('api_key', 'number'));
+            WhatsappSetting::create($data);
         }
 
         return redirect()->back()->with('success', 'WhatsApp Settings updated successfully');
