@@ -411,7 +411,7 @@
                                         <th>Employee</th>
                                         <th>Subject</th>
                                         <th>Class</th>
-                                        <th style="width: 15%;">Action</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -422,8 +422,14 @@
                                                     class="label label-default">{{ $es->subject->subjectCategory->name ?? '' }}</span>
                                             </td>
                                             <td><span class="badge bg-blue">{{ $es->schoolClass->name ?? '' }}</span></td>
-                                            <td>
-                                                <form
+                                            <td class="assignment-actions">
+                                                <button type="button"
+                                                    class="btn btn-primary btn-sm replace-employee-button"
+                                                    data-toggle="modal" data-target="#replaceEmployeeModal"
+                                                    data-replace-url="{{ route('lesson-plan-setting.assignment.employee.update', $es->id) }}">
+                                                    <i class="fa fa-exchange"></i> Replace
+                                                </button>
+                                                <form class="assignment-action-form"
                                                     action="{{ route('lesson-plan-setting.assignment.destroy', $es->id) }}"
                                                     method="POST">
                                                     @csrf @method('DELETE')
@@ -442,6 +448,64 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="replaceEmployeeModal" tabindex="-1" role="dialog"
+        aria-labelledby="replaceEmployeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <form id="replaceEmployeeForm" action="" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="replaceEmployeeModalLabel">Replace Employee</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Select an active employee for this assignment.</p>
+                        <div class="table-responsive">
+                            <table id="replaceEmployeeTable" class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Branch</th>
+                                        <th>Organization</th>
+                                        <th>Level</th>
+                                        <th>Position</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($employees as $employee)
+                                        <tr>
+                                            <td>{{ $employee->user->name ?? 'Unknown User' }}</td>
+                                            <td>{{ $employee->employment->branch->name ?? ($employee->employment->branch_name ?? '-') }}
+                                            </td>
+                                            <td>{{ $employee->employment->organization->name ?? ($employee->employment->organization_name ?? '-') }}
+                                            </td>
+                                            <td>{{ $employee->employment->job_level->name ?? ($employee->employment->job_level_name ?? '-') }}
+                                            </td>
+                                            <td>{{ $employee->employment->job_position->name ?? ($employee->employment->job_position_name ?? '-') }}
+                                            </td>
+                                            <td>
+                                                <button type="submit" name="employee_id" value="{{ $employee->id }}"
+                                                    class="btn btn-success btn-sm">
+                                                    <i class="fa fa-check"></i> Choose
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 @section('content-script')
     <script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
@@ -452,6 +516,21 @@
                 "language": {
                     "emptyTable": "No data available in this section"
                 }
+            });
+
+            var replaceEmployeeTable = $('#replaceEmployeeTable').DataTable({
+                "language": {
+                    "emptyTable": "No active employees available"
+                },
+                "pageLength": 10,
+                "lengthMenu": [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
+                ]
+            });
+
+            $('#replaceEmployeeModal').on('shown.bs.modal', function() {
+                replaceEmployeeTable.columns.adjust();
             });
 
             // Remember active tab on reload
@@ -495,6 +574,11 @@
 
             setupSubjectFilter('approver_category_id', 'approver_subject_id');
             setupSubjectFilter('assignment_category_id', 'assignment_subject_id');
+
+            $('#replaceEmployeeModal').on('show.bs.modal', function(event) {
+                var replaceButton = $(event.relatedTarget);
+                $('#replaceEmployeeForm').attr('action', replaceButton.data('replace-url'));
+            });
         });
     </script>
 @endsection

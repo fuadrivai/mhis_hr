@@ -22,7 +22,11 @@ class LessonPlanSettingController extends Controller
         $approvers = SubjectCategoryApprover::with(['subject', 'employee', 'schoolClass'])->get();
         $monitors = SubjectCategoryMonitor::with(['subjectCategory', 'employee'])->get();
         $employeeSubjects = EmployeeSubject::with(['employee', 'subject', 'schoolClass'])->get();
-        $employees = Employee::with('user')->get();
+        $employees = Employee::with(['user', 'employment.branch', 'employment.organization', 'employment.job_level', 'employment.job_position'])
+            ->whereHas('employment', function ($query) {
+                $query->where('status', true);
+            })
+            ->get();
 
         return view('settings.lesson_plan.index', compact(
             'title', 'classes', 'categories', 'subjects', 'approvers', 'monitors', 'employeeSubjects', 'employees'
@@ -101,6 +105,28 @@ class LessonPlanSettingController extends Controller
     {
         EmployeeSubject::findOrFail($id)->delete();
         return redirect()->back()->with('success', 'Assignment deleted');
+    }
+
+    public function updateAssignmentEmployee(Request $request, $id)
+    {
+        $request->validate([
+            'employee_id' => [
+                'required',
+                'exists:employees,id',
+                function ($attribute, $value, $fail) {
+                    if (!Employee::whereKey($value)->whereHas('employment', function ($query) {
+                        $query->where('status', true);
+                    })->exists()) {
+                        $fail('The selected employee is not active.');
+                    }
+                },
+            ],
+        ]);
+
+        $assignment = EmployeeSubject::findOrFail($id);
+        $assignment->update(['employee_id' => $request->employee_id]);
+
+        return redirect()->back()->with('success', 'Assignment employee replaced successfully');
     }
 
     // --- Monitor ---

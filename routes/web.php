@@ -155,6 +155,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('lesson-plan/monitor', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeMonitor'])->name('lesson-plan-setting.monitor.store');
             Route::delete('lesson-plan/monitor/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyMonitor'])->name('lesson-plan-setting.monitor.destroy');
             Route::post('lesson-plan/assignment', [\App\Http\Controllers\LessonPlanSettingController::class, 'storeAssignment'])->name('lesson-plan-setting.assignment.store');
+            Route::post('lesson-plan/assignment/{id}/employee', [\App\Http\Controllers\LessonPlanSettingController::class, 'updateAssignmentEmployee'])->name('lesson-plan-setting.assignment.employee.update');
             Route::delete('lesson-plan/assignment/{id}', [\App\Http\Controllers\LessonPlanSettingController::class, 'destroyAssignment'])->name('lesson-plan-setting.assignment.destroy');
             
             // Assessment Settings
