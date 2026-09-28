@@ -39,8 +39,10 @@
             <div class="chat-container">
                 <div class="contact-list-container">
                     <div class="contact-filter">
-                        <select id="tagFilter" class="form-control">
-                            <option value="">All Tags</option>
+                        <select id="accountFilter" class="form-control mb-2">
+                            <option value="">All Sender Numbers</option>
+                        </select>
+                        <select id="tagFilter" class="form-control select2" multiple data-placeholder="Filter by Tags">
                             @foreach($tags as $tag)
                                 <option value="{{ $tag->id }}">{{ $tag->name }}</option>
                             @endforeach
@@ -111,16 +113,19 @@
 @section('content-script')
 <script>
     let currentContact = null;
+    let currentAccount = null;
     let allContacts = [];
 
     function renderContacts() {
-        let filterTag = $('#tagFilter').val();
+        let filterTags = $('#tagFilter').val();
+        let filterAccount = $('#accountFilter').val();
         let html = '';
         
         let filteredContacts = allContacts.filter(c => {
-            if (!filterTag) return true;
+            if (filterAccount && c.account_number !== filterAccount) return false;
+            if (!filterTags || filterTags.length === 0) return true;
             if (!c.tags) return false;
-            return c.tags.some(t => t.id == filterTag);
+            return c.tags.some(t => filterTags.includes(t.id.toString()));
         });
         
         filteredContacts.forEach(function(contact) {
@@ -147,14 +152,14 @@
             let displayName = contact.name !== 'null' && contact.name ? contact.name : contact.number;
             
             html += `
-                <div class="contact-item" data-number="${contact.number}" data-name="${displayName}" data-tags="${tagIds.join(',')}">
+                <div class="contact-item" data-number="${contact.number}" data-account="${contact.account_number}" data-name="${displayName}" data-tags="${tagIds.join(',')}">
                     <img src="${contact.picture}" alt="DP" onerror="this.src='/images/user.png'">
                     <div class="contact-info">
                         <div class="contact-name">
                             <span>${displayName}</span>
                             ${redDotHtml}
                         </div>
-                        <div class="contact-number">+${contact.number}</div>
+                        <div class="contact-number">+${contact.number} <span class="badge badge-secondary" style="font-size:9px; float:right;">Via: ${contact.account_name || contact.account_number}</span></div>
                         <div>${tagsHtml}</div>
                     </div>
                 </div>
@@ -167,8 +172,8 @@
         
         $('#contactList').html(html);
         
-        if (currentContact) {
-            $(`.contact-item[data-number="${currentContact}"]`).addClass('active');
+        if (currentContact && currentAccount) {
+            $(`.contact-item[data-number="${currentContact}"][data-account="${currentAccount}"]`).addClass('active');
         }
     }
 
@@ -176,6 +181,22 @@
         $.get('/whatsapp/api/contacts', function(res) {
             if (res.status && res.data) {
                 allContacts = res.data;
+                
+                // Populate Account Filter
+                let accHtml = '<option value="">All Sender Numbers</option>';
+                let seenAccounts = [];
+                allContacts.forEach(c => {
+                    if (c.account_number && !seenAccounts.includes(c.account_number)) {
+                        seenAccounts.push(c.account_number);
+                        accHtml += `<option value="${c.account_number}">${c.account_name || c.account_number} (+${c.account_number})</option>`;
+                    }
+                });
+                
+                // Keep selected value
+                let curAccVal = $('#accountFilter').val();
+                $('#accountFilter').html(accHtml);
+                if (curAccVal) $('#accountFilter').val(curAccVal);
+
                 renderContacts();
             } else {
                 $('#contactList').html('<div style="padding:20px; color:red;">' + (res.message || 'Failed to load contacts') + '</div>');
@@ -185,11 +206,12 @@
         });
     }
 
-    function fetchMessages(number, name, tags) {
+    function fetchMessages(number, name, tags, account) {
         currentContact = number;
+        currentAccount = account;
         $('#noChatArea').hide();
         $('#chatArea').show();
-        $('#chatHeaderTitle').text(name);
+        $('#chatHeaderTitle').text(name + ' (via +' + account + ')');
         
         // Prepare tags modal
         $('#tagContactNumber').val(number);
@@ -204,7 +226,7 @@
             number: number
         });
         
-        $.get('/whatsapp/api/messages?contact_number=' + number, function(res) {
+        $.get('/whatsapp/api/messages?contact_number=' + number + '&account_number=' + account, function(res) {
             if (res.status && res.data) {
                 let html = '';
                 res.data.forEach(function(msg) {
@@ -258,6 +280,7 @@
         let formData = new FormData();
         formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
         formData.append('number', currentContact);
+        formData.append('account_number', currentAccount);
         if (text) formData.append('message', text);
         if (file) formData.append('media', file);
         
@@ -274,7 +297,7 @@
                     $('#mediaInput').val('');
                     $('#mediaPreviewContainer').hide();
                     
-                    fetchMessages(currentContact, $('#chatHeaderTitle').text(), $('#contactTagsSelect').val() ? $('#contactTagsSelect').val().join(',') : '');
+                    fetchMessages(currentContact, $('#chatHeaderTitle').text().split(' (')[0], $('#contactTagsSelect').val() ? $('#contactTagsSelect').val().join(',') : '', currentAccount);
                     
                     // Update local timestamp to clear red dot for future fetch if any
                     let contactObj = allContacts.find(c => c.number == currentContact);
@@ -294,16 +317,20 @@
     }
 
     $(document).ready(function() {
+        $('.select2').select2();
         fetchContacts();
         
         $('#tagFilter').change(function() {
+            renderContacts();
+        });
+        $('#accountFilter').change(function() {
             renderContacts();
         });
         
         $(document).on('click', '.contact-item', function() {
             $('.contact-item').removeClass('active');
             $(this).addClass('active');
-            fetchMessages($(this).data('number'), $(this).data('name'), $(this).data('tags').toString());
+            fetchMessages($(this).data('number'), $(this).data('name'), $(this).data('tags').toString(), $(this).data('account'));
         });
         
         $('#sendMessageBtn').click(sendMessage);
