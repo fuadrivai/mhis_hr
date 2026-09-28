@@ -193,7 +193,7 @@
                                     </li>
                                 @endif --}}
 
-                                @if ($isAdmin || $isRole3)
+                                @if ($isAdmin || $isRole3 || $isWhatsappMonitor)
                                     <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i
                                                 class="fa fa-gears"></i>
                                             Settings <span class="fa fa-chevron-down"></span></a>
@@ -203,7 +203,11 @@
                                                 <ul class="nav child_menu">
                                                     @if ($isAdmin)
                                                         <li><a href="/setting/branch">Branch</a></li>
+                                                    @endif
+                                                    @if ($isAdmin || $isWhatsappMonitor)
                                                         <li><a href="{{ route('whatsapp.setting.index') }}">WhatsApp Settings</a></li>
+                                                    @endif
+                                                    @if ($isAdmin)
                                                         <li><a href="/setting/organization">Organization</a></li>
                                                         <li><a href="/setting/position">Job Position</a></li>
                                                         <li><a href="/setting/level">Job Level</a></li>

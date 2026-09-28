@@ -12,18 +12,10 @@
             @endif
             <form action="{{ route('whatsapp.setting.store') }}" method="POST">
                 @csrf
-                <div class="form-group row">
-                    <label class="col-form-label col-md-3 col-sm-3 label-align">API Key <span class="required">*</span></label>
-                    <div class="col-md-6 col-sm-6">
-                        <input type="text" name="api_key" required="required" class="form-control" value="{{ $setting->api_key ?? '' }}">
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label class="col-form-label col-md-3 col-sm-3 label-align">Sender Number <span class="required">*</span></label>
-                    <div class="col-md-6 col-sm-6">
-                        <input type="text" name="number" required="required" class="form-control" value="{{ $setting->number ?? '' }}">
-                    </div>
-                </div>
+                @php
+                    $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->roles->contains('id', 1);
+                @endphp
+
                 <div class="form-group row">
                     <label class="col-form-label col-md-3 col-sm-3 label-align">Working Hours</label>
                     <div class="col-md-3 col-sm-3">
@@ -55,6 +47,69 @@
             </form>
         </div>
     </div>
+
+    @if($isAdmin)
+    <div class="x_panel">
+        <div class="x_title">
+            <h2>WhatsApp Accounts</h2>
+            <div class="clearfix"></div>
+        </div>
+        <div class="x_content">
+            <form action="{{ route('whatsapp.account.store') }}" method="POST">
+                @csrf
+                <div class="form-group row">
+                    <label class="col-form-label col-md-1 col-sm-1 label-align">Name</label>
+                    <div class="col-md-2 col-sm-2">
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Sales">
+                    </div>
+                    <label class="col-form-label col-md-1 col-sm-1 label-align">API Key *</label>
+                    <div class="col-md-3 col-sm-3">
+                        <input type="text" name="api_key" required="required" class="form-control">
+                    </div>
+                    <label class="col-form-label col-md-1 col-sm-1 label-align">Number *</label>
+                    <div class="col-md-3 col-sm-3">
+                        <input type="text" name="number" required="required" class="form-control">
+                    </div>
+                    <div class="col-md-1 col-sm-1">
+                        <button type="submit" class="btn btn-primary">Add</button>
+                    </div>
+                </div>
+            </form>
+
+            <table class="table table-striped mt-4">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>API Key</th>
+                        <th>Number</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($accounts as $account)
+                        <tr>
+                            <td>{{ $account->name }}</td>
+                            <td>{{ substr($account->api_key, 0, 8) }}...</td>
+                            <td>{{ $account->number }}</td>
+                            <td>
+                                <form action="{{ route('whatsapp.account.destroy', $account->id) }}" method="POST" onsubmit="return confirm('Remove account?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    @endforeach
+                    @if($accounts->isEmpty())
+                        <tr>
+                            <td colspan="4" class="text-center">No accounts found.</td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
 
     <div class="x_panel">
         <div class="x_title">
@@ -111,6 +166,7 @@
         </div>
     </div>
 
+    @if($isAdmin)
     <div class="x_panel">
         <div class="x_title">
             <h2>WhatsApp Monitors</h2>
@@ -246,6 +302,7 @@
             </table>
         </div>
     </div>
+    @endif
 </div>
 @endsection
 

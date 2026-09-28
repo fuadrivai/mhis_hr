@@ -108,6 +108,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::group(['prefix' => 'setting'], function () {
             Route::get('whatsapp', [WhatsappSettingController::class, 'index'])->name('whatsapp.setting.index');
             Route::post('whatsapp', [WhatsappSettingController::class, 'store'])->name('whatsapp.setting.store');
+            Route::post('whatsapp/account', [WhatsappSettingController::class, 'storeAccount'])->name('whatsapp.account.store');
+            Route::delete('whatsapp/account/{id}', [WhatsappSettingController::class, 'destroyAccount'])->name('whatsapp.account.destroy');
             Route::post('whatsapp/monitor', [WhatsappSettingController::class, 'storeMonitor'])->name('whatsapp.monitor.store');
             Route::delete('whatsapp/monitor/{id}', [WhatsappSettingController::class, 'destroyMonitor'])->name('whatsapp.monitor.destroy');
             Route::post('whatsapp/chatter', [WhatsappSettingController::class, 'storeChatter'])->name('whatsapp.chatter.store');
