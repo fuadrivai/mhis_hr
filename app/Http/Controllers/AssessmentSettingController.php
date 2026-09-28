@@ -114,6 +114,29 @@ class AssessmentSettingController extends Controller
         \App\Models\AssessmentAssignment::create($request->all());
         return redirect()->back()->with('success', 'Assignment added successfully');
     }
+
+    public function updateAssignmentEmployee(Request $request, $id)
+    {
+        $request->validate([
+            'employee_id' => [
+                'required',
+                'exists:employees,id',
+                function ($attribute, $value, $fail) {
+                    if (!\App\Models\Employee::whereKey($value)->whereHas('employment', function ($query) {
+                        $query->where('status', true);
+                    })->exists()) {
+                        $fail('The selected employee is not active.');
+                    }
+                },
+            ],
+        ]);
+
+        $assignment = \App\Models\AssessmentAssignment::findOrFail($id);
+        $assignment->update(['employee_id' => $request->employee_id]);
+
+        return redirect()->back()->with('success', 'Assignment employee replaced successfully');
+    }
+
     public function destroyAssignment($id)
     {
         \App\Models\AssessmentAssignment::findOrFail($id)->delete();

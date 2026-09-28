@@ -172,6 +172,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('assessment/monitor', [\App\Http\Controllers\AssessmentSettingController::class, 'storeMonitor'])->name('assessment-setting.monitor.store');
             Route::delete('assessment/monitor/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyMonitor'])->name('assessment-setting.monitor.destroy');
             Route::post('assessment/assignment', [\App\Http\Controllers\AssessmentSettingController::class, 'storeAssignment'])->name('assessment-setting.assignment.store');
+            Route::post('assessment/assignment/{id}/employee', [\App\Http\Controllers\AssessmentSettingController::class, 'updateAssignmentEmployee'])->name('assessment-setting.assignment.employee.update');
             Route::delete('assessment/assignment/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyAssignment'])->name('assessment-setting.assignment.destroy');
             
             Route::get('lesson-plan-target', [\App\Http\Controllers\LessonPlanTargetController::class, 'index'])->name('lesson-plan-target.index');
