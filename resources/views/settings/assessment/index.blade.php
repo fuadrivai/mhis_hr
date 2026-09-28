@@ -82,14 +82,16 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="subject_ids[]" class="form-control select2" style="width: 100%;" multiple="multiple" data-placeholder="-- Select Subjects (Optional) --">
+                                        <select name="subject_ids[]" class="form-control select2" style="width: 100%;"
+                                            multiple="multiple" data-placeholder="-- Select Subjects (Optional) --">
                                             @foreach ($subjects as $s)
                                                 <option value="{{ $s->id }}">{{ $s->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <select name="school_class_ids[]" class="form-control select2" style="width: 100%;" multiple="multiple" data-placeholder="-- Select Classrooms (Optional) --">
+                                        <select name="school_class_ids[]" class="form-control select2" style="width: 100%;"
+                                            multiple="multiple" data-placeholder="-- Select Classrooms (Optional) --">
                                             @foreach ($classes as $c)
                                                 <option value="{{ $c->id }}">{{ $c->name }}</option>
                                             @endforeach
@@ -100,7 +102,8 @@
                                             placeholder="Level (1, 2...)" min="1" required>
                                     </div>
                                     <div class="col-md-1 col-sm-1 col-xs-12 form-group">
-                                        <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-plus"></i></button>
+                                        <button type="submit" class="btn btn-primary btn-block"><i
+                                                class="fa fa-plus"></i></button>
                                     </div>
                                 </form>
                             </div>
@@ -122,12 +125,12 @@
                                             </td>
                                             <td><strong>{{ $a->employee->user->name ?? 'Unknown User' }}</strong></td>
                                             <td>
-                                                @foreach($a->subjects as $s)
+                                                @foreach ($a->subjects as $s)
                                                     <span class="badge bg-purple">{{ $s->name }}</span>
                                                 @endforeach
                                             </td>
                                             <td>
-                                                @foreach($a->schoolClasses as $c)
+                                                @foreach ($a->schoolClasses as $c)
                                                     <span class="badge bg-blue">{{ $c->name }}</span>
                                                 @endforeach
                                             </td>
@@ -136,11 +139,12 @@
                                                 <form action="{{ route('assessment-setting.approver.destroy', $a->id) }}"
                                                     method="POST" style="display:inline;">
                                                     @csrf @method('DELETE')
-                                                    <button type="button" class="btn btn-warning btn-sm btn-edit-approver" 
-                                                        data-id="{{ $a->id }}" 
-                                                        data-category="{{ $a->subject_category_id }}" 
-                                                        data-employee="{{ $a->employee_id }}" 
-                                                        data-level="{{ $a->level }}" 
+                                                    <button type="button"
+                                                        class="btn btn-warning btn-sm btn-edit-approver"
+                                                        data-id="{{ $a->id }}"
+                                                        data-category="{{ $a->subject_category_id }}"
+                                                        data-employee="{{ $a->employee_id }}"
+                                                        data-level="{{ $a->level }}"
                                                         data-classes="{{ json_encode($a->schoolClasses->pluck('id')) }}"
                                                         data-subjects="{{ json_encode($a->subjects->pluck('id')) }}">
                                                         <i class="fa fa-edit"></i>
@@ -218,7 +222,8 @@
                         </div>
 
                         <!-- Employee Assignments -->
-                        <div role="tabpanel" class="tab-pane fade" id="tab_assignments" aria-labelledby="assignments-tab">
+                        <div role="tabpanel" class="tab-pane fade" id="tab_assignments"
+                            aria-labelledby="assignments-tab">
                             <div class="form-section">
                                 <form action="{{ route('assessment-setting.assignment.store') }}" method="POST"
                                     class="row">
@@ -277,6 +282,12 @@
                                             </td>
                                             <td><span class="badge bg-blue">{{ $es->schoolClass->name ?? '' }}</span></td>
                                             <td>
+                                                <button type="button"
+                                                    class="btn btn-primary btn-sm replace-employee-button"
+                                                    data-toggle="modal" data-target="#replaceEmployeeModal"
+                                                    data-replace-url="{{ route('assessment-setting.assignment.employee.update', $es->id) }}">
+                                                    <i class="fa fa-exchange"></i> Replace
+                                                </button>
                                                 <form
                                                     action="{{ route('assessment-setting.assignment.destroy', $es->id) }}"
                                                     method="POST">
@@ -297,21 +308,82 @@
         </div>
     </div>
 
+    <div class="modal fade" id="replaceEmployeeModal" tabindex="-1" role="dialog"
+        aria-labelledby="replaceEmployeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <form id="replaceEmployeeForm" action="" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="replaceEmployeeModalLabel">Replace Employee</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Select an active employee for this assignment.</p>
+                        <div class="table-responsive">
+                            <table id="replaceEmployeeTable" class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Branch</th>
+                                        <th>Organization</th>
+                                        <th>Level</th>
+                                        <th>Position</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($employees as $employee)
+                                        <tr>
+                                            <td>{{ $employee->user->name ?? 'Unknown User' }}</td>
+                                            <td>{{ $employee->employment->branch->name ?? ($employee->employment->branch_name ?? '-') }}
+                                            </td>
+                                            <td>{{ $employee->employment->organization->name ?? ($employee->employment->organization_name ?? '-') }}
+                                            </td>
+                                            <td>{{ $employee->employment->job_level->name ?? ($employee->employment->job_level_name ?? '-') }}
+                                            </td>
+                                            <td>{{ $employee->employment->job_position->name ?? ($employee->employment->job_position_name ?? '-') }}
+                                            </td>
+                                            <td>
+                                                <button type="submit" name="employee_id" value="{{ $employee->id }}"
+                                                    class="btn btn-success btn-sm">
+                                                    <i class="fa fa-check"></i> Choose
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Approver Modal -->
-    <div class="modal fade" id="editApproverModal" tabindex="-1" role="dialog" aria-labelledby="editApproverModalLabel">
+    <div class="modal fade" id="editApproverModal" tabindex="-1" role="dialog"
+        aria-labelledby="editApproverModalLabel">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <form id="editApproverForm" action="" method="POST">
                     @csrf
                     @method('PUT')
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                aria-hidden="true">&times;</span></button>
                         <h4 class="modal-title" id="editApproverModalLabel">Edit Approver</h4>
                     </div>
                     <div class="modal-body">
                         <div class="form-group">
                             <label>Category</label>
-                            <select name="subject_category_id" id="edit_category_id" class="form-control select2" style="width: 100%;" required>
+                            <select name="subject_category_id" id="edit_category_id" class="form-control select2"
+                                style="width: 100%;" required>
                                 <option value="">-- Select Category --</option>
                                 @foreach ($categories as $cat)
                                     <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -320,7 +392,8 @@
                         </div>
                         <div class="form-group">
                             <label>Approver (Employee)</label>
-                            <select name="employee_id" id="edit_employee_id" class="form-control select2" style="width: 100%;" required>
+                            <select name="employee_id" id="edit_employee_id" class="form-control select2"
+                                style="width: 100%;" required>
                                 <option value="">-- Select Approver (Employee) --</option>
                                 @foreach ($employees as $emp)
                                     <option value="{{ $emp->id }}">{{ $emp->user->name ?? 'Unknown User' }}</option>
@@ -329,7 +402,8 @@
                         </div>
                         <div class="form-group">
                             <label>Subjects (Optional)</label>
-                            <select name="subject_ids[]" id="edit_subject_ids" class="form-control select2" style="width: 100%;" multiple="multiple" data-placeholder="-- Select Subjects --">
+                            <select name="subject_ids[]" id="edit_subject_ids" class="form-control select2"
+                                style="width: 100%;" multiple="multiple" data-placeholder="-- Select Subjects --">
                                 @foreach ($subjects as $s)
                                     <option value="{{ $s->id }}">{{ $s->name }}</option>
                                 @endforeach
@@ -337,7 +411,8 @@
                         </div>
                         <div class="form-group">
                             <label>Classrooms (Optional)</label>
-                            <select name="school_class_ids[]" id="edit_school_class_ids" class="form-control select2" style="width: 100%;" multiple="multiple" data-placeholder="-- Select Classrooms --">
+                            <select name="school_class_ids[]" id="edit_school_class_ids" class="form-control select2"
+                                style="width: 100%;" multiple="multiple" data-placeholder="-- Select Classrooms --">
                                 @foreach ($classes as $c)
                                     <option value="{{ $c->id }}">{{ $c->name }}</option>
                                 @endforeach
@@ -345,7 +420,8 @@
                         </div>
                         <div class="form-group">
                             <label>Level</label>
-                            <input type="number" name="level" id="edit_level" class="form-control" placeholder="Level (1, 2...)" min="1" required>
+                            <input type="number" name="level" id="edit_level" class="form-control"
+                                placeholder="Level (1, 2...)" min="1" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -366,6 +442,21 @@
                 "language": {
                     "emptyTable": "No data available in this section"
                 }
+            });
+
+            var replaceEmployeeTable = $('#replaceEmployeeTable').DataTable({
+                "language": {
+                    "emptyTable": "No active employees available"
+                },
+                "pageLength": 10,
+                "lengthMenu": [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
+                ]
+            });
+
+            $('#replaceEmployeeModal').on('shown.bs.modal', function() {
+                replaceEmployeeTable.columns.adjust();
             });
 
             // Remember active tab on reload
@@ -397,6 +488,11 @@
                 $('#edit_subject_ids').val(subjects).trigger('change');
 
                 $('#editApproverModal').modal('show');
+            });
+
+            $('#replaceEmployeeModal').on('show.bs.modal', function(event) {
+                var replaceButton = $(event.relatedTarget);
+                $('#replaceEmployeeForm').attr('action', replaceButton.data('replace-url'));
             });
         });
     </script>
