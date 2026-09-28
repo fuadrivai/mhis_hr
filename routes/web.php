@@ -35,6 +35,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReprimandController;
 use App\Http\Controllers\ReprimandTypeController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\WhatsappSettingController;
+use App\Http\Controllers\WhatsappChatController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -104,6 +106,15 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         
 
         Route::group(['prefix' => 'setting'], function () {
+            Route::get('whatsapp', [WhatsappSettingController::class, 'index'])->name('whatsapp.setting.index');
+            Route::post('whatsapp', [WhatsappSettingController::class, 'store'])->name('whatsapp.setting.store');
+            Route::post('whatsapp/monitor', [WhatsappSettingController::class, 'storeMonitor'])->name('whatsapp.monitor.store');
+            Route::delete('whatsapp/monitor/{id}', [WhatsappSettingController::class, 'destroyMonitor'])->name('whatsapp.monitor.destroy');
+            Route::post('whatsapp/chatter', [WhatsappSettingController::class, 'storeChatter'])->name('whatsapp.chatter.store');
+            Route::delete('whatsapp/chatter/{id}', [WhatsappSettingController::class, 'destroyChatter'])->name('whatsapp.chatter.destroy');
+            Route::post('whatsapp/tag', [WhatsappSettingController::class, 'storeTag'])->name('whatsapp.tag.store');
+            Route::put('whatsapp/tag/{id}', [WhatsappSettingController::class, 'updateTag'])->name('whatsapp.tag.update');
+            Route::delete('whatsapp/tag/{id}', [WhatsappSettingController::class, 'destroyTag'])->name('whatsapp.tag.destroy');
             Route::resource('bank', BankController::class);
             Route::resource('religion', ReligionController::class);
             Route::resource('level', JobLevelController::class);
@@ -274,6 +285,17 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             
             Route::get('approvals', [\App\Http\Controllers\AssessmentApprovalController::class, 'index'])->name('assessment.approvals.index');
             Route::post('approvals/{id}', [\App\Http\Controllers\AssessmentApprovalController::class, 'process'])->name('assessment.approvals.process');
+        });
+
+        Route::group(['prefix' => 'whatsapp'], function () {
+            Route::get('chat', [WhatsappChatController::class, 'index'])->name('whatsapp.chat');
+            Route::get('monitoring', [WhatsappChatController::class, 'monitoring'])->name('whatsapp.monitoring');
+            Route::get('api/contacts', [WhatsappChatController::class, 'getContacts']);
+            Route::get('api/messages', [WhatsappChatController::class, 'getMessages']);
+            Route::post('api/send', [WhatsappChatController::class, 'sendMessage']);
+            Route::post('api/contacts/tags', [WhatsappChatController::class, 'setContactTag']);
+            Route::get('api/check-unread', [WhatsappChatController::class, 'checkUnread']);
+            Route::post('api/mark-read', [WhatsappChatController::class, 'markRead']);
         });
 
         Route::resource('signature', SignatureController::class);
