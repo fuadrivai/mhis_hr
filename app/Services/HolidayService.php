@@ -9,4 +9,5 @@ interface HolidayService
     function post($request);
     function put($holiday, $request);
     function delete($holiday);
+    function reconcileDates(array $dates);
 }

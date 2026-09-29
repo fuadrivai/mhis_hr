@@ -24,4 +24,9 @@ class EmployeeShiftOverride extends Model
     {
         return $this->belongsTo(Shift::class);
     }
+
+    public function holiday()
+    {
+        return $this->belongsTo(Holiday::class);
+    }
 }

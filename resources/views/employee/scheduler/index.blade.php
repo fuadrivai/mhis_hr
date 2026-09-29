@@ -112,7 +112,7 @@
         }
 
         .datepicker-dropdown {
-            z-index: 1065 !important;
+            z-index: 20000 !important;
             min-width: 220px;
         }
 

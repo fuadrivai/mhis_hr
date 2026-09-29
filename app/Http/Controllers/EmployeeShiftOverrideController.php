@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Models\EmployeeShiftOverride;
 use App\Models\Shift;
+use App\Services\HolidayService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,13 @@ use Illuminate\Validation\ValidationException;
 
 class EmployeeShiftOverrideController extends Controller
 {
+    private HolidayService $holidayService;
+
+    public function __construct(HolidayService $holidayService)
+    {
+        $this->holidayService = $holidayService;
+    }
+
     public function create(Request $request)
     {
         $selectedDate = $request->query('date', now()->toDateString());
@@ -60,6 +68,7 @@ class EmployeeShiftOverrideController extends Controller
                     'date' => $validated['date'],
                 ]);
                 $override->shift_id = $validated['shift_id'];
+                $override->holiday_id = null;
                 $override->updated_by = auth()->id();
                 if (!$override->exists) {
                     $override->created_by = auth()->id();
@@ -73,7 +82,11 @@ class EmployeeShiftOverrideController extends Controller
 
     public function destroy(EmployeeShiftOverride $override)
     {
-        $override->delete();
+        DB::transaction(function () use ($override) {
+            $date = $override->date->toDateString();
+            $override->delete();
+            $this->holidayService->reconcileDates([$date]);
+        });
 
         return response()->json([
             'message' => 'Shift override removed successfully.',

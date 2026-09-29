@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Holiday;
+use App\Services\HolidayService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -70,6 +71,7 @@ class GenerateHoliday extends Command
                 $inserted = 0;
                 $updated = 0;
                 $deleted = 0;
+                $affectedDates = array_keys($apiHolidays);
 
                 foreach ($apiHolidays as $date => $attributes) {
                     $holiday = $existingHolidays->get($date);
@@ -94,10 +96,13 @@ class GenerateHoliday extends Command
 
                 foreach ($existingHolidays as $date => $holiday) {
                     if (!array_key_exists($date, $apiHolidays)) {
+                        $affectedDates[] = $date;
                         $holiday->delete();
                         $deleted++;
                     }
                 }
+
+                app(HolidayService::class)->reconcileDates($affectedDates);
 
                 return compact('inserted', 'updated', 'deleted');
             });

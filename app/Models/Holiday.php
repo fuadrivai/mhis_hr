@@ -41,4 +41,9 @@ class Holiday extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+
+    public function employeeShiftOverrides()
+    {
+        return $this->hasMany(EmployeeShiftOverride::class);
+    }
 }
