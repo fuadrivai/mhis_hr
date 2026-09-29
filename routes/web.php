@@ -30,6 +30,7 @@ use App\Http\Controllers\EmployeeKpiController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AnnouncementCategoryController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LeaveAllocationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReprimandController;
@@ -250,6 +251,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
 
             Route::resource('request', ApprovalRequestController::class);
         });
+        Route::resource('setting/holiday', HolidayController::class);
         Route::group(['prefix' => 'report'], function () {
             Route::get('attendance/filter', [ReportController::class, 'filterReport'])->name('report.attendance.filter');
             Route::get('attendance', [ReportController::class, 'attendance'])->name('report.attendance');
@@ -298,6 +300,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('api/mark-read', [WhatsappChatController::class, 'markRead']);
         });
 
+        
         Route::resource('signature', SignatureController::class);
         Route::resource('internal-document', InternalDocumentController::class);
     });
