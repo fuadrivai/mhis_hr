@@ -31,6 +31,7 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AnnouncementCategoryController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\HolidayController;
+use App\Http\Controllers\HourlyTimeOffBalanceController;
 use App\Http\Controllers\LeaveAllocationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReprimandController;
@@ -133,6 +134,14 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('timeoff/assignment', [TimeOffController::class, 'employeeAssignment'])->name('timeoff.employeeAssignment');
             Route::get('timeoff/assignment/{timeoffId}', [TimeOffController::class, 'assignment'])->name('timeoff.assignment');
             Route::resource('timeoff', TimeOffController::class);
+
+            Route::get('time/hourly-time-off', [HourlyTimeOffBalanceController::class, 'index'])->name('setting.hourly-time-off.index');
+            Route::get('time/hourly-time-off/create', [HourlyTimeOffBalanceController::class, 'create'])->name('setting.hourly-time-off.create');
+            Route::post('time/hourly-time-off', [HourlyTimeOffBalanceController::class, 'store'])->name('setting.hourly-time-off.store');
+            Route::get('time/hourly-time-off/{groupId}/balances/{employeeId}', [HourlyTimeOffBalanceController::class, 'employeeBalance'])->name('setting.hourly-time-off.employee-balance');
+            Route::get('time/hourly-time-off/{groupId}/balances', [HourlyTimeOffBalanceController::class, 'show'])->name('setting.hourly-time-off.show');
+            Route::get('time/hourly-time-off/{groupId}/edit', [HourlyTimeOffBalanceController::class, 'edit'])->name('setting.hourly-time-off.edit');
+            Route::put('time/hourly-time-off/{groupId}', [HourlyTimeOffBalanceController::class, 'update'])->name('setting.hourly-time-off.update');
             
             Route::get('leave/allocation/{id}/histories', [LeaveAllocationController::class, 'getLeaveAllocationHistories']);
             Route::resource('leave/allocation', LeaveAllocationController::class);

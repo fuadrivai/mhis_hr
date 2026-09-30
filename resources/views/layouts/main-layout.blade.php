@@ -64,6 +64,7 @@
 
                                 <?php
                                 $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->roles->contains('id', 1);
+                                $isHrd = (bool) optional(auth()->user()->employee)->is_hrd;
                                 $isRole3 = auth()->user()->roles->contains('id', 3);
                                 $isWhatsappChatter = \App\Models\WhatsappChatter::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
                                 $isWhatsappMonitor = \App\Models\WhatsappMonitor::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
@@ -71,7 +72,8 @@
 
                                 @if ($isWhatsappChatter)
                                     <li class={{ Request::is('whatsapp/chat*') ? 'current-page' : '' }}>
-                                        <a href="{{ route('whatsapp.chat') }}"><i class="fa fa-whatsapp"></i> WhatsApp Chat </a>
+                                        <a href="{{ route('whatsapp.chat') }}"><i class="fa fa-whatsapp"></i> WhatsApp
+                                            Chat </a>
                                     </li>
                                 @endif
 
@@ -177,7 +179,8 @@
 
                                 @if ($isWhatsappMonitor)
                                     <li class={{ Request::is('whatsapp/monitoring*') ? 'current-page' : '' }}>
-                                        <a href="{{ route('whatsapp.monitoring') }}"><i class="fa fa-eye"></i> WhatsApp Monitoring </a>
+                                        <a href="{{ route('whatsapp.monitoring') }}"><i class="fa fa-eye"></i> WhatsApp
+                                            Monitoring </a>
                                     </li>
                                 @endif
 
@@ -193,7 +196,7 @@
                                     </li>
                                 @endif --}}
 
-                                @if ($isAdmin || $isRole3 || $isWhatsappMonitor)
+                                @if ($isAdmin || $isHrd || $isRole3 || $isWhatsappMonitor)
                                     <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i
                                                 class="fa fa-gears"></i>
                                             Settings <span class="fa fa-chevron-down"></span></a>
@@ -205,7 +208,8 @@
                                                         <li><a href="/setting/branch">Branch</a></li>
                                                     @endif
                                                     @if ($isAdmin || $isWhatsappMonitor)
-                                                        <li><a href="{{ route('whatsapp.setting.index') }}">WhatsApp Settings</a></li>
+                                                        <li><a href="{{ route('whatsapp.setting.index') }}">WhatsApp
+                                                                Settings</a></li>
                                                     @endif
                                                     @if ($isAdmin)
                                                         <li><a href="/setting/organization">Organization</a></li>
@@ -214,7 +218,9 @@
                                                         <li><a href="/setting/religion">Religion</a></li>
                                                         <li><a href="/setting/reprimand-type">Reprimand Type</a></li>
                                                     @endif
-                                                    <li><a href="/setting/kpi-template">KPI Template</a></li>
+                                                    @if ($isAdmin)
+                                                        <li><a href="/setting/kpi-template">KPI Template</a></li>
+                                                    @endif
                                                     @if ($isAdmin)
                                                         <li><a href="/setting/lesson-plan">Lesson Plan Settings</a>
                                                         </li>
@@ -226,22 +232,28 @@
                                                     @endif
                                                 </ul>
                                             </li>
-                                            @if ($isAdmin)
+                                            @if ($isAdmin || $isHrd)
                                                 <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
                                                             class="fa fa-chevron-down"></span></a>
                                                     <?php
-                                                    $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*') || Request::is('setting/timeoff*') || Request::is('setting/holiday*') || Request::is('setting/location*');
+                                                    $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*') || Request::is('setting/timeoff*') || Request::is('setting/time/hourly-time-off*') || Request::is('setting/holiday*') || Request::is('setting/location*');
                                                     ?>
                                                     <ul style="display: {{ $isBlock ? 'block' : 'none' }}"
                                                         class="nav child_menu">
-                                                        <li><a href="/setting/schedule">Schedule</a></li>
-                                                        <li><a href="/setting/timeoff">Time off</a></li>
-                                                        <li><a href="/setting/holiday">Holiday</a></li>
-                                                        <li><a href="/setting/leave/allocation">Leave Allocation</a>
-                                                        </li>
-                                                        <li><a href="/setting/location">Live Attendance</a></li>
+                                                        @if ($isAdmin)
+                                                            <li><a href="/setting/schedule">Schedule</a></li>
+                                                            <li><a href="/setting/timeoff">Time off</a></li>
+                                                            <li><a href="/setting/holiday">Holiday</a></li>
+                                                            <li><a href="/setting/leave/allocation">Leave
+                                                                    Allocation</a></li>
+                                                            <li><a href="/setting/location">Live Attendance</a></li>
+                                                        @endif
+                                                        <li><a href="{{ route('setting.hourly-time-off.index') }}">Hourly
+                                                                Time Off</a></li>
                                                     </ul>
                                                 </li>
+                                            @endif
+                                            @if ($isAdmin)
                                                 <li><a href="/setting/academic-year">Academic Year</a></li>
                                                 <li><a href="/setting/approval">Approval</a></li>
                                                 <li><a href="/setting/bank">Bank</a></li>

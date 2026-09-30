@@ -28,7 +28,10 @@ class DatabaseSeeder extends Seeder
         //     'password' => '$2y$10$zMzXBaCLSTLnNJnPIYsN6OJHisOlgA/g6LW2kWsYN11Zq4aF2FjDS', // mutiaraharapan
         // ]);
 
-        $this->call([RelationshipSeeder::class]);
-        $this->call([DocumentCategorySeeder::class]);
+        $this->call([
+            RelationshipSeeder::class,
+            DocumentCategorySeeder::class,
+            HourlyTimeOffBalanceSeeder::class,
+        ]);
     }
 }

@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Services\AcademicYearService;
 use App\Services\ApprovalEngine;
 use App\Services\ApprovalRequestService;
+use App\Services\HourlyTimeOffBalanceService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -30,11 +31,17 @@ use function App\Helpers\sendMessage;
 class ApprovalRequestImplement implements ApprovalRequestService{
     private ApprovalEngine $approvalEngine;
     private AcademicYearService $academicYearService;
+    private HourlyTimeOffBalanceService $hourlyTimeOffBalanceService;
 
-    public function __construct(ApprovalEngine $approvalEngine, AcademicYearService $academicYearService)
+    public function __construct(
+        ApprovalEngine $approvalEngine,
+        AcademicYearService $academicYearService,
+        HourlyTimeOffBalanceService $hourlyTimeOffBalanceService
+    )
     {
         $this->approvalEngine = $approvalEngine;
         $this->academicYearService = $academicYearService;
+        $this->hourlyTimeOffBalanceService = $hourlyTimeOffBalanceService;
     }
 
     public function get($with = [])
@@ -160,7 +167,16 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 throw new \Exception('No matching approval rule found for this employee.');
             }
 
-            if ($timeoff->deduct_leave_balance) {
+            if ($timeoff->balance_group_id) {
+                $requestedHours = $this->hourlyTimeOffBalanceService->getRequestedHours($request['dynamic_fields'] ?? []);
+                $this->hourlyTimeOffBalanceService->checkAvailability(
+                    $employee->id,
+                    $timeoff->balance_group_id,
+                    $requestedHours
+                );
+            }
+
+            if ($timeoff->deduct_leave_balance && !$timeoff->balance_group_id) {
                 if (!$activeAcademicYear) {
                     throw new \Exception('No active academic year found for leave balance validation.');
                 }
@@ -515,6 +531,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                     ]);
 
                 $this->restoreLeaveBalance($request);
+                $this->reverseHourlyBalance($request);
                 $this->_sendNotification($request->requester->user_id,
                     [
                         'title' =>
@@ -540,6 +557,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                     ->where('status','pending')
                     ->update(['status' => 'skipped','show_action' => 0]);
                 $this->restoreLeaveBalance($request);
+                $this->reverseHourlyBalance($request);
 
                     $startDate = data_get($request->data->payload ?? [], 'start_date');
                     $endDate = data_get($request->data->payload ?? [], 'end_date')?? $startDate;
@@ -566,6 +584,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                     $request->status = 'approved';
                     $request->show_cancel = 0;
                     $request->save();
+                    $this->consumeHourlyBalance($request);
 
                     $this->_sendNotification($request->requester->user_id,
                         [
@@ -628,38 +647,41 @@ class ApprovalRequestImplement implements ApprovalRequestService{
     }
 
     public function cancel($data){
-        $payload = is_array($data) ? $data : $data->all();
-        $userId = data_get($payload, 'user.id') ?? auth()->id();
-        if (!$userId) {
-            throw new \Exception('User ID is required');
-        }
-        $employee = Employee::where('user_id', $userId)->first();
-        if (!$employee) {
-            throw new \Exception('Employee not found for the given user ID');
-        }
+        return DB::transaction(function () use ($data) {
+            $payload = is_array($data) ? $data : $data->all();
+            $userId = data_get($payload, 'user.id') ?? auth()->id();
+            if (!$userId) {
+                throw new \Exception('User ID is required');
+            }
+            $employee = Employee::where('user_id', $userId)->first();
+            if (!$employee) {
+                throw new \Exception('Employee not found for the given user ID');
+            }
 
-        $requestId = data_get($payload, 'request_id');
-        $note = data_get($payload, 'note');
-        $request = ApprovalRequest::findOrFail($requestId);
+            $requestId = data_get($payload, 'request_id');
+            $note = data_get($payload, 'note');
+            $request = ApprovalRequest::findOrFail($requestId);
 
-        $request->status = 'cancelled';
-        $request->show_cancel = 0;
-        $request->save();
+            $request->status = 'cancelled';
+            $request->show_cancel = 0;
+            $request->save();
 
-        Approval::where('approval_request_id', $request->id)
+            Approval::where('approval_request_id', $request->id)
                 ->whereIn('status', ['pending'])
                 ->update(['status' => 'skipped', 'show_action' => 0]);
 
-        $this->restoreLeaveBalance($request);
+            $this->restoreLeaveBalance($request);
+            $this->reverseHourlyBalance($request);
 
-        ApprovalHistory::create([
-            'approval_request_id' => $request->id,
-            'action' => $request->status,
-            'step_order' => $request->approvals()->max('step_order') + 1,
-            'approver_employee_id' => $employee->id,
-            'note' => "Time off request has been {$request->status}" . ($note ? " with note: {$note}" : ''),
-        ]);
-        return $request;
+            ApprovalHistory::create([
+                'approval_request_id' => $request->id,
+                'action' => $request->status,
+                'step_order' => $request->approvals()->max('step_order') + 1,
+                'approver_employee_id' => $employee->id,
+                'note' => "Time off request has been {$request->status}" . ($note ? " with note: {$note}" : ''),
+            ]);
+            return $request;
+        });
     }
 
     public function put($request)
@@ -697,7 +719,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
 
     private function restoreLeaveBalance(ApprovalRequest $approvalRequest): void
     {
-        if (!$approvalRequest->type->deduct_leave_balance) {
+        if (!$approvalRequest->type->deduct_leave_balance || $approvalRequest->type->balance_group_id) {
             return;
         }
 
@@ -723,6 +745,33 @@ class ApprovalRequestImplement implements ApprovalRequestService{
             'days' => $requestedDays,
             'remark' => "Leave balance restored after request {$approvalRequest->status}.",
         ]);
+    }
+
+    private function consumeHourlyBalance(ApprovalRequest $approvalRequest): void
+    {
+        $approvalRequest->loadMissing(['type.balanceGroup', 'data']);
+        $balanceGroup = $approvalRequest->type->balanceGroup;
+        if (!$balanceGroup) {
+            return;
+        }
+
+        $hours = $this->hourlyTimeOffBalanceService->getRequestedHours($approvalRequest->data->payload ?? []);
+        $this->hourlyTimeOffBalanceService->consume(
+            $approvalRequest->requester_employee_id,
+            $balanceGroup->id,
+            $approvalRequest->id,
+            $approvalRequest->timeoff_id,
+            $hours
+        );
+    }
+
+    private function reverseHourlyBalance(ApprovalRequest $approvalRequest): void
+    {
+        $this->hourlyTimeOffBalanceService->reverse(
+            $approvalRequest->requester_employee_id,
+            $approvalRequest->id,
+            $approvalRequest->timeoff_id
+        );
     }
 
     private function _sendNotification($userId, $data)
