@@ -34,4 +34,8 @@ return [
         'url' => env('FACERECOGNITION_API_URL'),
     ],
 
+    'holiday' => [
+        'url' => env('URL_HOLIDAY'),
+    ],
+
 ];
