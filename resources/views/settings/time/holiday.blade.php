@@ -13,12 +13,12 @@
                         Goverment
                     </a>
                 </li>
-                <li class="nav-item" role="presentation">
+                {{-- <li class="nav-item" role="presentation">
                     <a class="nav-link" id="company-tab" data-toggle="tab" href="#company-content" role="tab"
                         aria-controls="company-content" aria-selected="false">
                         Company
                     </a>
-                </li>
+                </li> --}}
                 <li class="nav-item" role="presentation">
                     <a class="nav-link" id="school-tab" data-toggle="tab" href="#school-content" role="tab"
                         aria-controls="school-content" aria-selected="false">
