@@ -39,440 +39,88 @@
                     </div>
                 @endif
 
-                <div class="" role="tabpanel" data-example-id="togglable-tabs">
+                <div role="tabpanel">
                     <ul id="myTab" class="nav nav-tabs bar_tabs" role="tablist">
                         <li role="presentation" class="active">
                             <a href="#tab_approvers" id="approvers-tab" role="tab" data-toggle="tab"
-                                aria-expanded="true"><i class="fa fa-users"></i> Approvers</a>
+                                data-assessment-tab="approvers" aria-expanded="true"><i class="fa fa-users"></i>
+                                Approvers</a>
                         </li>
                         <li role="presentation">
                             <a href="#tab_monitors" id="monitors-tab" role="tab" data-toggle="tab"
-                                aria-expanded="false"><i class="fa fa-eye"></i> Monitors</a>
+                                data-assessment-tab="monitors" aria-expanded="false"><i class="fa fa-eye"></i> Monitors</a>
                         </li>
                         <li role="presentation">
                             <a href="#tab_assignments" id="assignments-tab" role="tab" data-toggle="tab"
-                                aria-expanded="false"><i class="fa fa-check-square-o"></i> Employee Assignments</a>
+                                data-assessment-tab="assignments" aria-expanded="false"><i class="fa fa-check-square-o"></i>
+                                Employee Assignments</a>
                         </li>
                     </ul>
                     <div id="myTabContent" class="tab-content custom-tab-content">
-                        <!-- Approvers -->
                         <div role="tabpanel" class="tab-pane fade active in" id="tab_approvers"
                             aria-labelledby="approvers-tab">
-                            <div class="form-section">
-                                <form action="{{ route('assessment-setting.approver.store') }}" method="POST"
-                                    class="row">
-                                    @csrf
-                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <select name="subject_category_id" class="form-control select2" style="width: 100%;"
-                                            required>
-                                            <option value="">-- Select Category --</option>
-                                            @foreach ($categories as $cat)
-                                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <select name="employee_id" class="form-control select2" style="width: 100%;"
-                                            required>
-                                            <option value="">-- Select Approver (Employee) --</option>
-                                            @foreach ($employees as $emp)
-                                                <option value="{{ $emp->id }}">{{ $emp->user->name ?? 'Unknown User' }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="subject_ids[]" class="form-control select2" style="width: 100%;"
-                                            multiple="multiple" data-placeholder="-- Select Subjects (Optional) --">
-                                            @foreach ($subjects as $s)
-                                                <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <select name="school_class_ids[]" class="form-control select2" style="width: 100%;"
-                                            multiple="multiple" data-placeholder="-- Select Classrooms (Optional) --">
-                                            @foreach ($classes as $c)
-                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 col-sm-2 col-xs-12 form-group">
-                                        <input type="number" name="level" class="form-control"
-                                            placeholder="Level (1, 2...)" min="1" required>
-                                    </div>
-                                    <div class="col-md-1 col-sm-1 col-xs-12 form-group">
-                                        <button type="submit" class="btn btn-primary btn-block"><i
-                                                class="fa fa-plus"></i></button>
-                                    </div>
-                                </form>
-                            </div>
-                            <table class="table table-striped table-bordered datatable" style="width: 100%">
-                                <thead>
-                                    <tr>
-                                        <th>Category</th>
-                                        <th>Approver</th>
-                                        <th>Subjects</th>
-                                        <th>Classrooms</th>
-                                        <th>Level</th>
-                                        <th style="width: 15%;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($approvers as $a)
-                                        <tr>
-                                            <td><span class="label label-info">{{ $a->subjectCategory->name ?? '' }}</span>
-                                            </td>
-                                            <td><strong>{{ $a->employee->user->name ?? 'Unknown User' }}</strong></td>
-                                            <td>
-                                                @foreach ($a->subjects as $s)
-                                                    <span class="badge bg-purple">{{ $s->name }}</span>
-                                                @endforeach
-                                            </td>
-                                            <td>
-                                                @foreach ($a->schoolClasses as $c)
-                                                    <span class="badge bg-blue">{{ $c->name }}</span>
-                                                @endforeach
-                                            </td>
-                                            <td><span class="badge bg-green">Level {{ $a->level }}</span></td>
-                                            <td>
-                                                <form action="{{ route('assessment-setting.approver.destroy', $a->id) }}"
-                                                    method="POST" style="display:inline;">
-                                                    @csrf @method('DELETE')
-                                                    <button type="button"
-                                                        class="btn btn-warning btn-sm btn-edit-approver"
-                                                        data-id="{{ $a->id }}"
-                                                        data-category="{{ $a->subject_category_id }}"
-                                                        data-employee="{{ $a->employee_id }}"
-                                                        data-level="{{ $a->level }}"
-                                                        data-classes="{{ json_encode($a->schoolClasses->pluck('id')) }}"
-                                                        data-subjects="{{ json_encode($a->subjects->pluck('id')) }}">
-                                                        <i class="fa fa-edit"></i>
-                                                    </button>
-                                                    <button type="submit" class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('Delete this approver?')"><i
-                                                            class="fa fa-trash"></i></button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                            <p><i class="fa fa-spinner fa-spin"></i> Loading approvers...</p>
                         </div>
-
-                        <!-- Monitors -->
-                        <div role="tabpanel" class="tab-pane fade" id="tab_monitors" aria-labelledby="monitors-tab">
-                            <div class="form-section">
-                                <form action="{{ route('assessment-setting.monitor.store') }}" method="POST"
-                                    class="row">
-                                    @csrf
-                                    <div class="col-md-4 col-sm-4 col-xs-12 form-group">
-                                        <select name="subject_category_id" class="form-control select2"
-                                            style="width: 100%;" required>
-                                            <option value="">-- Select Category --</option>
-                                            @foreach ($categories as $cat)
-                                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-5 col-sm-5 col-xs-12 form-group">
-                                        <select name="employee_id" class="form-control select2" style="width: 100%"
-                                            required>
-                                            <option value="">-- Select Monitor (Employee) --</option>
-                                            @foreach ($employees as $emp)
-                                                <option value="{{ $emp->id }}">
-                                                    {{ $emp->user->name ?? 'Unknown User' }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <button type="submit" class="btn btn-primary btn-block"><i
-                                                class="fa fa-plus"></i> Add Monitor</button>
-                                    </div>
-                                </form>
-                            </div>
-                            <table class="table table-striped table-bordered datatable" style="width: 100%">
-                                <thead>
-                                    <tr>
-                                        <th>Category</th>
-                                        <th>Monitor</th>
-                                        <th style="width: 15%;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($monitors as $m)
-                                        <tr>
-                                            <td><span
-                                                    class="label label-info">{{ $m->subjectCategory->name ?? '' }}</span>
-                                            </td>
-                                            <td><strong>{{ $m->employee->user->name ?? 'Unknown User' }}</strong></td>
-                                            <td>
-                                                <form action="{{ route('assessment-setting.monitor.destroy', $m->id) }}"
-                                                    method="POST">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('Delete this monitor?')"><i
-                                                            class="fa fa-trash"></i> Delete</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Employee Assignments -->
-                        <div role="tabpanel" class="tab-pane fade" id="tab_assignments"
-                            aria-labelledby="assignments-tab">
-                            <div class="form-section">
-                                <form action="{{ route('assessment-setting.assignment.store') }}" method="POST"
-                                    class="row">
-                                    @csrf
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="employee_id" class="form-control select2" style="width: 100%;"
-                                            required>
-                                            <option value="">-- Select Employee --</option>
-                                            @foreach ($employees as $emp)
-                                                <option value="{{ $emp->id }}">
-                                                    {{ $emp->user->name ?? 'Unknown User' }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="subject_id" class="form-control select2" style="width: 100%;"
-                                            required>
-                                            <option value="">-- Select Subject --</option>
-                                            @foreach ($subjects as $s)
-                                                <option value="{{ $s->id }}">{{ $s->name }}
-                                                    ({{ $s->subjectCategory->name ?? '' }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <select name="school_class_id" class="form-control select2" style="width: 100%;"
-                                            required>
-                                            <option value="">-- Select Class --</option>
-                                            @foreach ($classes as $c)
-                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 col-sm-3 col-xs-12 form-group">
-                                        <button type="submit" class="btn btn-primary btn-block"><i
-                                                class="fa fa-link"></i> Assign Subject</button>
-                                    </div>
-                                </form>
-                            </div>
-                            <table class="table table-striped table-bordered datatable" style="width: 100%">
-                                <thead>
-                                    <tr>
-                                        <th>Employee</th>
-                                        <th>Subject</th>
-                                        <th>Class</th>
-                                        <th style="width: 15%;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($employeeSubjects as $es)
-                                        <tr>
-                                            <td><strong>{{ $es->employee->user->name ?? 'Unknown User' }}</strong></td>
-                                            <td>{{ $es->subject->name ?? '' }} <span
-                                                    class="label label-default">{{ $es->subject->subjectCategory->name ?? '' }}</span>
-                                            </td>
-                                            <td><span class="badge bg-blue">{{ $es->schoolClass->name ?? '' }}</span></td>
-                                            <td>
-                                                <button type="button"
-                                                    class="btn btn-primary btn-sm replace-employee-button"
-                                                    data-toggle="modal" data-target="#replaceEmployeeModal"
-                                                    data-replace-url="{{ route('assessment-setting.assignment.employee.update', $es->id) }}">
-                                                    <i class="fa fa-exchange"></i> Replace
-                                                </button>
-                                                <form
-                                                    action="{{ route('assessment-setting.assignment.destroy', $es->id) }}"
-                                                    method="POST">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('Delete this assignment?')"><i
-                                                            class="fa fa-trash"></i> Delete</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        <div role="tabpanel" class="tab-pane fade" id="tab_monitors" aria-labelledby="monitors-tab"></div>
+                        <div role="tabpanel" class="tab-pane fade" id="tab_assignments" aria-labelledby="assignments-tab">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="modal fade" id="replaceEmployeeModal" tabindex="-1" role="dialog"
-        aria-labelledby="replaceEmployeeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <form id="replaceEmployeeForm" action="" method="POST">
-                    @csrf
-                    <div class="modal-header">
-                        <h4 class="modal-title" id="replaceEmployeeModalLabel">Replace Employee</h4>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Select an active employee for this assignment.</p>
-                        <div class="table-responsive">
-                            <table id="replaceEmployeeTable" class="table table-striped table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Employee</th>
-                                        <th>Branch</th>
-                                        <th>Organization</th>
-                                        <th>Level</th>
-                                        <th>Position</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($employees as $employee)
-                                        <tr>
-                                            <td>{{ $employee->user->name ?? 'Unknown User' }}</td>
-                                            <td>{{ $employee->employment->branch->name ?? ($employee->employment->branch_name ?? '-') }}
-                                            </td>
-                                            <td>{{ $employee->employment->organization->name ?? ($employee->employment->organization_name ?? '-') }}
-                                            </td>
-                                            <td>{{ $employee->employment->job_level->name ?? ($employee->employment->job_level_name ?? '-') }}
-                                            </td>
-                                            <td>{{ $employee->employment->job_position->name ?? ($employee->employment->job_position_name ?? '-') }}
-                                            </td>
-                                            <td>
-                                                <button type="submit" name="employee_id" value="{{ $employee->id }}"
-                                                    class="btn btn-success btn-sm">
-                                                    <i class="fa fa-check"></i> Choose
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Approver Modal -->
-    <div class="modal fade" id="editApproverModal" tabindex="-1" role="dialog"
-        aria-labelledby="editApproverModalLabel">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <form id="editApproverForm" action="" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                                aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="editApproverModalLabel">Edit Approver</h4>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label>Category</label>
-                            <select name="subject_category_id" id="edit_category_id" class="form-control select2"
-                                style="width: 100%;" required>
-                                <option value="">-- Select Category --</option>
-                                @foreach ($categories as $cat)
-                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Approver (Employee)</label>
-                            <select name="employee_id" id="edit_employee_id" class="form-control select2"
-                                style="width: 100%;" required>
-                                <option value="">-- Select Approver (Employee) --</option>
-                                @foreach ($employees as $emp)
-                                    <option value="{{ $emp->id }}">{{ $emp->user->name ?? 'Unknown User' }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Subjects (Optional)</label>
-                            <select name="subject_ids[]" id="edit_subject_ids" class="form-control select2"
-                                style="width: 100%;" multiple="multiple" data-placeholder="-- Select Subjects --">
-                                @foreach ($subjects as $s)
-                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Classrooms (Optional)</label>
-                            <select name="school_class_ids[]" id="edit_school_class_ids" class="form-control select2"
-                                style="width: 100%;" multiple="multiple" data-placeholder="-- Select Classrooms --">
-                                @foreach ($classes as $c)
-                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Level</label>
-                            <input type="number" name="level" id="edit_level" class="form-control"
-                                placeholder="Level (1, 2...)" min="1" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 @endsection
+
 @section('content-script')
     <script src="/plugins/datatables.net/js/jquery.dataTables.min.js"></script>
     <script src="/plugins/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
     <script>
         $(document).ready(function() {
-            $(".datatable").DataTable({
-                "language": {
-                    "emptyTable": "No data available in this section"
-                }
-            });
+            var tabUrlTemplate = @json(route('assessment-setting.tab', ['tab' => '__assessment_tab__']));
 
-            var replaceEmployeeTable = $('#replaceEmployeeTable').DataTable({
-                "language": {
-                    "emptyTable": "No active employees available"
-                },
-                "pageLength": 10,
-                "lengthMenu": [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, "All"]
-                ]
-            });
+            function loadAssessmentTab(tab) {
+                var $pane = $('#tab_' + tab);
+                $pane.html('<p><i class="fa fa-spinner fa-spin"></i> Loading...</p>');
 
-            $('#replaceEmployeeModal').on('shown.bs.modal', function() {
-                replaceEmployeeTable.columns.adjust();
-            });
+                $.get(tabUrlTemplate.replace('__assessment_tab__', encodeURIComponent(tab)))
+                    .done(function(html) {
+                        $pane.html(html);
+                        $pane.find('.datatable').DataTable({
+                            language: {
+                                emptyTable: 'No data available in this section'
+                            }
+                        });
+                        $pane.find('.select2').select2({
+                            width: '100%'
+                        });
 
-            // Remember active tab on reload
-            $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-                localStorage.setItem('activeTab', $(e.target).attr('href'));
-            });
-
-            var activeTab = localStorage.getItem('activeTab');
-            if (activeTab) {
-                $('#myTab a[href="' + activeTab + '"]').tab('show');
-            } else {
-                // Force Classes as default if no tab is saved
-                $('#myTab a[href="#tab_classes"]').tab('show');
+                        var $replaceTable = $pane.find('#replaceEmployeeTable');
+                        if ($replaceTable.length) {
+                            $replaceTable.DataTable({
+                                language: {
+                                    emptyTable: 'No active employees available'
+                                },
+                                pageLength: 10,
+                                lengthMenu: [
+                                    [10, 25, 50, -1],
+                                    [10, 25, 50, 'All']
+                                ]
+                            });
+                        }
+                    })
+                    .fail(function(xhr) {
+                        $pane.html('<div class="alert alert-danger">Unable to load this section (HTTP ' +
+                            xhr.status + '). Please try again.</div>');
+                    });
             }
 
-            $('.btn-edit-approver').click(function() {
+            $('a[data-assessment-tab]').on('click', function() {
+                loadAssessmentTab($(this).data('assessment-tab'));
+            });
+            $('#approvers-tab').tab('show');
+            loadAssessmentTab('approvers');
+
+            $(document).on('click', '.btn-edit-approver', function() {
                 var id = $(this).data('id');
                 var category = $(this).data('category');
                 var employee = $(this).data('employee');
@@ -490,9 +138,13 @@
                 $('#editApproverModal').modal('show');
             });
 
-            $('#replaceEmployeeModal').on('show.bs.modal', function(event) {
+            $(document).on('show.bs.modal', '#replaceEmployeeModal', function(event) {
                 var replaceButton = $(event.relatedTarget);
                 $('#replaceEmployeeForm').attr('action', replaceButton.data('replace-url'));
+            });
+
+            $(document).on('shown.bs.modal', '#replaceEmployeeModal', function() {
+                $('#replaceEmployeeTable').DataTable().columns.adjust();
             });
         });
     </script>

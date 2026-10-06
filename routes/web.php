@@ -174,6 +174,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             
             // Assessment Settings
             Route::get('assessment', [\App\Http\Controllers\AssessmentSettingController::class, 'index'])->name('assessment-setting.index');
+            Route::get('assessment/tab/{tab}', [\App\Http\Controllers\AssessmentSettingController::class, 'tab'])->name('assessment-setting.tab');
             Route::post('assessment/class', [\App\Http\Controllers\AssessmentSettingController::class, 'storeClass'])->name('assessment-setting.class.store');
             Route::delete('assessment/class/{id}', [\App\Http\Controllers\AssessmentSettingController::class, 'destroyClass'])->name('assessment-setting.class.destroy');
             Route::post('assessment/category', [\App\Http\Controllers\AssessmentSettingController::class, 'storeCategory'])->name('assessment-setting.category.store');

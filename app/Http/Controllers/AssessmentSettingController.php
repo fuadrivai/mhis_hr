@@ -9,17 +9,56 @@ class AssessmentSettingController extends Controller
     public function index()
     {
         $title = 'Assessment Settings';
-        $classes = \App\Models\SchoolClass::all();
-        $categories = \App\Models\SubjectCategory::all();
-        $subjects = \App\Models\Subject::with('subjectCategory')->get();
-        $approvers = \App\Models\AssessmentApprover::with(['subjectCategory', 'employee.user', 'schoolClasses', 'subjects'])->get();
-        $monitors = \App\Models\AssessmentMonitor::with(['subjectCategory', 'employee'])->get();
-        $employeeSubjects = \App\Models\AssessmentAssignment::with(['employee', 'subject', 'schoolClass'])->get();
-        $employees = \App\Models\Employee::with('user')->get();
 
-        return view('settings.assessment.index', compact(
-            'title', 'classes', 'categories', 'subjects', 'approvers', 'monitors', 'employeeSubjects', 'employees'
-        ));
+        return view('settings.assessment.index', compact('title'));
+    }
+
+    public function tab($tab)
+    {
+        switch ($tab) {
+            case 'approvers':
+                $classes = \App\Models\SchoolClass::all();
+                $categories = \App\Models\SubjectCategory::all();
+                $subjects = \App\Models\Subject::with('subjectCategory')->get();
+                $approvers = \App\Models\AssessmentApprover::with(['subjectCategory', 'employee.user', 'schoolClasses', 'subjects'])->get();
+                $employees = \App\Models\Employee::with('user')->get();
+
+                return view('settings.assessment.partials.approvers', compact(
+                    'classes', 'categories', 'subjects', 'approvers', 'employees'
+                ));
+
+            case 'monitors':
+                $categories = \App\Models\SubjectCategory::all();
+                $monitors = \App\Models\AssessmentMonitor::with(['subjectCategory', 'employee.user'])->get();
+                $employees = \App\Models\Employee::with('user')->get();
+
+                return view('settings.assessment.partials.monitors', compact(
+                    'categories', 'monitors', 'employees'
+                ));
+
+            case 'assignments':
+                $classes = \App\Models\SchoolClass::all();
+                $subjects = \App\Models\Subject::with('subjectCategory')->get();
+                $employeeSubjects = \App\Models\AssessmentAssignment::with([
+                    'employee.user',
+                    'subject.subjectCategory',
+                    'schoolClass',
+                ])->get();
+                $employees = \App\Models\Employee::with([
+                    'user',
+                    'employment.branch',
+                    'employment.organization',
+                    'employment.job_level',
+                    'employment.job_position',
+                ])->get();
+
+                return view('settings.assessment.partials.assignments', compact(
+                    'classes', 'subjects', 'employeeSubjects', 'employees'
+                ));
+
+            default:
+                abort(404);
+        }
     }
 
     // --- Approver ---
