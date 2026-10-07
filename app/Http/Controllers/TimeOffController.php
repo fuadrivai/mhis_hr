@@ -83,6 +83,10 @@ class TimeOffController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge([
+            'is_global' => filter_var($request->input('is_global', false), FILTER_VALIDATE_BOOLEAN),
+            'deduct_leave_balance' => filter_var($request->input('deduct_leave_balance', false), FILTER_VALIDATE_BOOLEAN),
+        ]);
 
         $request->validate([
             'code' => 'required|string|max:255|unique:timeoffs,code',

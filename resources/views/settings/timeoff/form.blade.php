@@ -41,19 +41,19 @@
                         <div class="form-group row">
                             <label class="col-sm-3 col-form-label">Flags</label>
                             <div class="col-sm-9">
-                                <input type="hidden" name="is_global" value="false">
+                                <input type="hidden" name="is_global" value="0">
                                 <div class="form-check mb-2">
                                     <input type="checkbox" class="form-check-input" id="is_global" name="is_global"
-                                        value="true"
+                                        value="1"
                                         {{ old('is_global', isset($timeOff) ? $timeOff->is_global : true) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="is_global">Is Global</label>
                                 </div>
                                 <small class="form-text text-muted mb-3">Enable this time off for all employees.</small>
 
-                                <input type="hidden" name="deduct_leave_balance" value="false">
+                                <input type="hidden" name="deduct_leave_balance" value="0">
                                 <div class="form-check">
                                     <input type="checkbox" class="form-check-input" id="deduct_leave_balance"
-                                        name="deduct_leave_balance" value="true"
+                                        name="deduct_leave_balance" value="1"
                                         {{ old('deduct_leave_balance', isset($timeOff) ? $timeOff->deduct_leave_balance : false) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="deduct_leave_balance">Deduct Leave Balance</label>
                                 </div>
