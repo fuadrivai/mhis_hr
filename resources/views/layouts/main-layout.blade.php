@@ -212,6 +212,7 @@
                                                         <li><a href="/setting/position">Job Position</a></li>
                                                         <li><a href="/setting/level">Job Level</a></li>
                                                         <li><a href="/setting/religion">Religion</a></li>
+                                                        <li><a href="{{ route('setting.company.sop.index') }}">SOP</a></li>
                                                         <li><a href="/setting/reprimand-type">Reprimand Type</a></li>
                                                     @endif
                                                     <li><a href="/setting/kpi-template">KPI Template</a></li>

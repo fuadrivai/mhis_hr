@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AnnouncementCategoryApiController;
 use App\Http\Controllers\Api\ApprovalRequestApiController;
 use App\Http\Controllers\Api\AttendanceApiController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\SopApiController;
 use App\Http\Controllers\Api\BranchApiController;
 use App\Http\Controllers\Api\EmployeeApiController;
 use App\Http\Controllers\Api\GsheetLinkApiController;
@@ -94,6 +95,8 @@ Route::name('api.')->group(function () {
         Route::resource('level', JobLevelApiController::class);
 
         Route::resource('announcement', AnnouncementApiController::class);
+
+        Route::resource('sop', SopApiController::class);
 
         Route::resource('location', PinLocationApiController::class);
 

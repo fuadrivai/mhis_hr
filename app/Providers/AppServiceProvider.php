@@ -10,8 +10,10 @@ use App\Services\Implement\ApprovalRequestImplement;
 use App\Services\Implement\HolidayImplement;
 use App\Services\Implement\LeaveAllocationImplement;
 use App\Services\Implement\RoleImplement;
+use App\Services\Implement\SopImplement;
 use App\Services\LeaveAllocationService;
 use App\Services\RoleService;
+use App\Services\SopService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Session;
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         RoleService::class => RoleImplement::class,
         LeaveAllocationService::class => LeaveAllocationImplement::class,
         HolidayService::class => HolidayImplement::class,
+        SopService::class => SopImplement::class,
     ];
 
     public function register()

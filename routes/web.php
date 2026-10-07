@@ -23,6 +23,7 @@ use App\Http\Controllers\ReligionController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SignatureController;
+use App\Http\Controllers\SopController;
 use App\Http\Controllers\TimeOffController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\KpiTemplateController;
@@ -118,6 +119,9 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::post('whatsapp/tag', [WhatsappSettingController::class, 'storeTag'])->name('whatsapp.tag.store');
             Route::put('whatsapp/tag/{id}', [WhatsappSettingController::class, 'updateTag'])->name('whatsapp.tag.update');
             Route::delete('whatsapp/tag/{id}', [WhatsappSettingController::class, 'destroyTag'])->name('whatsapp.tag.destroy');
+            Route::group(['prefix' => 'company', 'as' => 'setting.company.'], function () {
+                Route::resource('sop', SopController::class);
+            });
             Route::resource('bank', BankController::class);
             Route::resource('religion', ReligionController::class);
             Route::resource('level', JobLevelController::class);
