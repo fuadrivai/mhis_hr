@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\WhatsappSetting;
 use App\Models\WhatsappReplyLog;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Http\Client\Pool;
 use Carbon\Carbon;
 
 class WhatsappChatController extends Controller
@@ -19,7 +21,8 @@ class WhatsappChatController extends Controller
 
         $title = "WhatsApp Chat";
         $tags = \App\Models\WhatsappTag::all();
-        return view('whatsapp.chat', compact('title', 'tags'));
+        $accounts = \App\Models\WhatsappAccount::all();
+        return view('whatsapp.chat', compact('title', 'tags', 'accounts'));
     }
 
     public function monitoring()
@@ -53,16 +56,65 @@ class WhatsappChatController extends Controller
         return view('whatsapp.monitoring', compact('logs', 'title', 'stats'));
     }
 
-    public function getContacts()
+    public function getContacts(Request $request)
     {
         $chatter = \App\Models\WhatsappChatter::with('tags')->where('employee_id', auth()->user()->employee->id ?? 0)->first();
         if (!$chatter) {
             return response()->json(['status' => false, 'message' => 'Unauthorized']);
         }
 
-        $accounts = \App\Models\WhatsappAccount::all();
-        if ($accounts->isEmpty()) {
+        $allAccounts = \App\Models\WhatsappAccount::all();
+        if ($allAccounts->isEmpty()) {
             return response()->json(['status' => false, 'message' => 'WhatsApp accounts not configured']);
+        }
+
+        $selectedAccount = $request->query('account_number');
+        $accounts = $allAccounts;
+        if ($selectedAccount) {
+            $matched = $allAccounts->where('number', $selectedAccount);
+            if ($matched->isNotEmpty()) {
+                $accounts = $matched;
+            }
+        }
+
+        $forceRefresh = $request->boolean('refresh');
+        $results = [];
+        $accountsToFetch = [];
+
+        foreach ($accounts as $account) {
+            $cacheKey = 'wa_contacts_acc_' . $account->number;
+            if ($forceRefresh) {
+                Cache::forget($cacheKey);
+            }
+            $cached = Cache::get($cacheKey);
+            if ($cached !== null) {
+                $results[$account->number] = $cached;
+            } else {
+                $accountsToFetch[] = $account;
+            }
+        }
+
+        if (!empty($accountsToFetch)) {
+            $responses = Http::pool(function (Pool $pool) use ($accountsToFetch) {
+                return collect($accountsToFetch)->map(function ($account) use ($pool) {
+                    return $pool->as($account->number)->timeout(30)->get('https://mhisnetshield.us/apiv2/contact.php', [
+                        'api_key' => $account->api_key,
+                        'nomor' => $account->number
+                    ]);
+                });
+            });
+
+            foreach ($accountsToFetch as $account) {
+                $res = $responses[$account->number] ?? null;
+                if ($res instanceof \Illuminate\Http\Client\Response && $res->successful()) {
+                    $json = $res->json();
+                    $data = (isset($json['status']) && $json['status'] == true && isset($json['data'])) ? $json['data'] : [];
+                    Cache::put('wa_contacts_acc_' . $account->number, $data, 120);
+                    $results[$account->number] = $data;
+                } else {
+                    $results[$account->number] = Cache::get('wa_contacts_acc_' . $account->number, []);
+                }
+            }
         }
 
         $chatterTagIds = $chatter->is_all_tags ? [] : $chatter->tags->pluck('id')->toArray();
@@ -70,50 +122,60 @@ class WhatsappChatController extends Controller
         $contactStates = \App\Models\WhatsappContactState::all()->keyBy('contact_number');
 
         $allFilteredData = [];
+        $accountsSummary = [];
 
         foreach ($accounts as $account) {
-            $response = Http::get('https://mhisnetshield.us/apiv2/contact.php', [
-                'api_key' => $account->api_key,
-                'nomor' => $account->number
-            ]);
+            $contacts = $results[$account->number] ?? [];
+            $accountFilteredCount = 0;
 
-            $resJson = $response->json();
+            foreach ($contacts as $contact) {
+                $number = $contact['number'];
+                $ctags = isset($contactTags[$number]) ? $contactTags[$number]->pluck('tag')->toArray() : [];
+                $ctagIds = array_column($ctags, 'id');
 
-            if (isset($resJson['status']) && $resJson['status'] == true && isset($resJson['data'])) {
-                foreach ($resJson['data'] as $contact) {
-                    $number = $contact['number'];
-                    $ctags = isset($contactTags[$number]) ? $contactTags[$number]->pluck('tag')->toArray() : [];
-                    $ctagIds = array_column($ctags, 'id');
-
-                    // Filter by chatter tags if not "All"
-                    if (!$chatter->is_all_tags) {
-                        if (empty(array_intersect($chatterTagIds, $ctagIds))) {
-                            continue;
-                        }
+                // Filter by chatter tags if not "All"
+                if (!$chatter->is_all_tags) {
+                    if (empty(array_intersect($chatterTagIds, $ctagIds))) {
+                        continue;
                     }
-
-                    $contact['tags'] = $ctags;
-                    $contact['account_number'] = $account->number;
-                    $contact['account_name'] = $account->name;
-
-                    // Red dot logic: cached in WhatsappContactState
-                    $contact['unread'] = false;
-                    $contact['check_unread'] = false;
-                    
-                    if (isset($contact['last_msg_timestamp'])) {
-                        $ts = (string)$contact['last_msg_timestamp'];
-                        $state = $contactStates[$number] ?? null;
-                        
-                        if ($state && $state->api_last_msg_timestamp === $ts) {
-                            $contact['unread'] = (bool)$state->is_unread;
-                        } else {
-                            $contact['check_unread'] = true;
-                        }
-                    }
-
-                    $allFilteredData[] = $contact;
                 }
+
+                $contact['tags'] = $ctags;
+                $contact['account_number'] = $account->number;
+                $contact['account_name'] = $account->name;
+
+                // Red dot logic: resolved directly from last_message & database state
+                $contact['unread'] = false;
+                $contact['check_unread'] = false;
+                
+                $ts = isset($contact['last_msg_timestamp']) ? (string)$contact['last_msg_timestamp'] : '';
+                $state = $contactStates[$number] ?? null;
+
+                if ($state && $state->api_last_msg_timestamp === $ts) {
+                    $contact['unread'] = (bool)$state->is_unread;
+                } else {
+                    $lastMsg = $contact['last_message'] ?? null;
+                    $isFromMe = isset($lastMsg['from_me']) && ($lastMsg['from_me'] === true || $lastMsg['from_me'] === 'true' || $lastMsg['from_me'] === 1 || $lastMsg['from_me'] === '1');
+                    
+                    $contact['unread'] = !$isFromMe;
+                    
+                    if ($ts !== '') {
+                        \App\Models\WhatsappContactState::updateOrCreate(
+                            ['contact_number' => $number],
+                            ['api_last_msg_timestamp' => $ts, 'is_unread' => $contact['unread']]
+                        );
+                    }
+                }
+
+                $allFilteredData[] = $contact;
+                $accountFilteredCount++;
             }
+
+            $accountsSummary[] = [
+                'name' => $account->name,
+                'number' => $account->number,
+                'total' => $accountFilteredCount,
+            ];
         }
 
         usort($allFilteredData, function ($a, $b) {
@@ -122,7 +184,11 @@ class WhatsappChatController extends Controller
             return $tsB <=> $tsA;
         });
 
-        return response()->json(['status' => true, 'data' => $allFilteredData]);
+        return response()->json([
+            'status' => true,
+            'data' => $allFilteredData,
+            'accounts' => $accountsSummary
+        ]);
     }
 
     public function getMessages(Request $request)
@@ -243,6 +309,8 @@ class WhatsappChatController extends Controller
                 if ($contactState) {
                     $contactState->update(['is_unread' => false]);
                 }
+                
+                Cache::forget('wa_contacts_acc_' . $account->number);
             }
             
             return $resJson;
@@ -291,6 +359,8 @@ class WhatsappChatController extends Controller
             if ($contactState) {
                 $contactState->update(['is_unread' => false]);
             }
+            
+            Cache::forget('wa_contacts_acc_' . $account->number);
         }
 
         return $resJson;
@@ -388,13 +458,14 @@ class WhatsappChatController extends Controller
     {
         $number = $request->input('number');
         $ts = $request->input('ts');
+        $accountNumber = $request->input('account_number');
         
-        $setting = WhatsappSetting::first();
-        if (!$setting || !$number) return response()->json(['status' => false]);
+        $account = $accountNumber ? \App\Models\WhatsappAccount::where('number', $accountNumber)->first() : \App\Models\WhatsappAccount::first();
+        if (!$account || !$number) return response()->json(['status' => false]);
         
         $response = Http::get('https://mhisnetshield.us/apiv2/get_message.php', [
-            'api_key' => $setting->api_key,
-            'nomor' => $setting->number,
+            'api_key' => $account->api_key,
+            'nomor' => $account->number,
             'm_from' => $number
         ]);
         
