@@ -37,7 +37,7 @@
                             <p>Select categories to print:</p>
                             <div class="row">
                                 @foreach($monitorRoles as $role)
-                                    @if($role->subjectCategory)
+                                    @if($role->subjectCategory && $target->appliesToCategory($role->subject_category_id))
                                     <div class="col-md-3 col-sm-4 col-xs-6">
                                         <label class="checkbox-inline">
                                             <input type="checkbox" name="category_ids[]" value="{{ $role->subject_category_id }}" checked>

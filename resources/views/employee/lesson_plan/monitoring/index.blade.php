@@ -30,28 +30,45 @@
                     @endforeach
                 </div>
 
+                @php
+                    $monitoredCatIds = $monitorRoles->pluck('subject_category_id')->toArray();
+                @endphp
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered datatable">
                         <thead>
                             <tr>
                                 <th>Deadline</th>
+                                <th>Description</th>
                                 <th>Lesson Plan Month</th>
+                                <th>Applicable Categories</th>
                                 <th style="width: 15%;">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($targets as $target)
+                                @if($target->subjectCategories->isEmpty() || $target->subjectCategories->pluck('id')->intersect($monitoredCatIds)->isNotEmpty())
                                 <tr>
                                     <td>{{ \Carbon\Carbon::parse($target->deadline_date)->format('d M Y') }}</td>
+                                    <td><strong>{{ $target->description }}</strong></td>
                                     <td>
                                         @foreach($target->months as $month)
                                             <span class="badge bg-green">{{ $month->month }} {{ $month->year }}</span>
                                         @endforeach
                                     </td>
                                     <td>
+                                        @if($target->subjectCategories->isEmpty())
+                                            <span class="label label-success"><i class="fa fa-globe"></i> All Categories</span>
+                                        @else
+                                            @foreach($target->subjectCategories as $sc)
+                                                <span class="label label-primary" style="margin-right: 3px; display: inline-block; margin-bottom: 2px;"><i class="fa fa-tag"></i> {{ $sc->name }}</span>
+                                            @endforeach
+                                        @endif
+                                    </td>
+                                    <td>
                                         <a href="{{ route('employee.lesson-plan.monitoring.show', $target->id) }}" class="btn btn-info btn-sm"><i class="fa fa-folder-open"></i> View Details</a>
                                     </td>
                                 </tr>
+                                @endif
                             @endforeach
                         </tbody>
                     </table>

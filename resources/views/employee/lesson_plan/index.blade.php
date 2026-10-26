@@ -32,20 +32,22 @@
                     <tbody>
                         @foreach($targets as $target)
                             @foreach($assignments as $assignment)
-                            <tr>
-                                <td>{{ $target->description }}</td>
-                                <td>
-                                    @foreach($target->months as $m)
-                                        <span class="label label-info">{{ $m->month }} {{ $m->year }}</span>
-                                    @endforeach
-                                </td>
-                                <td>{{ $target->deadline_date }}</td>
-                                <td>{{ $assignment->subject->name ?? '' }} ({{ $assignment->subject->subjectCategory->name ?? '' }})</td>
-                                <td>{{ $assignment->schoolClass->name ?? '' }}</td>
-                                <td>
-                                    <a href="{{ route('employee.lesson-plan.submit-form', ['targetId' => $target->id, 'assignmentId' => $assignment->id]) }}" class="btn btn-primary btn-sm">View & Submit</a>
-                                </td>
-                            </tr>
+                                @if($target->appliesToCategory($assignment->subject->subject_category_id ?? null))
+                                <tr>
+                                    <td>{{ $target->description }}</td>
+                                    <td>
+                                        @foreach($target->months as $m)
+                                            <span class="label label-info">{{ $m->month }} {{ $m->year }}</span>
+                                        @endforeach
+                                    </td>
+                                    <td>{{ $target->deadline_date }}</td>
+                                    <td>{{ $assignment->subject->name ?? '' }} ({{ $assignment->subject->subjectCategory->name ?? '' }})</td>
+                                    <td>{{ $assignment->schoolClass->name ?? '' }}</td>
+                                    <td>
+                                        <a href="{{ route('employee.lesson-plan.submit-form', ['targetId' => $target->id, 'assignmentId' => $assignment->id]) }}" class="btn btn-primary btn-sm">View & Submit</a>
+                                    </td>
+                                </tr>
+                                @endif
                             @endforeach
                         @endforeach
                     </tbody>

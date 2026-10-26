@@ -21,4 +21,9 @@ class SubjectCategory extends Model
     {
         return $this->hasMany(SubjectCategoryMonitor::class);
     }
+
+    public function lessonPlanTargets()
+    {
+        return $this->belongsToMany(LessonPlanTarget::class, 'lesson_plan_target_subject_categories');
+    }
 }

@@ -15,4 +15,17 @@ class LessonPlanTarget extends Model
     {
         return $this->hasMany(LessonPlanTargetMonth::class);
     }
+
+    public function subjectCategories()
+    {
+        return $this->belongsToMany(SubjectCategory::class, 'lesson_plan_target_subject_categories');
+    }
+
+    public function appliesToCategory($categoryId)
+    {
+        if ($this->subjectCategories->isEmpty()) {
+            return true;
+        }
+        return $this->subjectCategories->contains('id', $categoryId);
+    }
 }

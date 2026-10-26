@@ -20,10 +20,10 @@ class EmployeeLessonPlanController extends Controller
         }
 
         // Get subjects assigned to this employee
-        $assignments = EmployeeSubject::where('employee_id', $employeeId)->with(['subject', 'schoolClass'])->get();
+        $assignments = EmployeeSubject::where('employee_id', $employeeId)->with(['subject.subjectCategory', 'schoolClass'])->get();
         
         // Get all active targets
-        $targets = LessonPlanTarget::with('months')->orderBy('deadline_date', 'desc')->get();
+        $targets = LessonPlanTarget::with(['months', 'subjectCategories'])->orderBy('deadline_date', 'desc')->get();
 
         return view('employee.lesson_plan.index', compact('title', 'assignments', 'targets'));
     }
@@ -31,12 +31,17 @@ class EmployeeLessonPlanController extends Controller
     public function showTarget($targetId, $assignmentId)
     {
         $title = 'Submit Lesson Plan';
-        $target = LessonPlanTarget::with('months')->findOrFail($targetId);
-        $assignment = EmployeeSubject::with(['subject', 'schoolClass'])->findOrFail($assignmentId);
+        $target = LessonPlanTarget::with(['months', 'subjectCategories'])->findOrFail($targetId);
+        $assignment = EmployeeSubject::with(['subject.subjectCategory', 'schoolClass'])->findOrFail($assignmentId);
         
         // Ensure the assignment belongs to the logged in employee
         if ($assignment->employee_id !== auth()->user()->employee->id) {
             abort(403);
+        }
+
+        // Ensure target applies to this subject category
+        if (!$target->appliesToCategory($assignment->subject->subject_category_id)) {
+            return redirect()->route('employee.lesson-plan.index')->with('error', 'This target does not apply to this subject category.');
         }
 
         // Get existing submissions for this assignment and target's months
@@ -57,9 +62,14 @@ class EmployeeLessonPlanController extends Controller
             'file_link' => 'required|url',
         ]);
 
-        $assignment = EmployeeSubject::findOrFail($assignmentId);
+        $assignment = EmployeeSubject::with('subject')->findOrFail($assignmentId);
         if ($assignment->employee_id !== auth()->user()->employee->id) {
             abort(403);
+        }
+
+        $targetMonth = LessonPlanTargetMonth::with('lessonPlanTarget.subjectCategories')->findOrFail($monthId);
+        if (!$targetMonth->lessonPlanTarget->appliesToCategory($assignment->subject->subject_category_id)) {
+            abort(403, 'Target does not apply to this subject category.');
         }
 
         $submission = LessonPlanSubmission::updateOrCreate(

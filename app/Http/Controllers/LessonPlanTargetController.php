@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LessonPlanTarget;
 use App\Models\LessonPlanTargetMonth;
+use App\Models\SubjectCategory;
 use Illuminate\Http\Request;
 
 class LessonPlanTargetController extends Controller
@@ -11,8 +12,9 @@ class LessonPlanTargetController extends Controller
     public function index()
     {
         $title = 'Lesson Plan Targets';
-        $targets = LessonPlanTarget::with('months')->orderBy('deadline_date', 'desc')->get();
-        return view('settings.lesson_plan.target', compact('title', 'targets'));
+        $targets = LessonPlanTarget::with(['months', 'subjectCategories'])->orderBy('deadline_date', 'desc')->get();
+        $categories = SubjectCategory::orderBy('name')->get();
+        return view('settings.lesson_plan.target', compact('title', 'targets', 'categories'));
     }
 
     public function store(Request $request)
@@ -21,7 +23,9 @@ class LessonPlanTargetController extends Controller
             'deadline_date' => 'required|date',
             'description' => 'nullable|string',
             'months' => 'required|array|min:1',
-            'years' => 'required|array|min:1'
+            'years' => 'required|array|min:1',
+            'subject_category_ids' => 'nullable|array',
+            'subject_category_ids.*' => 'exists:subject_categories,id'
         ]);
 
         $target = LessonPlanTarget::create([
@@ -29,6 +33,10 @@ class LessonPlanTargetController extends Controller
             'description' => $request->description,
             'created_by' => auth()->id()
         ]);
+
+        if (!empty($request->subject_category_ids)) {
+            $target->subjectCategories()->sync($request->subject_category_ids);
+        }
 
         foreach ($request->months as $key => $month) {
             LessonPlanTargetMonth::create([
@@ -45,8 +53,9 @@ class LessonPlanTargetController extends Controller
     public function edit($id)
     {
         $title = 'Edit Lesson Plan Target';
-        $target = LessonPlanTarget::with('months')->findOrFail($id);
-        return view('settings.lesson_plan.target_edit', compact('title', 'target'));
+        $target = LessonPlanTarget::with(['months', 'subjectCategories'])->findOrFail($id);
+        $categories = SubjectCategory::orderBy('name')->get();
+        return view('settings.lesson_plan.target_edit', compact('title', 'target', 'categories'));
     }
 
     public function update(Request $request, $id)
@@ -55,7 +64,9 @@ class LessonPlanTargetController extends Controller
             'deadline_date' => 'required|date',
             'description' => 'nullable|string',
             'months' => 'required|array|min:1',
-            'years' => 'required|array|min:1'
+            'years' => 'required|array|min:1',
+            'subject_category_ids' => 'nullable|array',
+            'subject_category_ids.*' => 'exists:subject_categories,id'
         ]);
 
         $target = LessonPlanTarget::findOrFail($id);
@@ -63,6 +74,8 @@ class LessonPlanTargetController extends Controller
             'deadline_date' => $request->deadline_date,
             'description' => $request->description,
         ]);
+
+        $target->subjectCategories()->sync($request->subject_category_ids ?? []);
 
         $existingMonths = $target->months;
         $requestedMonthIds = [];

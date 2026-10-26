@@ -26,7 +26,7 @@ class LessonPlanMonitoringController extends Controller
         }
 
         // Fetch all lesson plan targets
-        $targets = LessonPlanTarget::with('months')->orderBy('deadline_date', 'desc')->get();
+        $targets = LessonPlanTarget::with(['months', 'subjectCategories'])->orderBy('deadline_date', 'desc')->get();
 
         return view('employee.lesson_plan.monitoring.index', compact('title', 'targets', 'monitorRoles'));
     }
@@ -40,7 +40,7 @@ class LessonPlanMonitoringController extends Controller
             return redirect()->back()->with('error', 'Employee record not found.');
         }
 
-        $target = LessonPlanTarget::with('months')->findOrFail($id);
+        $target = LessonPlanTarget::with(['months', 'subjectCategories'])->findOrFail($id);
 
         $monitorRoles = SubjectCategoryMonitor::where('employee_id', $employeeId)->get();
         if ($monitorRoles->isEmpty()) {
@@ -48,6 +48,9 @@ class LessonPlanMonitoringController extends Controller
         }
 
         $monitoredCategoryIds = $monitorRoles->pluck('subject_category_id')->toArray();
+        if ($target->subjectCategories->isNotEmpty()) {
+            $monitoredCategoryIds = array_values(array_intersect($monitoredCategoryIds, $target->subjectCategories->pluck('id')->toArray()));
+        }
 
         // Get Employee Subjects that fall under these categories
         $employeeSubjects = \App\Models\EmployeeSubject::with(['employee.user', 'subject.subjectCategory', 'schoolClass'])
@@ -116,7 +119,7 @@ class LessonPlanMonitoringController extends Controller
             return redirect()->back()->with('error', 'Employee record not found.');
         }
 
-        $target = LessonPlanTarget::with('months')->findOrFail($id);
+        $target = LessonPlanTarget::with(['months', 'subjectCategories'])->findOrFail($id);
 
         $monitorRoles = SubjectCategoryMonitor::where('employee_id', $employeeId)->get();
         if ($monitorRoles->isEmpty()) {
@@ -124,6 +127,10 @@ class LessonPlanMonitoringController extends Controller
         }
 
         $monitoredCategoryIds = $monitorRoles->pluck('subject_category_id')->toArray();
+        if ($target->subjectCategories->isNotEmpty()) {
+            $monitoredCategoryIds = array_values(array_intersect($monitoredCategoryIds, $target->subjectCategories->pluck('id')->toArray()));
+        }
+
         $selectedCategories = $request->input('category_ids', []);
         
         // Filter monitored categories by selected categories if any are provided
@@ -193,7 +200,7 @@ class LessonPlanMonitoringController extends Controller
     public function showSubject($id, $subject_id)
     {
         $title = 'Monitoring Lesson Plan Subject Details';
-        $target = LessonPlanTarget::with('months')->findOrFail($id);
+        $target = LessonPlanTarget::with(['months', 'subjectCategories'])->findOrFail($id);
         
         $user = auth()->user();
         $employeeId = $user->employee->id ?? 0;
@@ -206,7 +213,7 @@ class LessonPlanMonitoringController extends Controller
         $monitoredCategoryIds = $monitorRoles->pluck('subject_category_id')->toArray();
         $subject = \App\Models\Subject::with('subjectCategory')->findOrFail($subject_id);
 
-        if (!in_array($subject->subject_category_id, $monitoredCategoryIds)) {
+        if (!$target->appliesToCategory($subject->subject_category_id) || !in_array($subject->subject_category_id, $monitoredCategoryIds)) {
             return redirect()->route('employee.lesson-plan.monitoring.show', $id)->with('error', 'You do not have permission to monitor this subject.');
         }
 
@@ -259,7 +266,7 @@ class LessonPlanMonitoringController extends Controller
             return redirect()->back()->with('error', 'Employee record not found.');
         }
 
-        $target = LessonPlanTarget::with('months')->findOrFail($id);
+        $target = LessonPlanTarget::with(['months', 'subjectCategories'])->findOrFail($id);
 
         $monitorRoles = SubjectCategoryMonitor::where('employee_id', $employeeId)->get();
         if ($monitorRoles->isEmpty()) {
@@ -267,6 +274,10 @@ class LessonPlanMonitoringController extends Controller
         }
 
         $monitoredCategoryIds = $monitorRoles->pluck('subject_category_id')->toArray();
+        if ($target->subjectCategories->isNotEmpty()) {
+            $monitoredCategoryIds = array_values(array_intersect($monitoredCategoryIds, $target->subjectCategories->pluck('id')->toArray()));
+        }
+
         $selectedCategories = $request->input('category_ids', []);
         
         if (!empty($selectedCategories)) {

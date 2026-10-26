@@ -47,6 +47,26 @@
                                 <input type="date" name="deadline_date" class="form-control" value="{{ $target->deadline_date }}" required>
                             </div>
                         </div>
+
+                        <div class="row" style="margin-top: 10px;">
+                            <div class="col-md-12 form-group">
+                                <label>Applicable Subject Categories <small class="text-muted">(Select one or more categories, or leave unselected to apply to all categories)</small></label>
+                                <div style="background: #fff; border: 1px solid #ccc; padding: 10px 15px; border-radius: 4px; max-height: 160px; overflow-y: auto;">
+                                    <div class="row">
+                                        @php
+                                            $selectedCategoryIds = $target->subjectCategories->pluck('id')->toArray();
+                                        @endphp
+                                        @foreach($categories as $cat)
+                                            <div class="col-md-3 col-sm-4 col-xs-6">
+                                                <label style="font-weight: normal; cursor: pointer;">
+                                                    <input type="checkbox" name="subject_category_ids[]" value="{{ $cat->id }}" {{ in_array($cat->id, $selectedCategoryIds) ? 'checked' : '' }}> {{ $cat->name }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div class="row" style="margin-top: 10px;">
                             <div class="col-md-12">

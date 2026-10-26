@@ -46,6 +46,23 @@
                                 <input type="date" name="deadline_date" class="form-control" required>
                             </div>
                         </div>
+
+                        <div class="row" style="margin-top: 10px;">
+                            <div class="col-md-12 form-group">
+                                <label>Applicable Subject Categories <small class="text-muted">(Optional: Leave unselected to apply to all categories, or select specific categories)</small></label>
+                                <div style="background: #fff; border: 1px solid #ccc; padding: 10px 15px; border-radius: 4px; max-height: 160px; overflow-y: auto;">
+                                    <div class="row">
+                                        @foreach($categories as $cat)
+                                            <div class="col-md-3 col-sm-4 col-xs-6">
+                                                <label style="font-weight: normal; cursor: pointer;">
+                                                    <input type="checkbox" name="subject_category_ids[]" value="{{ $cat->id }}"> {{ $cat->name }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div class="row" style="margin-top: 10px;">
                             <div class="col-md-12">
@@ -95,9 +112,10 @@
                 <table class="table table-striped table-bordered datatable" style="width: 100%">
                     <thead>
                         <tr>
-                            <th style="width: 35%">Description</th>
-                            <th style="width: 20%">Deadline Date</th>
-                            <th style="width: 30%">Target Months</th>
+                            <th style="width: 25%">Description</th>
+                            <th style="width: 15%">Deadline Date</th>
+                            <th style="width: 25%">Target Months</th>
+                            <th style="width: 20%">Applicable Categories</th>
                             <th style="width: 15%">Action</th>
                         </tr>
                     </thead>
@@ -110,6 +128,15 @@
                                 @foreach($target->months as $m)
                                     <span class="label label-info" style="margin-right: 5px;"><i class="fa fa-calendar"></i> {{ $m->month }} {{ $m->year }} {{ $m->has_5_weeks ? '(5 Weeks)' : '' }}</span>
                                 @endforeach
+                            </td>
+                            <td>
+                                @if($target->subjectCategories->isEmpty())
+                                    <span class="label label-success"><i class="fa fa-globe"></i> All Categories</span>
+                                @else
+                                    @foreach($target->subjectCategories as $sc)
+                                        <span class="label label-primary" style="margin-right: 3px; display: inline-block; margin-bottom: 2px;"><i class="fa fa-tag"></i> {{ $sc->name }}</span>
+                                    @endforeach
+                                @endif
                             </td>
                             <td>
                                 <form action="{{ route('lesson-plan-target.destroy', $target->id) }}" method="POST">
