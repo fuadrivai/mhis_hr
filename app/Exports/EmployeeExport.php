@@ -10,7 +10,6 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class EmployeeExport implements FromCollection, WithHeadings, WithMapping
 {
     private Collection $employees;
-    private int $number = 0;
 
     public function __construct(Collection $employees)
     {
@@ -24,47 +23,63 @@ class EmployeeExport implements FromCollection, WithHeadings, WithMapping
 
     public function headings(): array
     {
-        return [
-            'No',
-            'Full Name',
-            'Employee ID',
-            'Email',
-            'Mobile Phone',
-            'Place of Birth',
-            'D.O.B',
-            'Gender',
-            'NIK',
-            'Branch',
-            'Organization',
-            'Job Position',
-            'Job Level',
-            'Employment Status',
-            'Join Date',
-            'End Date',
-            'Active Status',
-        ];
+        return \App\Imports\EmployeeImport::templateHeadings();
     }
 
     public function map($employee): array
     {
+        $personal = $employee->personal;
+        $employment = $employee->employment;
+
         return [
-            ++$this->number,
-            optional($employee->personal)->fullname,
-            optional($employee->employment)->employee_id,
-            optional($employee->personal)->email,
-            optional($employee->personal)->mobile_phone,
-            optional($employee->personal)->birth_place,
-            optional($employee->personal)->birth_date,
-            optional($employee->personal)->gendre == 1 ? 'Male' : 'Female',
-            optional($employee->personal)->identity_number,
-            optional($employee->employment)->branch->name,
-            optional($employee->employment)->organization->name,
-            optional($employee->employment)->job_position->name,
-            optional($employee->employment)->job_level->name,
-            optional($employee->employment)->employment_status,
-            optional($employee->employment)->join_date,
-            optional($employee->employment)->end_date,
-            optional($employee)->is_active == 1 ? 'Active' : 'Inactive',
+            optional($employment)->employee_id,
+            optional($personal)->fullname,
+            optional($employment)->barcode ?? optional($personal)->barcode,
+            optional(optional($employment)->organization)->name,
+            optional(optional($employment)->job_position)->name,
+            optional(optional($employment)->job_level)->name,
+            $this->formatDate(optional($employment)->join_date),
+            $this->formatDate(optional($employment)->resign_date),
+            optional($employment)->employment_status,
+            $this->formatDate(optional($employment)->end_date),
+            $this->formatDate(optional($employment)->sign_date),
+            optional($personal)->email,
+            $this->formatDate(optional($personal)->birth_date),
+            optional($personal)->birth_place,
+            optional($personal)->address,
+            optional($personal)->current_address,
+            optional($personal)->identity_number,
+            optional($personal)->mobile_phone,
+            optional($personal)->phone,
+            optional(optional($employment)->branch)->name,
+            optional(optional($personal)->religion)->name,
+            optional($personal)->gendre === null
+                ? null
+                : (optional($personal)->gendre == 1 ? 'Male' : 'Female'),
+            $this->maritalStatus(optional($personal)->marital_status),
+            optional($personal)->blood_type,
+            optional($employment)->nationality_code,
         ];
+    }
+
+    private function formatDate($value): ?string
+    {
+        return $value ? \Illuminate\Support\Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    private function maritalStatus($value): ?string
+    {
+        switch ((string) $value) {
+            case '1':
+                return 'Single';
+            case '2':
+                return 'Married';
+            case '3':
+                return 'Widow';
+            case '4':
+                return 'Widower';
+            default:
+                return null;
+        }
     }
 }

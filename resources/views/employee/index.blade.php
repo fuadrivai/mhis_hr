@@ -5,6 +5,20 @@
 @endsection
 
 @section('content-child')
+    @if (session('message'))
+        <div class="alert alert-success">{{ session('message') }}</div>
+    @endif
+    @if ($errors->has('file'))
+        <div class="alert alert-danger">
+            <strong>Import gagal. Periksa file dan baris berikut:</strong>
+            <ul class="mb-0">
+                @foreach ($errors->get('file') as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="col-md-12 col-sm-12">
         <div class="x_panel">
             <div class="x_title">
@@ -50,15 +64,21 @@
             <form method="post" action="/employee/import" enctype="multipart/form-data">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Import Excel</h5>
+                        <h5 class="modal-title" id="exampleModalLabel">Import Employees</h5>
                     </div>
                     <div class="modal-body">
 
                         {{ csrf_field() }}
 
-                        <label>Choose File</label>
+                        <p>Download the template and keep its column headers unchanged. Required fields: Employee ID, Full Name, Organization, Job Position, Job Level, Employment Status, Email, Branch, Religion, and Gender.</p>
+                        <p>Use dates in <code>YYYY-MM-DD</code> format. Employment Status: permanent, contract, probation, or freelance. Gender: Male or Female. Marital Status: Single, Married, Widow, or Widower. Blood Type: A, B, AB, or O. Keep ID, barcode, and phone values as text to preserve leading zeroes.</p>
+                        <a href="{{ route('employee.import-template') }}" class="btn btn-default btn-sm">
+                            <i class="fa fa-download"></i> Download CSV Template
+                        </a>
+
+                        <label for="employee-import-file" class="mt-3">Choose CSV or Excel file</label>
                         <div class="form-group">
-                            <input type="file" name="file" required="required">
+                            <input id="employee-import-file" type="file" name="file" accept=".csv,.xls,.xlsx" required>
                         </div>
 
                     </div>

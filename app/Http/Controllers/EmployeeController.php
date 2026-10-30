@@ -22,9 +22,11 @@ use App\Services\RelationshipService;
 use App\Services\ReligionService;
 use App\Services\ScheduleService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Redirect;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Validators\ValidationException as ExcelValidationException;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
 
 class EmployeeController extends Controller
@@ -350,27 +352,38 @@ class EmployeeController extends Controller
 
     public function import_excel(Request $request)
     {
-        // validasi
         $this->validate($request, [
-            'file' => 'required|mimes:csv,xls,xlsx'
+            'file' => 'required|file|mimes:csv,txt,xls,xlsx|max:10240'
         ]);
 
-        $file = $request->file('file');
+        try {
+            DB::transaction(function () use ($request) {
+                Excel::import(new EmployeeImport(), $request->file('file'));
+            });
+        } catch (ExcelValidationException $exception) {
+            $errors = [];
 
-        $fileName = rand() . $file->getClientOriginalName();
+            foreach ($exception->failures() as $failure) {
+                $errors[] = 'Baris ' . $failure->row() . ' (' . $failure->attribute() . '): '
+                    . implode(' ', $failure->errors());
+            }
 
-        $destination = public_path('file_employee');
+            return Redirect::to('employee')->withErrors(['file' => $errors])->withInput();
+        }
 
-        $file->move($destination, $fileName);
+        return Redirect::to('employee')->with('message', 'Data karyawan berhasil diimpor.');
+    }
 
-        // import data
-        Excel::import(new EmployeeImport, $destination . '/' . $fileName);
-
-        // notifikasi dengan session
-        session()->flash('message', 'Data Siswa Berhasil Diimport!');
-
-        // alihkan halaman kembali
-        return Redirect::to('employee');
+    public function download_import_template()
+    {
+        return response()->streamDownload(function () {
+            $output = fopen('php://output', 'w');
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, EmployeeImport::templateHeadings(), ',', '"', '');
+            fclose($output);
+        }, 'employee-import-template.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function export(Request $request)

@@ -94,6 +94,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::put('/{id}', [AnnouncementController::class, 'update'])->name('update');
         });
         Route::group(['prefix' => 'employee'], function () {
+            Route::get('import-template', [EmployeeController::class, 'download_import_template'])->name('employee.import-template');
             Route::post('import', [EmployeeController::class, 'import_excel']);
             Route::get('export', [EmployeeController::class, 'export'])->name('employee.export');
             Route::get('kpi-monitoring', [EmployeeController::class, 'kpiMonitoring'])->name('employee.kpi-monitoring');
