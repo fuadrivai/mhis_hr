@@ -65,6 +65,7 @@
                                 <?php
                                 $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->roles->contains('id', 1);
                                 $isRole3 = auth()->user()->roles->contains('id', 3);
+                                $isRecruitmentMonitor = auth()->user()->isRecruitmentMonitor();
                                 $isWhatsappChatter = \App\Models\WhatsappChatter::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
                                 $isWhatsappMonitor = \App\Models\WhatsappMonitor::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
                                 ?>
@@ -134,7 +135,7 @@
                                     </li>
                                 @endif
 
-                                @if ($isAdmin || $isRole3)
+                                @if ($isRecruitmentMonitor)
                                     <li class={{ Request::is('recruitment*') ? 'active' : '' }}>
                                         <a><i class="fa fa-briefcase"></i>
                                             Recruitment <span class="fa fa-chevron-down"></span></a>
@@ -262,6 +263,9 @@
                                                 </ul>
                                             </li>
                                             @if ($isAdmin)
+                                                <li class="{{ request()->routeIs('settings.recruitment-monitors*') ? 'current-page' : '' }}">
+                                                    <a href="{{ route('settings.recruitment-monitors') }}">Recruitment Monitors</a>
+                                                </li>
                                                 <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
                                                             class="fa fa-chevron-down"></span></a>
                                                     <?php

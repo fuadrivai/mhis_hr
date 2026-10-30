@@ -31,6 +31,39 @@ class User extends Authenticatable implements JWTSubject
         );
     }
 
+    public function recruitmentMonitor()
+    {
+        return $this->hasOneThrough(
+            RecruitmentMonitor::class,
+            Employee::class,
+            'user_id',
+            'employee_id',
+            'id',
+            'id'
+        );
+    }
+
+    public function isRecruitmentAdministrator(): bool
+    {
+        return $this->hasRole('admin') || $this->roles()->where('roles.id', 1)->exists();
+    }
+
+    public function isRecruitmentMonitor(): bool
+    {
+        return $this->recruitmentMonitor()
+            ->whereHas('employee', function ($query) {
+                $query->where('is_active', true);
+            })
+            ->exists();
+    }
+
+    public function canAccessRecruitment(): bool
+    {
+        return $this->isRecruitmentAdministrator()
+            || $this->roles()->where('roles.id', 3)->exists()
+            || $this->isRecruitmentMonitor();
+    }
+
     public function hasRole($role)
     {
         return $this->roles()->where('name', $role)->exists();

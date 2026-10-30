@@ -7,11 +7,13 @@ use App\Services\ApprovalRequestService;
 use App\Services\CandidateRegistrationService;
 use App\Services\HolidayService;
 use App\Services\JobRequirementService;
+use App\Services\RecruitmentMonitorService;
 use App\Services\Implement\AcademicYearImplement;
 use App\Services\Implement\ApprovalRequestImplement;
 use App\Services\Implement\CandidateRegistrationImplement;
 use App\Services\Implement\HolidayImplement;
 use App\Services\Implement\JobRequirementImplement;
+use App\Services\Implement\RecruitmentMonitorImplement;
 use App\Services\Implement\LeaveAllocationImplement;
 use App\Services\Implement\RoleImplement;
 use App\Services\Implement\SopImplement;
@@ -39,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         ApprovalRequestService::class => ApprovalRequestImplement::class,
         CandidateRegistrationService::class => CandidateRegistrationImplement::class,
         JobRequirementService::class => JobRequirementImplement::class,
+        RecruitmentMonitorService::class => RecruitmentMonitorImplement::class,
         AcademicYearService::class => AcademicYearImplement::class,
         RoleService::class => RoleImplement::class,
         LeaveAllocationService::class => LeaveAllocationImplement::class,

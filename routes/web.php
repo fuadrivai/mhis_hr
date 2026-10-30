@@ -37,6 +37,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReprimandController;
 use App\Http\Controllers\ReprimandTypeController;
 use App\Http\Controllers\RecruitmentController;
+use App\Http\Controllers\RecruitmentMonitorController;
 use App\Http\Controllers\CandidateRegistrationController;
 use App\Http\Controllers\JobRequirementController;
 use App\Http\Controllers\RoleController;
@@ -106,6 +107,12 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             ->name('recruitment.candidates.show');
         Route::get('recruitment/settings/job-requirements', [JobRequirementController::class, 'index'])
             ->name('recruitment.settings.job-requirements');
+        Route::get('setting/recruitment-monitors', [RecruitmentMonitorController::class, 'index'])
+            ->name('settings.recruitment-monitors');
+        Route::post('setting/recruitment-monitors', [RecruitmentMonitorController::class, 'store'])
+            ->name('settings.recruitment-monitors.store');
+        Route::delete('setting/recruitment-monitors/{monitor}', [RecruitmentMonitorController::class, 'destroy'])
+            ->name('settings.recruitment-monitors.destroy');
         Route::get('recruitment/settings/job-requirements/create', [JobRequirementController::class, 'create'])
             ->name('recruitment.settings.job-requirements.create');
         Route::get('recruitment/settings/job-requirements/{jobRequirement}/edit', [JobRequirementController::class, 'edit'])

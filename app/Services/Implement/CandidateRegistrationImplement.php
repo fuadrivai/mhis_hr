@@ -763,18 +763,14 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
 
     private function authorizeRecruitment(User $user): void
     {
-        if (
-            !$user->hasRole('admin')
-            && !$user->roles->contains('id', 1)
-            && !$user->roles->contains('id', 3)
-        ) {
+        if (!$user->canAccessRecruitment()) {
             throw new AuthorizationException('Recruitment access is not allowed.');
         }
     }
 
     private function branchScopeId(User $user): ?int
     {
-        if ($user->hasRole('admin') || $user->roles->contains('id', 1)) {
+        if ($user->isRecruitmentAdministrator() || $user->isRecruitmentMonitor()) {
             return null;
         }
 

@@ -6,7 +6,9 @@ use App\Imports\CandidateImport;
 use App\Services\CandidateRegistrationService;
 use App\Services\Implement\CandidateRegistrationImplement;
 use App\Services\Implement\JobRequirementImplement;
+use App\Services\Implement\RecruitmentMonitorImplement;
 use App\Services\JobRequirementService;
+use App\Services\RecruitmentMonitorService;
 use Illuminate\Http\UploadedFile;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Imports\HeadingRowFormatter;
@@ -27,6 +29,14 @@ class CandidateImportTest extends TestCase
         $this->assertInstanceOf(
             JobRequirementImplement::class,
             $this->app->make(JobRequirementService::class)
+        );
+    }
+
+    public function test_recruitment_monitor_service_is_bound_to_its_implementation(): void
+    {
+        $this->assertInstanceOf(
+            RecruitmentMonitorImplement::class,
+            $this->app->make(RecruitmentMonitorService::class)
         );
     }
 

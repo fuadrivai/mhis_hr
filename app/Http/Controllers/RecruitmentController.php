@@ -21,11 +21,7 @@ class RecruitmentController extends Controller
     {
         $user = auth()->user();
 
-        if (
-            !$user->hasRole('admin')
-            && !$user->roles->contains('id', 1)
-            && !$user->roles->contains('id', 3)
-        ) {
+        if (!$user->canAccessRecruitment()) {
             abort(403);
         }
 

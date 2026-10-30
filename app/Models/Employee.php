@@ -15,6 +15,11 @@ class Employee extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function recruitmentMonitor()
+    {
+        return $this->hasOne(RecruitmentMonitor::class);
+    }
     public function personal()
     {
         return $this->belongsTo(Personal::class);
