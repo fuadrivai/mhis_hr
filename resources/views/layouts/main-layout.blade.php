@@ -134,6 +134,40 @@
                                     </li>
                                 @endif
 
+                                @if ($isAdmin || $isRole3)
+                                    <li class={{ Request::is('recruitment*') ? 'active' : '' }}>
+                                        <a><i class="fa fa-briefcase"></i>
+                                            Recruitment <span class="fa fa-chevron-down"></span></a>
+                                        <ul class="nav child_menu"
+                                            style="display: {{ Request::is('recruitment*') ? 'block' : 'none' }}">
+                                            <li class="{{ request()->routeIs('recruitment.index') && request()->route('section') === 'dashboard' ? 'current-page' : '' }}">
+                                                <a href="{{ route('recruitment.index', ['section' => 'dashboard']) }}">Dashboard</a>
+                                            </li>
+                                            <li class="{{ Request::is('recruitment/candidates*') ? 'active' : '' }}">
+                                                <a>Candidates <span class="fa fa-chevron-down"></span></a>
+                                                <ul class="nav child_menu"
+                                                    style="display: {{ Request::is('recruitment/candidates*') ? 'block' : 'none' }}">
+                                                    <li class="{{ request()->routeIs('recruitment.candidates') ? 'current-page' : '' }}">
+                                                        <a href="{{ route('recruitment.candidates') }}">Candidate Database</a>
+                                                    </li>
+                                                    <li class="{{ request()->routeIs('recruitment.candidates.form') ? 'current-page' : '' }}">
+                                                        <a href="{{ route('recruitment.candidates.form') }}">Candidate Registration</a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                            <li class="{{ Request::is('recruitment/settings*') ? 'active' : '' }}">
+                                                <a>Settings <span class="fa fa-chevron-down"></span></a>
+                                                <ul class="nav child_menu"
+                                                    style="display: {{ Request::is('recruitment/settings*') ? 'block' : 'none' }}">
+                                                    <li class="{{ request()->routeIs('recruitment.settings.job-requirements*') ? 'current-page' : '' }}">
+                                                        <a href="{{ route('recruitment.settings.job-requirements') }}">Job Requirements</a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                @endif
+
                                 <li class={{ Request::is('lesson-plan*') ? 'active' : '' }}><a><i
                                             class="fa fa-book"></i>
                                         Lesson Plan <span class="fa fa-chevron-down"></span></a>

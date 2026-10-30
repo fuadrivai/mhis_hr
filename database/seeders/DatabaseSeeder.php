@@ -30,5 +30,6 @@ class DatabaseSeeder extends Seeder
 
         $this->call([RelationshipSeeder::class]);
         $this->call([DocumentCategorySeeder::class]);
+        $this->call([JobRequirementSeeder::class]);
     }
 }

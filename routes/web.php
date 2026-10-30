@@ -36,6 +36,9 @@ use App\Http\Controllers\LeaveAllocationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReprimandController;
 use App\Http\Controllers\ReprimandTypeController;
+use App\Http\Controllers\RecruitmentController;
+use App\Http\Controllers\CandidateRegistrationController;
+use App\Http\Controllers\JobRequirementController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\WhatsappSettingController;
 use App\Http\Controllers\WhatsappChatController;
@@ -58,12 +61,66 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::resource('attendance', AttendanceController::class);
     Route::post('/login', [AuthController::class, 'authenticate']);
     Route::get('/timeoff/action', [ApprovalRequestController::class, 'timeoffAction'])->name('timeoff.action');
+    Route::get('careers/candidate-registration', [CandidateRegistrationController::class, 'selfRegistrationForm'])
+        ->name('recruitment.self-registration');
+    Route::post('careers/candidate-registration', [CandidateRegistrationController::class, 'selfRegister'])
+        ->middleware('throttle:5,1')
+        ->name('recruitment.self-registration.store');
 
 
     Route::group(['middleware' => 'auth'], function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/', [HomeController::class, 'index']);
         Route::get('clockin', [AttendanceLogController::class, 'clockin']);
+        Route::get('recruitment/candidates', [CandidateRegistrationController::class, 'index'])
+            ->name('recruitment.candidates');
+        Route::get('recruitment/candidates/export', [CandidateRegistrationController::class, 'export'])
+            ->name('recruitment.candidates.export');
+        Route::get('recruitment/candidates/form', [CandidateRegistrationController::class, 'form'])
+            ->name('recruitment.candidates.form');
+        Route::post('recruitment/candidates', [CandidateRegistrationController::class, 'store'])
+            ->name('recruitment.candidates.store');
+        Route::post('recruitment/candidates/import/preview', [CandidateRegistrationController::class, 'previewImport'])
+            ->name('recruitment.candidates.import.preview');
+        Route::post('recruitment/candidates/import/commit', [CandidateRegistrationController::class, 'commitImport'])
+            ->name('recruitment.candidates.import.commit');
+        Route::get('recruitment/candidates/import/template', [CandidateRegistrationController::class, 'downloadImportTemplate'])
+            ->name('recruitment.candidates.import.template');
+        Route::get('recruitment/candidates/{candidate}/edit', [CandidateRegistrationController::class, 'edit'])
+            ->whereNumber('candidate')
+            ->name('recruitment.candidates.edit');
+        Route::put('recruitment/candidates/{candidate}', [CandidateRegistrationController::class, 'update'])
+            ->whereNumber('candidate')
+            ->name('recruitment.candidates.update');
+        Route::get('recruitment/candidates/{candidate}/applications/create', [CandidateRegistrationController::class, 'addApplication'])
+            ->whereNumber('candidate')
+            ->name('recruitment.candidates.applications.create');
+        Route::patch('recruitment/candidates/{candidate}/applications/{application}/pipeline', [CandidateRegistrationController::class, 'updateApplication'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->name('recruitment.candidates.applications.pipeline');
+        Route::get('recruitment/candidates/{candidate}/applications/{application}/resume', [CandidateRegistrationController::class, 'resume'])
+            ->name('recruitment.candidates.resume');
+        Route::get('recruitment/candidates/{candidate}', [CandidateRegistrationController::class, 'show'])
+            ->whereNumber('candidate')
+            ->name('recruitment.candidates.show');
+        Route::get('recruitment/settings/job-requirements', [JobRequirementController::class, 'index'])
+            ->name('recruitment.settings.job-requirements');
+        Route::get('recruitment/settings/job-requirements/create', [JobRequirementController::class, 'create'])
+            ->name('recruitment.settings.job-requirements.create');
+        Route::get('recruitment/settings/job-requirements/{jobRequirement}/edit', [JobRequirementController::class, 'edit'])
+            ->name('recruitment.settings.job-requirements.edit');
+        Route::post('recruitment/settings/job-requirements', [JobRequirementController::class, 'store'])
+            ->name('recruitment.settings.job-requirements.store');
+        Route::put('recruitment/settings/job-requirements/{jobRequirement}', [JobRequirementController::class, 'update'])
+            ->name('recruitment.settings.job-requirements.update');
+        Route::patch('recruitment/settings/job-requirements/{jobRequirement}/status', [JobRequirementController::class, 'updateStatus'])
+            ->name('recruitment.settings.job-requirements.status');
+        Route::delete('recruitment/settings/job-requirements/{jobRequirement}', [JobRequirementController::class, 'destroy'])
+            ->name('recruitment.settings.job-requirements.destroy');
+        Route::get('recruitment/{section?}', [RecruitmentController::class, 'index'])
+            ->where('section', 'dashboard|candidates|applications|pipeline|interviews|assessments|final-review|talent-pool|reports|settings')
+            ->name('recruitment.index');
 
         Route::resource('pin-location', PinLocationController::class);
         Route::get('scheduler/calendar', [EmployeeScheduleController::class, 'calendar'])->name('scheduler.calendar');
