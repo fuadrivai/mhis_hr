@@ -119,8 +119,9 @@ class AnnouncementImplement implements AnnouncementService
                     $query->where('publish_at', '<=', Carbon::now());
                 }
 
-                $query->orderByDesc('publish_at');
             }
+
+            $query->orderByDesc('publish_at')->orderByDesc('id');
 
             if (is_numeric($limit) && (int) $limit > 0) {
                 $query->limit((int) $limit);

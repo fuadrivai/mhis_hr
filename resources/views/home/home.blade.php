@@ -14,8 +14,20 @@
                 <div class="dash-title">
                     <p>Snapshot for {{ \Carbon\Carbon::now()->format('l, F j, Y') }}</p>
                 </div>
-                <div class="dash-pill">
-                    Last refreshed: {{ \Carbon\Carbon::now()->format('h:i A') }}
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="dash-pill">
+                        Last refreshed: {{ \Carbon\Carbon::now()->format('h:i A') }}
+                    </div>
+                    <form method="GET" action="{{ url('/') }}" style="margin: 0;">
+                        <select name="branch_id" id="branch_id" class="form-control" aria-label="Filter by branch" onchange="this.form.submit()">
+                            <option value="">All Branches</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ (string) $selectedBranchId === (string) $branch->id ? 'selected' : '' }}>
+                                    {{ $branch->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
                 </div>
             </div>
 
@@ -161,6 +173,7 @@
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
+            var calendarBranchFilter = @json($selectedBranchId ? (string) $selectedBranchId : '1,2,3');
             if(calendarEl) {
                 var calendar = new FullCalendar.Calendar(calendarEl, {
                     initialView: 'dayGridMonth',
@@ -172,7 +185,7 @@
                     },
                     events: function(fetchInfo, successCallback, failureCallback) {
                         $.ajax({
-                            url: 'https://calendar.mutiaraharapan.sch.id/api/schedule?branch=1,2,3&category=internal,leadership',
+                            url: 'https://calendar.mutiaraharapan.sch.id/api/schedule?branch=' + encodeURIComponent(calendarBranchFilter) + '&category=internal,leadership',
                             type: 'GET',
                             success: function(response) {
                                 // Fallback mapping in case of various JSON formats from the API

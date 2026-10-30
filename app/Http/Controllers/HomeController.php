@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ApprovalRequest;
+use App\Models\Attendance;
+use App\Models\Branch;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -11,7 +15,7 @@ class HomeController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
@@ -21,9 +25,23 @@ class HomeController extends Controller
         }
 
         if ($user->hasRole('admin')) {
+            $validated = $request->validate([
+                'branch_id' => 'nullable|integer|exists:branches,id',
+            ]);
+            $branchId = $validated['branch_id'] ?? null;
+            $branches = Branch::orderBy('name')->get();
+            $applyBranch = function ($query) use ($branchId) {
+                if ($branchId) {
+                    $query->where('branch_id', $branchId);
+                }
+            };
+
             // Active Employees right now
             $now = \Carbon\Carbon::now();
-            $employees = \App\Models\Employee::where('is_active', 1)->whereHas('employment')->with('employment')->get();
+            $employees = Employee::where('is_active', 1)
+                ->whereHas('employment', $applyBranch)
+                ->with(['employment.job_level', 'personal'])
+                ->get();
             $activeEmployees = $employees->filter(function($emp) use ($now) {
                 return $emp->employment && ($emp->employment->resign_date === null || \Carbon\Carbon::parse($emp->employment->resign_date)->isAfter($now));
             });
@@ -114,20 +132,30 @@ class HomeController extends Controller
             }
 
             // KPI Data
-            $newThisMonth = \App\Models\Employee::whereHas('employment', function($q) use ($now) {
+            $newThisMonth = Employee::whereHas('employment', function($q) use ($now, $applyBranch) {
                 $q->whereMonth('join_date', $now->month)->whereYear('join_date', $now->year);
+                $applyBranch($q);
             })->count();
 
-            $presentToday = \App\Models\Attendance::whereDate('date', $now->toDateString())
-                                ->where('status', 'present')
-                                ->count();
+            $presentTodayQuery = Attendance::whereDate('date', $now->toDateString())
+                ->where('status', 'present');
+            if ($branchId) {
+                $presentTodayQuery->whereHas('employee.employment', $applyBranch);
+            }
+            $presentToday = $presentTodayQuery->count();
             
             $presentPercentage = $totalActive > 0 ? round(($presentToday / $totalActive) * 100, 1) : 0;
 
-            $openRequests = \App\Models\ApprovalRequest::where('status', 'pending')->count();
+            $openRequestsQuery = ApprovalRequest::where('status', 'pending');
+            if ($branchId) {
+                $openRequestsQuery->whereHas('requester.employment', $applyBranch);
+            }
+            $openRequests = $openRequestsQuery->count();
 
             return view('home.home', [
                 "title" => "Home Page",
+                "branches" => $branches,
+                "selectedBranchId" => $branchId,
                 "totalActive" => $totalActive,
                 "newThisMonth" => $newThisMonth,
                 "presentToday" => $presentToday,

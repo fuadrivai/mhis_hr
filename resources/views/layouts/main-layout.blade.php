@@ -341,6 +341,7 @@
     <script src="/plugins/fastclick/lib/fastclick.js"></script>
     <!-- NProgress -->
     <script src="/plugins/nprogress/nprogress.js"></script>
+    <script src="/plugins/bootstrap-progressbar/bootstrap-progressbar.min.js"></script>
 
     <!-- Custom Theme Scripts -->
     <script src="/build/js/custom.min.js"></script>
