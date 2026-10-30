@@ -13,6 +13,10 @@ use App\Models\Personal;
 use App\Models\Position;
 use App\Models\Religion;
 use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Excel as BaseExcel;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class EmployeeExportTest extends TestCase
@@ -91,5 +95,43 @@ class EmployeeExportTest extends TestCase
             'AB',
             'ID',
         ], $export->map($employee));
+    }
+
+    public function test_export_preserves_full_identity_number_as_text(): void
+    {
+        $identityNumber = '1234567890123456';
+        $personal = (new Personal())->forceFill(['identity_number' => $identityNumber]);
+        $personal->setRelation('religion', null);
+
+        $employment = new Employment();
+        $employment->setRelation('organization', null);
+        $employment->setRelation('job_position', null);
+        $employment->setRelation('job_level', null);
+        $employment->setRelation('branch', null);
+
+        $employee = new Employee();
+        $employee->setRelation('personal', $personal);
+        $employee->setRelation('employment', $employment);
+
+        $contents = Excel::raw(
+            new EmployeeExport(new Collection([$employee])),
+            BaseExcel::XLSX
+        );
+        $tempFile = tempnam(sys_get_temp_dir(), 'employee-export-');
+
+        $this->assertNotFalse($tempFile);
+
+        try {
+            file_put_contents($tempFile, $contents);
+            $spreadsheet = IOFactory::load($tempFile);
+            $cell = $spreadsheet->getActiveSheet()->getCell('Q2');
+
+            $this->assertSame($identityNumber, $cell->getValue());
+            $this->assertSame(DataType::TYPE_STRING, $cell->getDataType());
+        } finally {
+            if (is_file($tempFile)) {
+                unlink($tempFile);
+            }
+        }
     }
 }

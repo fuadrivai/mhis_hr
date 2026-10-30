@@ -3,12 +3,18 @@
 namespace App\Exports;
 
 use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
 
-class EmployeeExport implements FromCollection, WithHeadings, WithMapping
+class EmployeeExport extends DefaultValueBinder implements FromCollection, WithHeadings, WithMapping, WithCustomValueBinder
 {
+    private const IDENTITY_NUMBER_COLUMN = 'Q';
+
     private Collection $employees;
 
     public function __construct(Collection $employees)
@@ -30,6 +36,7 @@ class EmployeeExport implements FromCollection, WithHeadings, WithMapping
     {
         $personal = $employee->personal;
         $employment = $employee->employment;
+        $identityNumber = optional($personal)->identity_number;
 
         return [
             optional($employment)->employee_id,
@@ -48,7 +55,7 @@ class EmployeeExport implements FromCollection, WithHeadings, WithMapping
             optional($personal)->birth_place,
             optional($personal)->address,
             optional($personal)->current_address,
-            optional($personal)->identity_number,
+            $identityNumber === null ? null : (string) $identityNumber,
             optional($personal)->mobile_phone,
             optional($personal)->phone,
             optional(optional($employment)->branch)->name,
@@ -60,6 +67,17 @@ class EmployeeExport implements FromCollection, WithHeadings, WithMapping
             optional($personal)->blood_type,
             optional($employment)->nationality_code,
         ];
+    }
+
+    public function bindValue(Cell $cell, $value)
+    {
+        if ($cell->getColumn() === self::IDENTITY_NUMBER_COLUMN && $value !== null) {
+            $cell->setValueExplicit((string) $value, DataType::TYPE_STRING);
+
+            return true;
+        }
+
+        return parent::bindValue($cell, $value);
     }
 
     private function formatDate($value): ?string
