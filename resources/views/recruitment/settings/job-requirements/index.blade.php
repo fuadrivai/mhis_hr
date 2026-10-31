@@ -27,7 +27,7 @@
                 <table id="job-requirements-table" class="table table-striped table-bordered table-sm" style="width: 100%">
                     <thead>
                         <tr>
-                            <th>Title</th>
+                            <th>Title & Available Roles</th>
                             <th class="text-center">Status</th>
                             <th class="text-center job-requirement-actions-column">Action</th>
                         </tr>
@@ -35,7 +35,16 @@
                     <tbody>
                         @foreach ($jobRequirements as $jobRequirement)
                             <tr>
-                                <td>{{ $jobRequirement->title }}</td>
+                                <td>
+                                    <strong>{{ $jobRequirement->title }}</strong>
+                                    @if ($jobRequirement->positions->isNotEmpty())
+                                        <div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px;">
+                                            @foreach ($jobRequirement->positions as $pos)
+                                                <span class="label label-info" style="font-size: 11px; padding: 3px 6px; display: inline-block;">{{ $pos->name }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </td>
                                 <td class="text-center">
                                     <form method="POST"
                                         action="{{ route('recruitment.settings.job-requirements.status', $jobRequirement) }}">

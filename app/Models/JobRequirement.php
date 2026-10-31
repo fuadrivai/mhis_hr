@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JobRequirement extends Model
 {
@@ -16,5 +16,15 @@ class JobRequirement extends Model
     public function details(): HasMany
     {
         return $this->hasMany(JobRequirementDetail::class);
+    }
+
+    public function positions(): HasMany
+    {
+        return $this->hasMany(JobRequirementPosition::class);
+    }
+
+    public function openings(): HasMany
+    {
+        return $this->hasMany(JobOpening::class);
     }
 }

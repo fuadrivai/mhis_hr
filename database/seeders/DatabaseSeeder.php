@@ -14,22 +14,31 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        // \App\Models\User::factory(10)->create();
-        // User::create([
-        //     'name' => "Fuad Rifai",
-        //     'email' => "fuad.r@mutiaraharapan.sch.id",
-        //     'email_verified_at' => now(),
-        //     'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-        // ]);
-        // User::create([
-        //     'name' => "Salludin Gozali",
-        //     'email' => "salludin.g@mutiaraharapan.sch.id",
-        //     'email_verified_at' => now(),
-        //     'password' => '$2y$10$zMzXBaCLSTLnNJnPIYsN6OJHisOlgA/g6LW2kWsYN11Zq4aF2FjDS', // mutiaraharapan
-        // ]);
+        $this->call([
+            RoleSeeder::class,
+            PositionSeeder::class,
+            RelationshipSeeder::class,
+            DocumentCategorySeeder::class,
+            DegreeSeeder::class,
+            JobRequirementSeeder::class,
+        ]);
 
-        $this->call([RelationshipSeeder::class]);
-        $this->call([DocumentCategorySeeder::class]);
-        $this->call([JobRequirementSeeder::class]);
+        $fuad = User::firstOrCreate([
+            'email' => 'fuad.r@mutiaraharapan.sch.id',
+        ], [
+            'name' => 'Fuad Rifai',
+            'email_verified_at' => now(),
+            'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+        ]);
+        $fuad->roles()->syncWithoutDetaching([1]);
+
+        $salludin = User::firstOrCreate([
+            'email' => 'salludin.g@mutiaraharapan.sch.id',
+        ], [
+            'name' => 'Salludin Gozali',
+            'email_verified_at' => now(),
+            'password' => '$2y$10$zMzXBaCLSTLnNJnPIYsN6OJHisOlgA/g6LW2kWsYN11Zq4aF2FjDS',
+        ]);
+        $salludin->roles()->syncWithoutDetaching([1]);
     }
 }

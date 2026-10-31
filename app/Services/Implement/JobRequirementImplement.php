@@ -3,11 +3,13 @@
 namespace App\Services\Implement;
 
 use App\Models\JobRequirement;
+use App\Models\Position;
 use App\Models\User;
 use App\Services\JobRequirementService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class JobRequirementImplement implements JobRequirementService
 {
@@ -22,14 +24,14 @@ class JobRequirementImplement implements JobRequirementService
     {
         $this->authorizeAccess($user);
 
-        return JobRequirement::with('details')->latest()->get();
+        return JobRequirement::with(['details', 'positions'])->latest()->get();
     }
 
     public function find(JobRequirement $jobRequirement, User $user): JobRequirement
     {
         $this->authorizeAccess($user);
 
-        return $jobRequirement->load('details');
+        return $jobRequirement->load(['details', 'positions']);
     }
 
     public function create(array $data, User $user): JobRequirement
@@ -43,13 +45,38 @@ class JobRequirementImplement implements JobRequirementService
                 'footer' => $data['footer'] ?? null,
             ]);
 
-            foreach ($data['requirements'] as $requirement) {
-                $jobRequirement->details()->create([
-                    'requirement' => $requirement,
-                ]);
+            if (!empty($data['positions'])) {
+                foreach ($data['positions'] as $posName) {
+                    $trimmed = trim((string) $posName);
+                    if ($trimmed !== '') {
+                        $matchedPosition = Position::whereRaw('LOWER(name) = ?', [Str::lower($trimmed)])->first();
+                        $jobRequirement->positions()->create([
+                            'name' => $trimmed,
+                            'position_id' => $matchedPosition?->id,
+                        ]);
+                    }
+                }
             }
 
-            return $jobRequirement->load('details');
+            foreach ($data['requirements'] as $requirement) {
+                if (is_array($requirement)) {
+                    $jobRequirement->details()->create([
+                        'requirement'  => $requirement['text'] ?? ($requirement['requirement'] ?? ''),
+                        'category'     => $requirement['category'] ?? 'other',
+                        'is_mandatory' => !empty($requirement['is_mandatory']),
+                        'weight'       => (int) ($requirement['weight'] ?? 3),
+                    ]);
+                } else {
+                    $jobRequirement->details()->create([
+                        'requirement'  => (string) $requirement,
+                        'category'     => 'other',
+                        'is_mandatory' => false,
+                        'weight'       => 3,
+                    ]);
+                }
+            }
+
+            return $jobRequirement->load(['details', 'positions']);
         });
     }
 
@@ -64,14 +91,40 @@ class JobRequirementImplement implements JobRequirementService
                 'footer' => $data['footer'] ?? null,
             ]);
 
-            $jobRequirement->details()->delete();
-            foreach ($data['requirements'] as $requirement) {
-                $jobRequirement->details()->create([
-                    'requirement' => $requirement,
-                ]);
+            $jobRequirement->positions()->delete();
+            if (!empty($data['positions'])) {
+                foreach ($data['positions'] as $posName) {
+                    $trimmed = trim((string) $posName);
+                    if ($trimmed !== '') {
+                        $matchedPosition = Position::whereRaw('LOWER(name) = ?', [Str::lower($trimmed)])->first();
+                        $jobRequirement->positions()->create([
+                            'name' => $trimmed,
+                            'position_id' => $matchedPosition?->id,
+                        ]);
+                    }
+                }
             }
 
-            return $jobRequirement->load('details');
+            $jobRequirement->details()->delete();
+            foreach ($data['requirements'] as $requirement) {
+                if (is_array($requirement)) {
+                    $jobRequirement->details()->create([
+                        'requirement'  => $requirement['text'] ?? ($requirement['requirement'] ?? ''),
+                        'category'     => $requirement['category'] ?? 'other',
+                        'is_mandatory' => !empty($requirement['is_mandatory']),
+                        'weight'       => (int) ($requirement['weight'] ?? 3),
+                    ]);
+                } else {
+                    $jobRequirement->details()->create([
+                        'requirement'  => (string) $requirement,
+                        'category'     => 'other',
+                        'is_mandatory' => false,
+                        'weight'       => 3,
+                    ]);
+                }
+            }
+
+            return $jobRequirement->load(['details', 'positions']);
         });
     }
 

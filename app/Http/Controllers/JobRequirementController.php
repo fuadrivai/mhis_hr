@@ -46,8 +46,9 @@ class JobRequirementController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'footer' => 'nullable|string',
+            'positions' => 'nullable|array',
+            'positions.*' => 'nullable|string|max:255',
             'requirements' => 'required|array|min:1',
-            'requirements.*' => 'required|string|max:1000',
         ]);
 
         $this->jobRequirementService->create($validated, auth()->user());
@@ -63,8 +64,9 @@ class JobRequirementController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'footer' => 'nullable|string',
+            'positions' => 'nullable|array',
+            'positions.*' => 'nullable|string|max:255',
             'requirements' => 'required|array|min:1',
-            'requirements.*' => 'required|string|max:1000',
         ]);
 
         $this->jobRequirementService->update($jobRequirement, $validated, auth()->user());

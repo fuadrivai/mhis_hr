@@ -22,6 +22,7 @@
         "maatwebsite/excel": "^3.1",
         "php-open-source-saver/jwt-auth": "^2.9",
         "predis/predis": "^3.5",
+        "smalot/pdfparser": "^2.13",
         "yajra/laravel-datatables": "^13.0",
         "yajra/laravel-datatables-oracle": "~13.0"
     },

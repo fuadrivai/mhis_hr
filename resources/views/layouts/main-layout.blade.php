@@ -66,6 +66,7 @@
                                 $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->roles->contains('id', 1);
                                 $isRole3 = auth()->user()->roles->contains('id', 3);
                                 $isRecruitmentMonitor = auth()->user()->isRecruitmentMonitor();
+                                $canAccessRecruitment = auth()->user()->canAccessRecruitment();
                                 $isWhatsappChatter = \App\Models\WhatsappChatter::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
                                 $isWhatsappMonitor = \App\Models\WhatsappMonitor::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
                                 ?>
@@ -135,7 +136,7 @@
                                     </li>
                                 @endif
 
-                                @if ($isRecruitmentMonitor)
+                                @if ($canAccessRecruitment)
                                     <li class={{ Request::is('recruitment*') ? 'active' : '' }}>
                                         <a><i class="fa fa-briefcase"></i>
                                             Recruitment <span class="fa fa-chevron-down"></span></a>
@@ -143,6 +144,9 @@
                                             style="display: {{ Request::is('recruitment*') ? 'block' : 'none' }}">
                                             <li class="{{ request()->routeIs('recruitment.index') && request()->route('section') === 'dashboard' ? 'current-page' : '' }}">
                                                 <a href="{{ route('recruitment.index', ['section' => 'dashboard']) }}">Dashboard</a>
+                                            </li>
+                                            <li class="{{ Request::is('recruitment/job-openings*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('recruitment.job-openings.index') }}">Job Openings</a>
                                             </li>
                                             <li class="{{ Request::is('recruitment/candidates*') ? 'active' : '' }}">
                                                 <a>Candidates <span class="fa fa-chevron-down"></span></a>

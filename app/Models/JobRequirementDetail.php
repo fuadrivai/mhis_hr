@@ -11,6 +11,11 @@ class JobRequirementDetail extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'is_mandatory' => 'boolean',
+        'weight'       => 'integer',
+    ];
+
     public function jobRequirement(): BelongsTo
     {
         return $this->belongsTo(JobRequirement::class);

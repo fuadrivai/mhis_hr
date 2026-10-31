@@ -6,9 +6,13 @@ use App\Imports\CandidateImport;
 use App\Models\Branch;
 use App\Models\Candidate;
 use App\Models\CandidateApplication;
+use App\Models\JobOpening;
 use App\Models\Position;
 use App\Models\User;
+use App\Models\ApplicationStageHistory;
+use App\Jobs\ProcessCvMatchJob;
 use App\Services\CandidateRegistrationService;
+use App\Services\Recruitment\StageTransitionGuard;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -35,36 +39,35 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
         'Other',
     ];
 
-    private const CONSENT_VERSION = 'candidate-privacy-v1';
+    private const CONSENT_VERSION = 'candidate-privacy-v2';
     private const MAX_IMPORT_ROWS = 500;
-    private const STAGES = [
-        'received' => 'Received',
-        'screening' => 'Screening',
-        'shortlisted' => 'Shortlisted',
-        'interview' => 'Interview',
-        'assessment' => 'Assessment',
-        'reference_check' => 'Reference Check',
-        'offer' => 'Offer',
-        'hired' => 'Hired',
-        'rejected' => 'Rejected',
-        'withdrawn' => 'Withdrawn',
-    ];
-    private const APPLICATION_STATUSES = [
-        'received' => 'Not Processed',
+
+    public const STAGES = StageTransitionGuard::STAGES;
+
+    public const APPLICATION_STATUSES = [
+        'received'    => 'Not Processed',
         'in_progress' => 'In Progress',
-        'hired' => 'Hired',
-        'rejected' => 'Rejected',
-        'withdrawn' => 'Withdrawn',
+        'hired'       => 'Hired',
+        'rejected'    => 'Rejected',
+        'withdrawn'   => 'Withdrawn',
     ];
 
     public function getRegistrationPageData(User $user): array
     {
         $this->authorizeRecruitment($user);
 
+        $branchScopeId = $this->branchScopeId($user);
+        $openings = JobOpening::where('status', 'open')
+            ->when($branchScopeId !== null, fn ($q) => $q->where('branch_id', $branchScopeId))
+            ->with(['branch', 'position'])
+            ->orderBy('title')
+            ->get();
+
         return [
+            'openings'  => $openings,
             'positions' => Position::orderBy('name')->get(),
-            'branches' => $this->accessibleBranches($user),
-            'sources' => self::SOURCES,
+            'branches'  => $this->accessibleBranches($user),
+            'sources'   => self::SOURCES,
         ];
     }
 
@@ -90,7 +93,7 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
             }])
             ->with(['applications' => function ($query) use ($latestApplicationIds) {
                 $query->whereIn('id', $latestApplicationIds)
-                    ->with(['position', 'branch', 'hrPic']);
+                    ->with(['position', 'branch', 'hrPic', 'jobOpening', 'latestCvMatchResult.latestOverride']);
             }]);
 
         if (!empty($filters['q'])) {
@@ -146,8 +149,15 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
             ->select('hr_pic_id')
             ->distinct());
 
+        $branchScopeId = $this->branchScopeId($user);
+        $openings = JobOpening::query()
+            ->when($branchScopeId !== null, fn ($q) => $q->where('branch_id', $branchScopeId))
+            ->orderBy('title')
+            ->get(['id', 'title', 'branch_id']);
+
         return [
             'branches' => $this->accessibleBranches($user),
+            'openings' => $openings,
             'positions' => (clone $applications)->whereNotNull('position_applied')
                 ->select('position_applied')->distinct()->orderBy('position_applied')->pluck('position_applied'),
             'sources' => (clone $applications)->whereNotNull('source')
@@ -176,11 +186,12 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
                 'Candidate Name',
                 'Email',
                 'Phone',
-                'Position Applied',
+                'Job Opening / Position',
                 'Branch',
                 'Source',
                 'Application Status',
                 'Current Stage',
+                'Stage Substatus',
                 'HR PIC',
                 'Last Activity',
                 'Updated At',
@@ -195,11 +206,12 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
                         $candidate->full_name,
                         $candidate->email,
                         $candidate->phone,
-                        $application?->position_applied ?: $application?->position?->name,
+                        $application?->jobOpening?->title ?: ($application?->position_applied ?: $application?->position?->name),
                         $application?->branch?->name,
                         $application?->source,
                         self::APPLICATION_STATUSES[$application?->status ?? ''] ?? $application?->status,
                         self::STAGES[$application?->stage ?? ''] ?? $application?->stage,
+                        $application?->stage_substatus,
                         $application?->hrPic?->name,
                         $application?->last_activity_at?->format('Y-m-d H:i:s'),
                         $candidate->updated_at?->format('Y-m-d H:i:s'),
@@ -218,21 +230,25 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
         $this->authorizeRecruitment($user);
         $branchScopeId = $this->branchScopeId($user);
 
-        if ($branchScopeId === null) {
-            return $candidate->load([
-                'applications' => function ($query) {
-                    $query->orderByDesc('applied_at')->with(['position', 'branch', 'hrPic']);
-                },
-            ]);
-        }
-
-        $candidate->load([
+        $loadRelations = [
             'applications' => function ($query) use ($branchScopeId) {
-                $query->where('branch_id', $branchScopeId)
-                    ->orderByDesc('applied_at')
-                    ->with(['position', 'branch', 'hrPic']);
+                if ($branchScopeId !== null) {
+                    $query->where('branch_id', $branchScopeId);
+                }
+                $query->orderByDesc('applied_at')->with([
+                    'position',
+                    'branch',
+                    'hrPic',
+                    'jobOpening',
+                    'stageHistories' => fn ($q) => $q->with('changer')->orderByDesc('changed_at'),
+                    'latestCvMatchResult.requirementResults',
+                    'latestCvMatchResult.latestOverride.user',
+                    'latestCvMatchResult.overrides.user',
+                ]);
             },
-        ]);
+        ];
+
+        $candidate->load($loadRelations);
 
         if ($candidate->applications->isEmpty()) {
             abort(404);
@@ -278,26 +294,70 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
             }
         }
 
-        $status = match ($data['stage']) {
-            'received' => 'received',
-            'hired', 'rejected', 'withdrawn' => $data['stage'],
-            default => 'in_progress',
-        };
-        $application->update([
-            'stage' => $data['stage'],
-            'status' => $status,
-            'hr_pic_id' => $data['hr_pic_id'] ?? null,
-            'last_activity_at' => now(),
-        ]);
+        // Validate transition through centralized transition guard
+        app(StageTransitionGuard::class)->validateTransition(
+            $application,
+            $data['stage'],
+            $data['stage_substatus'] ?? null,
+            $data['reason'] ?? null,
+            $user
+        );
 
-        return $application->refresh()->load(['position', 'branch', 'hrPic']);
+        return DB::transaction(function () use ($application, $data, $user) {
+            $fromStage = $application->stage;
+            $fromSubstatus = $application->stage_substatus;
+            $status = StageTransitionGuard::mapAggregateStatus($data['stage']);
+
+            $updateData = [
+                'stage'            => $data['stage'],
+                'status'           => $status,
+                'last_activity_at' => now(),
+            ];
+
+            if (array_key_exists('stage_substatus', $data)) {
+                $updateData['stage_substatus'] = $data['stage_substatus'];
+            }
+
+            if (array_key_exists('hr_pic_id', $data)) {
+                $updateData['hr_pic_id'] = $data['hr_pic_id'];
+            }
+
+            $application->update($updateData);
+
+            // Record stage history
+            ApplicationStageHistory::create([
+                'candidate_application_id' => $application->id,
+                'from_stage'               => $fromStage,
+                'to_stage'                 => $data['stage'],
+                'from_substatus'           => $fromSubstatus,
+                'to_substatus'             => $data['stage_substatus'] ?? null,
+                'changed_by'               => $user->id,
+                'reason'                   => $data['reason'] ?? null,
+                'changed_at'               => now(),
+            ]);
+
+            // Sync opening filled status if attached to an opening
+            if ($application->job_opening_id) {
+                $opening = JobOpening::find($application->job_opening_id);
+                $opening?->syncHeadcountStatus();
+            }
+
+            return $application->refresh()->load([
+                'position',
+                'branch',
+                'hrPic',
+                'jobOpening',
+                'stageHistories' => fn ($q) => $q->with('changer')->orderByDesc('changed_at'),
+            ]);
+        });
     }
 
     public function getSelfRegistrationPageData(): array
     {
         return [
+            'openings'  => JobOpening::where('status', 'open')->with('branch')->orderBy('title')->get(),
             'positions' => Position::orderBy('name')->get(),
-            'branches' => Branch::where('is_active', true)->orderBy('name')->get(),
+            'branches'  => Branch::where('is_active', true)->orderBy('name')->get(),
         ];
     }
 
@@ -323,41 +383,65 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
         }
 
         Validator::make($data, [
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:50',
-            'current_city' => 'nullable|string|max:255',
-            'position_applied' => $registrationMethod === 'import'
-                ? 'nullable|string|max:255'
-                : 'required|string|max:255',
-            'position_id' => $registrationMethod === 'import'
-                ? 'required|integer'
-                : 'nullable|integer',
-            'branch_id' => 'required|integer',
-            'source' => $registrationMethod === 'self_registration'
+            'full_name'        => 'required|string|max:255',
+            'email'            => 'required|email|max:255',
+            'phone'            => 'required|string|max:50',
+            'current_city'     => 'nullable|string|max:255',
+            'job_opening_id'   => $registrationMethod === 'self_registration'
+                ? 'required|integer|exists:job_openings,id'
+                : 'nullable|integer|exists:job_openings,id',
+            'position_applied' => 'nullable|string|max:255',
+            'position_id'      => 'nullable|integer',
+            'branch_id'        => 'nullable|integer',
+            'source'           => $registrationMethod === 'self_registration'
                 ? 'nullable'
                 : 'required|in:' . implode(',', self::SOURCES),
-            'source_detail' => 'nullable|string|max:255',
-            'consent' => 'accepted',
+            'source_detail'    => 'nullable|string|max:255',
+            'consent'          => 'accepted',
         ])->validate();
 
-        $position = $registrationMethod === 'import'
-            ? Position::findOrFail($data['position_id'])
-            : Position::whereRaw('LOWER(name) = ?', [Str::lower(trim($data['position_applied']))])->first();
-        $positionName = $registrationMethod === 'import'
-            ? $position->name
-            : trim($data['position_applied']);
-        $branch = Branch::where('is_active', true)->findOrFail($data['branch_id']);
+        $opening = null;
+        if (!empty($data['job_opening_id'])) {
+            $opening = JobOpening::with(['branch', 'position'])->findOrFail($data['job_opening_id']);
+            $branch = $opening->branch;
+            $position = $opening->position;
+            $positionName = $opening->title;
+            $division = $opening->division;
+        } else {
+            // Legacy registration without opening
+            if (empty($data['branch_id'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'branch_id' => 'Branch is required.',
+                ]);
+            }
+            $branch = Branch::where('is_active', true)->findOrFail($data['branch_id']);
+            $position = !empty($data['position_id'])
+                ? Position::find($data['position_id'])
+                : Position::whereRaw('LOWER(name) = ?', [Str::lower(trim((string) ($data['position_applied'] ?? '')))])->first();
+            $positionName = trim((string) ($data['position_applied'] ?? ($position?->name ?? '')));
+            $division = $data['division'] ?? null;
+        }
+
         if ($registeredBy) {
             $this->assertBranchAccess($branch, $registeredBy);
         }
 
         $email = Str::lower(trim($data['email']));
         $candidate = $this->findCandidateByEmail($email);
-        if ($candidate && $this->hasApplicationByPosition($candidate, $positionName, $position?->id, $branch->id)) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'email' => 'This candidate is already registered for the selected position and branch.',
-            ]);
+
+        // Duplicate check
+        if ($opening) {
+            if ($candidate && $this->hasApplicationByOpening($candidate, $opening->id)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'email' => 'This candidate is already registered for the selected job opening.',
+                ]);
+            }
+        } else {
+            if ($candidate && $this->hasApplicationByPosition($candidate, $positionName, $position?->id, $branch->id)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'email' => 'This candidate is already registered for the selected position and branch.',
+                ]);
+            }
         }
 
         $resumePath = null;
@@ -369,11 +453,13 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
         }
 
         try {
-            return DB::transaction(function () use (
+            $createdApplication = DB::transaction(function () use (
                 $data,
                 $email,
+                $opening,
                 $position,
                 $positionName,
+                $division,
                 $branch,
                 $registrationMethod,
                 $registeredBy,
@@ -382,42 +468,62 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
                 $candidate = $this->findCandidateByEmail($email);
                 if (!$candidate) {
                     $candidate = Candidate::create([
-                        'full_name' => $data['full_name'],
-                        'email' => $email,
-                        'phone' => $data['phone'],
+                        'full_name'    => $data['full_name'],
+                        'email'        => $email,
+                        'phone'        => $data['phone'],
                         'current_city' => $data['current_city'] ?? null,
                     ]);
                     $candidate->candidate_code = sprintf('CAN-%s-%05d', now()->format('Y'), $candidate->id);
                     $candidate->save();
                 }
 
-                if ($this->hasApplicationByPosition($candidate, $positionName, $position?->id, $branch->id)) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'email' => 'This candidate is already registered for the selected position and branch.',
-                    ]);
-                }
-
-                return CandidateApplication::create([
-                    'candidate_id' => $candidate->id,
-                    'position_id' => $position?->id,
-                    'position_applied' => $positionName,
-                    'branch_id' => $branch->id,
-                    'source' => $registrationMethod === 'self_registration'
+                $application = CandidateApplication::create([
+                    'candidate_id'        => $candidate->id,
+                    'job_opening_id'      => $opening?->id,
+                    'position_id'         => $position?->id,
+                    'position_applied'    => $positionName,
+                    'division'            => $division,
+                    'branch_id'           => $branch->id,
+                    'source'              => $registrationMethod === 'self_registration'
                         ? 'Career Page'
                         : $data['source'],
-                    'source_detail' => $data['source_detail'] ?? null,
-                    'resume_path' => $resumePath,
-                    'consent_at' => now(),
-                    'consent_version' => self::CONSENT_VERSION,
+                    'source_detail'       => $data['source_detail'] ?? null,
+                    'resume_path'         => $resumePath,
+                    'consent_at'          => now(),
+                    'consent_version'     => self::CONSENT_VERSION,
                     'registration_method' => $registrationMethod,
-                    'registered_by' => $registeredBy?->id,
-                    'hr_pic_id' => $registeredBy?->id,
-                    'status' => 'received',
-                    'stage' => 'received',
-                    'applied_at' => now(),
-                    'last_activity_at' => now(),
+                    'registered_by'       => $registeredBy?->id,
+                    'hr_pic_id'           => $registeredBy?->id,
+                    'status'              => 'received',
+                    'stage'               => 'applied',
+                    'applied_at'          => now(),
+                    'last_activity_at'    => now(),
                 ]);
+
+                // Initial stage history
+                ApplicationStageHistory::create([
+                    'candidate_application_id' => $application->id,
+                    'from_stage'               => null,
+                    'to_stage'                 => 'applied',
+                    'from_substatus'           => null,
+                    'to_substatus'             => null,
+                    'changed_by'               => $registeredBy?->id,
+                    'reason'                   => 'Application created',
+                    'changed_at'               => now(),
+                ]);
+
+                return $application;
             });
+
+            if ($createdApplication->resume_path && ($opening?->job_requirement_id || $opening?->position_id)) {
+                try {
+                    ProcessCvMatchJob::dispatch($createdApplication->id, $registeredBy?->id, false);
+                } catch (Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Failed to dispatch ProcessCvMatchJob: ' . $e->getMessage());
+                }
+            }
+
+            return $createdApplication;
         } catch (Throwable $exception) {
             if ($resumePath) {
                 Storage::disk('local')->delete($resumePath);
@@ -448,17 +554,13 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
         $token = null;
         if ($assessment['valid_count'] > 0) {
             $token = (string) Str::uuid();
-            $extension = strtolower($file->getClientOriginalExtension() ?: 'csv');
-            $path = $file->storeAs('recruitment/imports', $token . '.' . $extension, 'local');
-
-            if (!$path) {
-                throw new RuntimeException('Candidate import file could not be stored.');
-            }
+            $extension = $file->getClientOriginalExtension() ?: 'xlsx';
+            $file->storeAs('recruitment/imports', $token . '.' . $extension, 'local');
         }
 
         return [
             'preview' => $assessment,
-            'token' => $token,
+            'token'   => $token,
         ];
     }
 
@@ -509,7 +611,7 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
 
         return [
             'imported_count' => count($validRows),
-            'skipped_count' => $assessment['total'] - count($validRows),
+            'skipped_count'  => $assessment['total'] - count($validRows),
         ];
     }
 
@@ -546,7 +648,7 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
             abort(404);
         }
 
-        return $application->resume_path;
+        return Storage::disk('local')->path($application->resume_path);
     }
 
     private function readImportRows($file): array
@@ -558,13 +660,15 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
 
     private function validateImportRows(array $rows, User $user): array
     {
-        $positions = Position::all()->keyBy(fn (Position $position) => Str::lower($position->name));
-        $branchQuery = Branch::where('is_active', true);
         $branchScopeId = $this->branchScopeId($user);
+
+        // Fetch open openings scoped to user's branch
+        $openingsQuery = JobOpening::where('status', 'open')->with(['branch', 'position']);
         if ($branchScopeId !== null) {
-            $branchQuery->whereKey($branchScopeId);
+            $openingsQuery->where('branch_id', $branchScopeId);
         }
-        $branches = $branchQuery->get()->keyBy(fn (Branch $branch) => Str::lower($branch->name));
+        $openings = $openingsQuery->get()->keyBy(fn (JobOpening $o) => Str::lower(trim($o->title)));
+
         $seenApplications = [];
         $result = [];
         $total = 0;
@@ -578,36 +682,34 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
             $total++;
             $line = $index + 2;
             $validator = Validator::make($data, [
-                'full_name' => 'required|string|max:255',
-                'email' => 'required|email|max:255',
-                'phone_number' => 'required|string|max:50',
-                'current_city' => 'nullable|string|max:255',
-                'position_applied' => 'required|string|max:255',
-                'branch_preference' => 'required|string|max:255',
+                'full_name'          => 'required|string|max:255',
+                'email'              => 'required|email|max:255',
+                'phone_number'       => 'required|string|max:50',
+                'current_city'       => 'nullable|string|max:255',
+                'position_applied'   => 'required|string|max:255',
+                'branch_preference'  => 'nullable|string|max:255',
                 'application_source' => 'required|in:' . implode(',', self::SOURCES),
-                'source_detail' => 'nullable|string|max:255',
-                'consent' => 'required|in:yes',
+                'source_detail'      => 'nullable|string|max:255',
+                'consent'            => 'required|in:yes',
             ]);
 
             $errors = $validator->fails() ? $validator->errors()->all() : [];
-            $position = $positions->get(Str::lower((string) ($data['position_applied'] ?? '')));
-            $branch = $branches->get(Str::lower((string) ($data['branch_preference'] ?? '')));
-            if (!$position) {
-                $errors[] = 'The position was not found in the Job Position records.';
-            }
-            if (!$branch) {
-                $errors[] = 'The branch was not found or is inactive.';
+            $positionTitle = Str::lower(trim((string) ($data['position_applied'] ?? '')));
+            $opening = $openings->get($positionTitle);
+
+            if (!$opening) {
+                $errors[] = "No open Job Opening found matching title '{$data['position_applied']}'.";
             }
 
-            if ($errors === []) {
+            if ($errors === [] && $opening) {
                 $email = Str::lower($data['email']);
                 $candidate = $this->findCandidateByEmail($email);
-                $applicationKey = $email . '|' . $position->id . '|' . $branch->id;
+                $applicationKey = $email . '|' . $opening->id;
 
                 if (isset($seenApplications[$applicationKey])) {
-                    $errors[] = 'Duplikat lamaran dalam file import.';
-                } elseif ($candidate && $this->hasApplication($candidate, $position->id, $branch->id)) {
-                    $errors[] = 'An application for this position and branch is already registered.';
+                    $errors[] = 'Duplicate application for this opening in import file.';
+                } elseif ($candidate && $this->hasApplicationByOpening($candidate, $opening->id)) {
+                    $errors[] = 'Candidate is already registered for this job opening.';
                 } else {
                     $seenApplications[$applicationKey] = true;
                 }
@@ -618,23 +720,25 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
             $data['source_detail'] = $data['source_detail'] ?? null;
             $data['phone'] = $data['phone_number'] ?? null;
             $data['current_city'] = $data['current_city'] ?? null;
-            $data['position_id'] = $position?->id;
-            $data['branch_id'] = $branch?->id;
+            $data['job_opening_id'] = $opening?->id;
+            $data['position_id'] = $opening?->position_id;
+            $data['branch_id'] = $opening?->branch_id;
 
             $result[] = [
-                'line' => $line,
-                'valid' => $errors === [],
-                'errors' => $errors,
-                'data' => $data,
-                'position' => $position,
-                'branch' => $branch,
+                'line'     => $line,
+                'valid'    => $errors === [],
+                'errors'   => $errors,
+                'data'     => $data,
+                'opening'  => $opening,
+                'position' => $opening?->position,
+                'branch'   => $opening?->branch,
             ];
         }
 
         return [
-            'rows' => $result,
-            'total' => $total,
-            'valid_count' => count(array_filter($result, fn (array $row) => $row['valid'])),
+            'rows'          => $result,
+            'total'         => $total,
+            'valid_count'   => count(array_filter($result, fn (array $row) => $row['valid'])),
             'invalid_count' => count(array_filter($result, fn (array $row) => !$row['valid'])),
         ];
     }
@@ -668,10 +772,10 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
 
     private function findCandidateByEmail(string $email): ?Candidate
     {
-        return Candidate::whereRaw('LOWER(email) = ?', [Str::lower($email)])->first();
+        return Candidate::where('email', Str::lower($email))->first();
     }
 
-    private function matchingApplicationsQuery(User $user, array $filters): Builder
+    private function matchingApplicationsQuery(User $user, array $filters = []): Builder
     {
         $query = CandidateApplication::query();
         $this->applyBranchScope($query, $user);
@@ -679,29 +783,49 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
         if (!empty($filters['branch_id'])) {
             $query->where('branch_id', $filters['branch_id']);
         }
+
+        if (!empty($filters['job_opening_id'])) {
+            $query->where('job_opening_id', $filters['job_opening_id']);
+        }
+
         if (!empty($filters['position'])) {
-            $position = $filters['position'];
-            $query->where(function (Builder $positionQuery) use ($position) {
-                $positionQuery->where('position_applied', $position)
-                    ->orWhereHas('position', fn ($related) => $related->where('name', $position));
-            });
+            $query->where('position_applied', $filters['position']);
         }
-        foreach (['status', 'stage', 'source', 'hr_pic_id'] as $field) {
-            if (isset($filters[$field]) && $filters[$field] !== '') {
-                $query->where($field, $filters[$field]);
-            }
+
+        if (!empty($filters['source'])) {
+            $query->where('source', $filters['source']);
         }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['stage'])) {
+            $query->where('stage', $filters['stage']);
+        }
+
+        if (!empty($filters['hr_pic_id'])) {
+            $query->where('hr_pic_id', $filters['hr_pic_id']);
+        }
+
         if (!empty($filters['applied_from'])) {
             $query->whereDate('applied_at', '>=', $filters['applied_from']);
         }
+
         if (!empty($filters['applied_to'])) {
             $query->whereDate('applied_at', '<=', $filters['applied_to']);
         }
+
         if (!empty($filters['inactive_days'])) {
-            $inactiveBefore = now()->subDays((int) $filters['inactive_days']);
-            $query->where(function (Builder $activityQuery) use ($inactiveBefore) {
-                $activityQuery->whereNull('last_activity_at')
-                    ->orWhere('last_activity_at', '<=', $inactiveBefore);
+            $threshold = now()->subDays((int) $filters['inactive_days']);
+            $query->where(function ($subQuery) use ($threshold) {
+                $subQuery->where(function ($inner) use ($threshold) {
+                    $inner->whereNotNull('last_activity_at')
+                        ->where('last_activity_at', '<=', $threshold);
+                })->orWhere(function ($inner) use ($threshold) {
+                    $inner->whereNull('last_activity_at')
+                        ->where('applied_at', '<=', $threshold);
+                });
             });
         }
 
@@ -739,7 +863,7 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
         return $candidate->applications()
             ->where('position_id', $positionId)
             ->where('branch_id', $branchId)
-            ->where('status', 'received')
+            ->whereNotIn('stage', ['rejected', 'withdrawn'])
             ->exists();
     }
 
@@ -751,13 +875,21 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
     ): bool {
         return $candidate->applications()
             ->where('branch_id', $branchId)
-            ->where('status', 'received')
+            ->whereNotIn('stage', ['rejected', 'withdrawn'])
             ->where(function ($query) use ($positionName, $positionId) {
                 $query->whereRaw('LOWER(position_applied) = ?', [Str::lower($positionName)]);
                 if ($positionId !== null) {
                     $query->orWhere('position_id', $positionId);
                 }
             })
+            ->exists();
+    }
+
+    private function hasApplicationByOpening(Candidate $candidate, int $openingId): bool
+    {
+        return $candidate->applications()
+            ->where('job_opening_id', $openingId)
+            ->whereNotIn('stage', ['rejected', 'withdrawn'])
             ->exists();
     }
 

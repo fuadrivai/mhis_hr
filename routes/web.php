@@ -39,6 +39,7 @@ use App\Http\Controllers\ReprimandTypeController;
 use App\Http\Controllers\RecruitmentController;
 use App\Http\Controllers\RecruitmentMonitorController;
 use App\Http\Controllers\CandidateRegistrationController;
+use App\Http\Controllers\JobOpeningController;
 use App\Http\Controllers\JobRequirementController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\WhatsappSettingController;
@@ -73,12 +74,42 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/', [HomeController::class, 'index']);
         Route::get('clockin', [AttendanceLogController::class, 'clockin']);
+                Route::get('recruitment/job-openings', [JobOpeningController::class, 'index'])
+            ->name('recruitment.job-openings.index');
+        Route::get('recruitment/job-openings/create', [JobOpeningController::class, 'create'])
+            ->name('recruitment.job-openings.create');
+        Route::post('recruitment/job-openings', [JobOpeningController::class, 'store'])
+            ->name('recruitment.job-openings.store');
+        Route::get('recruitment/job-openings/{jobOpening}', [JobOpeningController::class, 'show'])
+            ->whereNumber('jobOpening')
+            ->name('recruitment.job-openings.show');
+        Route::get('recruitment/job-openings/{jobOpening}/edit', [JobOpeningController::class, 'edit'])
+            ->whereNumber('jobOpening')
+            ->name('recruitment.job-openings.edit');
+        Route::put('recruitment/job-openings/{jobOpening}', [JobOpeningController::class, 'update'])
+            ->whereNumber('jobOpening')
+            ->name('recruitment.job-openings.update');
+        Route::post('recruitment/job-openings/{jobOpening}/close', [JobOpeningController::class, 'close'])
+            ->whereNumber('jobOpening')
+            ->name('recruitment.job-openings.close');
+        Route::post('recruitment/job-openings/{jobOpening}/reopen', [JobOpeningController::class, 'reopen'])
+            ->whereNumber('jobOpening')
+            ->name('recruitment.job-openings.reopen');
+        Route::post('recruitment/job-openings/{jobOpening}/batch-match', [JobOpeningController::class, 'batchMatch'])
+            ->whereNumber('jobOpening')
+            ->name('recruitment.job-openings.batch-match');
         Route::get('recruitment/candidates', [CandidateRegistrationController::class, 'index'])
             ->name('recruitment.candidates');
+        Route::post('recruitment/candidates/parse-cv', [CandidateRegistrationController::class, 'parseCv'])
+            ->name('recruitment.candidates.parse-cv');
         Route::get('recruitment/candidates/export', [CandidateRegistrationController::class, 'export'])
             ->name('recruitment.candidates.export');
         Route::get('recruitment/candidates/form', [CandidateRegistrationController::class, 'form'])
             ->name('recruitment.candidates.form');
+        Route::post('recruitment/candidates/bulk-upload', [CandidateRegistrationController::class, 'bulkUpload'])
+            ->name('recruitment.candidates.bulk-upload');
+        Route::post('recruitment/candidates/bulk-upload-item', [CandidateRegistrationController::class, 'bulkUploadItem'])
+            ->name('recruitment.candidates.bulk-upload-item');
         Route::post('recruitment/candidates', [CandidateRegistrationController::class, 'store'])
             ->name('recruitment.candidates.store');
         Route::post('recruitment/candidates/import/preview', [CandidateRegistrationController::class, 'previewImport'])
@@ -105,6 +136,13 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('recruitment/candidates/{candidate}', [CandidateRegistrationController::class, 'show'])
             ->whereNumber('candidate')
             ->name('recruitment.candidates.show');
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/match-cv', [CandidateRegistrationController::class, 'matchCv'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->name('recruitment.candidates.match-cv');
+        Route::post('recruitment/candidates/cv-match/{cvMatchResult}/override', [CandidateRegistrationController::class, 'overrideCvMatch'])
+            ->whereNumber('cvMatchResult')
+            ->name('recruitment.candidates.cv-match.override');
         Route::get('recruitment/settings/job-requirements', [JobRequirementController::class, 'index'])
             ->name('recruitment.settings.job-requirements');
         Route::get('setting/recruitment-monitors', [RecruitmentMonitorController::class, 'index'])
