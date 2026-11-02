@@ -28,6 +28,11 @@ class CvMatchResult extends Model
         return $this->belongsTo(CandidateApplication::class, 'candidate_application_id');
     }
 
+    public function candidateApplication(): BelongsTo
+    {
+        return $this->application();
+    }
+
     public function opening(): BelongsTo
     {
         return $this->belongsTo(JobOpening::class, 'job_opening_id');

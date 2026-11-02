@@ -60,8 +60,40 @@ class User extends Authenticatable implements JWTSubject
     public function canAccessRecruitment(): bool
     {
         return $this->isRecruitmentAdministrator()
-            || $this->roles()->where('roles.id', 3)->exists()
             || $this->isRecruitmentMonitor();
+    }
+
+    public function branchScopeId(): ?int
+    {
+        if ($this->isRecruitmentAdministrator() || $this->isRecruitmentMonitor()) {
+            return null;
+        }
+
+        $branch = $this->employee?->employment?->branch;
+        if ($branch && strtolower((string) $branch->name) === 'head office') {
+            return null;
+        }
+
+        $branchId = $this->employee?->employment?->branch_id;
+        return $branchId ? (int) $branchId : null;
+    }
+
+    public function isAssignedInterviewer(): bool
+    {
+        if (!$this->employee) {
+            return false;
+        }
+
+        return \App\Models\InterviewRoundInterviewer::where('employee_id', $this->employee->id)->exists();
+    }
+
+    public function isAssignedOfferApprover(): bool
+    {
+        if (!$this->employee) {
+            return false;
+        }
+
+        return \App\Models\OfferApprovalStep::where('approver_employee_id', $this->employee->id)->exists();
     }
 
     public function hasRole($role)

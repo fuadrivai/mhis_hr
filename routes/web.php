@@ -39,6 +39,14 @@ use App\Http\Controllers\ReprimandTypeController;
 use App\Http\Controllers\RecruitmentController;
 use App\Http\Controllers\RecruitmentMonitorController;
 use App\Http\Controllers\CandidateRegistrationController;
+use App\Http\Controllers\RecruitmentAssessmentController;
+use App\Http\Controllers\RecruitmentInterviewController;
+use App\Http\Controllers\RecruitmentMyInterviewController;
+use App\Http\Controllers\RecruitmentCompetencyController;
+use App\Http\Controllers\RecruitmentOfferController;
+use App\Http\Controllers\RecruitmentApprovalController;
+use App\Http\Controllers\RecruitmentOnboardingController;
+use App\Http\Controllers\RecruitmentRejectionReasonController;
 use App\Http\Controllers\JobOpeningController;
 use App\Http\Controllers\JobRequirementController;
 use App\Http\Controllers\RoleController;
@@ -143,6 +151,163 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::post('recruitment/candidates/cv-match/{cvMatchResult}/override', [CandidateRegistrationController::class, 'overrideCvMatch'])
             ->whereNumber('cvMatchResult')
             ->name('recruitment.candidates.cv-match.override');
+
+        // Phase 3: Psychotest Assessments
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/assessments', [RecruitmentAssessmentController::class, 'store'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->name('recruitment.assessments.store');
+        Route::get('recruitment/candidates/{candidate}/applications/{application}/assessments/{assessment}/download', [RecruitmentAssessmentController::class, 'download'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('assessment')
+            ->name('recruitment.assessments.download');
+        Route::delete('recruitment/candidates/{candidate}/applications/{application}/assessments/{assessment}', [RecruitmentAssessmentController::class, 'destroy'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('assessment')
+            ->name('recruitment.assessments.destroy');
+
+        // Phase 3: Interview Rounds & Evaluations Management (HR)
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/interviews', [RecruitmentInterviewController::class, 'storeRound'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->name('recruitment.interviews.store-round');
+        Route::put('recruitment/candidates/{candidate}/applications/{application}/interviews/{round}', [RecruitmentInterviewController::class, 'updateRound'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('round')
+            ->name('recruitment.interviews.update-round');
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/interviews/{round}/cancel', [RecruitmentInterviewController::class, 'cancelRound'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('round')
+            ->name('recruitment.interviews.cancel-round');
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/interviews/evaluations/{evaluation}/reopen', [RecruitmentInterviewController::class, 'reopenEvaluation'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('evaluation')
+            ->name('recruitment.interviews.evaluations.reopen');
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/interviews/evaluations/{evaluation}/attachment', [RecruitmentInterviewController::class, 'uploadAttachment'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('evaluation')
+            ->name('recruitment.interviews.evaluations.upload-attachment');
+        Route::get('recruitment/candidates/{candidate}/applications/{application}/interviews/evaluations/{evaluation}/attachment', [RecruitmentInterviewController::class, 'downloadAttachment'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('evaluation')
+            ->name('recruitment.interviews.evaluations.download-attachment');
+
+        // Phase 3: My Interviews (Interviewer Portal)
+        Route::get('recruitment/my-interviews', [RecruitmentMyInterviewController::class, 'index'])
+            ->name('recruitment.my-interviews.index');
+        Route::get('recruitment/my-interviews/{round}', [RecruitmentMyInterviewController::class, 'show'])
+            ->whereNumber('round')
+            ->name('recruitment.my-interviews.show');
+        Route::post('recruitment/my-interviews/{round}/draft', [RecruitmentMyInterviewController::class, 'saveDraft'])
+            ->whereNumber('round')
+            ->name('recruitment.my-interviews.draft');
+        Route::post('recruitment/my-interviews/{round}/submit', [RecruitmentMyInterviewController::class, 'submit'])
+            ->whereNumber('round')
+            ->name('recruitment.my-interviews.submit');
+        Route::get('recruitment/my-interviews/{round}/cv', [RecruitmentMyInterviewController::class, 'downloadCandidateCv'])
+            ->whereNumber('round')
+            ->name('recruitment.my-interviews.cv');
+
+        // Phase 3: Settings > Evaluation Competencies
+        Route::get('recruitment/settings/evaluation-competencies', [RecruitmentCompetencyController::class, 'index'])
+            ->name('recruitment.settings.evaluation-competencies.index');
+        Route::post('recruitment/settings/evaluation-competencies', [RecruitmentCompetencyController::class, 'store'])
+            ->name('recruitment.settings.evaluation-competencies.store');
+        Route::put('recruitment/settings/evaluation-competencies/{competency}', [RecruitmentCompetencyController::class, 'update'])
+            ->whereNumber('competency')
+            ->name('recruitment.settings.evaluation-competencies.update');
+        Route::patch('recruitment/settings/evaluation-competencies/{competency}/toggle', [RecruitmentCompetencyController::class, 'toggleActive'])
+            ->whereNumber('competency')
+            ->name('recruitment.settings.evaluation-competencies.toggle');
+        Route::delete('recruitment/settings/evaluation-competencies/{competency}', [RecruitmentCompetencyController::class, 'destroy'])
+            ->whereNumber('competency')
+            ->name('recruitment.settings.evaluation-competencies.destroy');
+
+        // Phase 4: Settings > Rejection Reasons
+        Route::get('recruitment/settings/rejection-reasons', [RecruitmentRejectionReasonController::class, 'index'])
+            ->name('recruitment.settings.rejection-reasons.index');
+        Route::post('recruitment/settings/rejection-reasons', [RecruitmentRejectionReasonController::class, 'store'])
+            ->name('recruitment.settings.rejection-reasons.store');
+        Route::put('recruitment/settings/rejection-reasons/{reason}', [RecruitmentRejectionReasonController::class, 'update'])
+            ->whereNumber('reason')
+            ->name('recruitment.settings.rejection-reasons.update');
+        Route::patch('recruitment/settings/rejection-reasons/{reason}/toggle', [RecruitmentRejectionReasonController::class, 'toggleActive'])
+            ->whereNumber('reason')
+            ->name('recruitment.settings.rejection-reasons.toggle');
+        Route::delete('recruitment/settings/rejection-reasons/{reason}', [RecruitmentRejectionReasonController::class, 'destroy'])
+            ->whereNumber('reason')
+            ->name('recruitment.settings.rejection-reasons.destroy');
+
+        // Phase 4: Job Offers Management
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/offers', [RecruitmentOfferController::class, 'store'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->name('recruitment.offers.store');
+        Route::put('recruitment/candidates/{candidate}/applications/{application}/offers/{offer}', [RecruitmentOfferController::class, 'update'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('offer')
+            ->name('recruitment.offers.update');
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/offers/{offer}/submit', [RecruitmentOfferController::class, 'submit'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('offer')
+            ->name('recruitment.offers.submit');
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/offers/{offer}/mark-sent', [RecruitmentOfferController::class, 'markSent'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('offer')
+            ->name('recruitment.offers.mark-sent');
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/offers/{offer}/response', [RecruitmentOfferController::class, 'recordResponse'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('offer')
+            ->name('recruitment.offers.response');
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/offers/{offer}/cancel', [RecruitmentOfferController::class, 'cancel'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('offer')
+            ->name('recruitment.offers.cancel');
+        Route::get('recruitment/candidates/{candidate}/applications/{application}/offers/{offer}/print', [RecruitmentOfferController::class, 'printSummary'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->whereNumber('offer')
+            ->name('recruitment.offers.print');
+
+        // Phase 4: My Approvals (Approver Portal)
+        Route::get('recruitment/my-approvals', [RecruitmentApprovalController::class, 'index'])
+            ->name('recruitment.my-approvals.index');
+        Route::post('recruitment/my-approvals/{offer}/approve', [RecruitmentApprovalController::class, 'approve'])
+            ->whereNumber('offer')
+            ->name('recruitment.my-approvals.approve');
+        Route::post('recruitment/my-approvals/{offer}/reject', [RecruitmentApprovalController::class, 'reject'])
+            ->whereNumber('offer')
+            ->name('recruitment.my-approvals.reject');
+
+        // Phase 4: Contract, Onboarding & Employee Draft
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/onboarding/contract', [RecruitmentOnboardingController::class, 'updateContract'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->name('recruitment.onboarding.contract');
+        Route::get('recruitment/candidates/{candidate}/applications/{application}/onboarding/contract/download', [RecruitmentOnboardingController::class, 'downloadContract'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->name('recruitment.onboarding.contract.download');
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/onboarding/join', [RecruitmentOnboardingController::class, 'updateJoin'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->name('recruitment.onboarding.join');
+        Route::post('recruitment/candidates/{candidate}/applications/{application}/onboarding/create-draft', [RecruitmentOnboardingController::class, 'createDraft'])
+            ->whereNumber('candidate')
+            ->whereNumber('application')
+            ->name('recruitment.onboarding.create-draft');
         Route::get('recruitment/settings/job-requirements', [JobRequirementController::class, 'index'])
             ->name('recruitment.settings.job-requirements');
         Route::get('setting/recruitment-monitors', [RecruitmentMonitorController::class, 'index'])
@@ -163,6 +328,9 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             ->name('recruitment.settings.job-requirements.status');
         Route::delete('recruitment/settings/job-requirements/{jobRequirement}', [JobRequirementController::class, 'destroy'])
             ->name('recruitment.settings.job-requirements.destroy');
+        Route::get('recruitment/reports/export/{type}', [RecruitmentController::class, 'exportReport'])
+            ->where('type', 'funnel|time_to_hire|sources|offers|rejections|headcount|ai_scores')
+            ->name('recruitment.reports.export');
         Route::get('recruitment/{section?}', [RecruitmentController::class, 'index'])
             ->where('section', 'dashboard|candidates|applications|pipeline|interviews|assessments|final-review|talent-pool|reports|settings')
             ->name('recruitment.index');

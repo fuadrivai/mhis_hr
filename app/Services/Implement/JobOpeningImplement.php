@@ -219,12 +219,20 @@ class JobOpeningImplement implements JobOpeningService
 
     private function branchScopeId(User $user): ?int
     {
-        if ($user->isRecruitmentAdministrator() || $user->isRecruitmentMonitor()) {
+        if ($user->isRecruitmentAdministrator()) {
+            return null;
+        }
+
+        $branch = $user->employee?->employment?->branch;
+        if ($branch && strtolower($branch->name) === 'head office') {
             return null;
         }
 
         $branchId = $user->employee?->employment?->branch_id;
         if (!$branchId) {
+            if ($user->isRecruitmentMonitor()) {
+                return null;
+            }
             throw new AuthorizationException('The user does not have an assigned branch.');
         }
 

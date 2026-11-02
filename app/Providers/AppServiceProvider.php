@@ -22,12 +22,25 @@ use App\Services\Implement\SopImplement;
 use App\Services\LeaveAllocationService;
 use App\Services\RoleService;
 use App\Services\SopService;
+use App\Services\RecruitmentAssessmentService;
+use App\Services\RecruitmentInterviewService;
+use App\Services\RecruitmentOfferService;
+use App\Services\RecruitmentOnboardingService;
+use App\Services\RecruitmentReportService;
+use App\Services\Implement\RecruitmentAssessmentImplement;
+use App\Services\Implement\RecruitmentInterviewImplement;
+use App\Services\Implement\RecruitmentOfferImplement;
+use App\Services\Implement\RecruitmentOnboardingImplement;
+use App\Services\Implement\RecruitmentReportImplement;
 use App\Services\Recruitment\Ai\CvTextExtractor;
 use App\Services\Recruitment\Ai\AiMatchingProvider;
 use App\Services\Recruitment\Ai\CvMatchingService;
 use App\Services\Recruitment\Ai\Implement\DefaultCvTextExtractor;
 use App\Services\Recruitment\Ai\Implement\OpenAiMatchingProvider;
 use App\Services\Recruitment\Ai\Implement\CvMatchingImplement;
+use Illuminate\Support\Facades\Gate;
+use App\Models\Offer;
+use App\Policies\OfferPolicy;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Session;
@@ -59,6 +72,11 @@ class AppServiceProvider extends ServiceProvider
         CvTextExtractor::class => DefaultCvTextExtractor::class,
         AiMatchingProvider::class => OpenAiMatchingProvider::class,
         CvMatchingService::class => CvMatchingImplement::class,
+        RecruitmentAssessmentService::class => RecruitmentAssessmentImplement::class,
+        RecruitmentInterviewService::class => RecruitmentInterviewImplement::class,
+        RecruitmentOfferService::class => RecruitmentOfferImplement::class,
+        RecruitmentOnboardingService::class => RecruitmentOnboardingImplement::class,
+        RecruitmentReportService::class => RecruitmentReportImplement::class,
     ];
 
     public function register()
@@ -74,6 +92,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::useBootstrap();
+
+        Gate::policy(Offer::class, OfferPolicy::class);
+        Gate::define('viewCompensation', [OfferPolicy::class, 'viewCompensation']);
 
         Session::extend('secure_file', function ($app) {
             $path = $app['config']['session.files'];

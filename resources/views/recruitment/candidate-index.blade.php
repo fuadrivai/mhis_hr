@@ -155,6 +155,26 @@
                     </div>
                     <div class="row">
                         <div class="col-md-2 col-sm-6 form-group">
+                            <label for="psychotest_result">Psychotest</label>
+                            <select id="psychotest_result" name="psychotest_result" class="form-control">
+                                <option value="">All results</option>
+                                <option value="recommended" @selected(($filters['psychotest_result'] ?? '') === 'recommended')>Recommended</option>
+                                <option value="considered" @selected(($filters['psychotest_result'] ?? '') === 'considered')>Considered</option>
+                                <option value="not_recommended" @selected(($filters['psychotest_result'] ?? '') === 'not_recommended')>Not Recommended</option>
+                                <option value="untested" @selected(($filters['psychotest_result'] ?? '') === 'untested')>Untested</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 col-sm-6 form-group">
+                            <label for="interview_status">Interview</label>
+                            <select id="interview_status" name="interview_status" class="form-control">
+                                <option value="">All interviews</option>
+                                <option value="scheduled" @selected(($filters['interview_status'] ?? '') === 'scheduled')>Scheduled</option>
+                                <option value="awaiting_evaluation" @selected(($filters['interview_status'] ?? '') === 'awaiting_evaluation')>Awaiting Evaluation</option>
+                                <option value="done" @selected(($filters['interview_status'] ?? '') === 'done')>Done</option>
+                                <option value="not_scheduled" @selected(($filters['interview_status'] ?? '') === 'not_scheduled')>Not Scheduled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 col-sm-6 form-group">
                             <label for="inactive_days">No activity for</label>
                             <select id="inactive_days" name="inactive_days" class="form-control">
                                 <option value="">Any activity</option>
@@ -175,7 +195,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-8 col-sm-12 form-group text-right" style="padding-top: 25px;">
+                        <div class="col-md-4 col-sm-12 form-group text-right" style="padding-top: 25px;">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fa fa-filter"></i> Apply Filters
                             </button>
@@ -198,6 +218,8 @@
                                 <th><a class="candidate-sort" href="{{ $sortUrl('branch') }}">Branch</a></th>
                                 <th><a class="candidate-sort" href="{{ $sortUrl('stage') }}">Current Stage</a></th>
                                 <th>AI Score</th>
+                                <th>Psychotest</th>
+                                <th>Interview</th>
                                 <th><a class="candidate-sort" href="{{ $sortUrl('updated_at') }}">Updated At</a></th>
                                 <th class="text-center">Actions</th>
                             </tr>
@@ -278,6 +300,42 @@
                                             <span class="label label-info" style="font-size: 10px;"><i class="fa fa-spinner fa-spin"></i> Queued</span>
                                         @elseif ($application?->resume_path)
                                             <span class="text-muted" style="font-size: 11px;">Pending</span>
+                                        @else
+                                            <span class="text-muted" style="font-size: 11px;">--</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @php
+                                            $assessment = $application?->latestAssessment;
+                                        @endphp
+                                        @if ($assessment)
+                                            <span class="label label-{{ $assessment->conclusion_badge_class }}" style="font-size: 11px;">
+                                                {{ $assessment->conclusion_label }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted" style="font-size: 11px;">--</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @php
+                                            $round = $application?->latestInterviewRound;
+                                        @endphp
+                                        @if ($round)
+                                            @if ($round->status === 'done')
+                                                <span class="label label-success" style="font-size: 11px;">
+                                                    <i class="fa fa-check"></i> Done (R{{ $round->round_no }})
+                                                </span>
+                                            @elseif ($round->status === 'cancelled')
+                                                <span class="label label-default" style="font-size: 11px;">Cancelled</span>
+                                            @elseif ($application?->stage_substatus === 'awaiting_evaluation')
+                                                <span class="label label-warning" style="font-size: 11px;">
+                                                    <i class="fa fa-clock-o"></i> Awaiting Eval
+                                                </span>
+                                            @else
+                                                <span class="label label-info" style="font-size: 11px;">
+                                                    <i class="fa fa-calendar"></i> R{{ $round->round_no }} Scheduled
+                                                </span>
+                                            @endif
                                         @else
                                             <span class="text-muted" style="font-size: 11px;">--</span>
                                         @endif

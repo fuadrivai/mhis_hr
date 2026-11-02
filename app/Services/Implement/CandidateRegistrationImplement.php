@@ -93,7 +93,15 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
             }])
             ->with(['applications' => function ($query) use ($latestApplicationIds) {
                 $query->whereIn('id', $latestApplicationIds)
-                    ->with(['position', 'branch', 'hrPic', 'jobOpening', 'latestCvMatchResult.latestOverride']);
+                    ->with([
+                        'position',
+                        'branch',
+                        'hrPic',
+                        'jobOpening',
+                        'latestCvMatchResult.latestOverride',
+                        'latestAssessment',
+                        'latestInterviewRound',
+                    ]);
             }]);
 
         if (!empty($filters['q'])) {
@@ -244,6 +252,15 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
                     'latestCvMatchResult.requirementResults',
                     'latestCvMatchResult.latestOverride.user',
                     'latestCvMatchResult.overrides.user',
+                    'assessments.uploadedBy',
+                    'interviewRounds.interviewers.personal',
+                    'interviewRounds.evaluations.interviewerEmployee.personal',
+                    'interviewRounds.evaluations.scores.competency',
+                    'rejections.reason',
+                    'rejections.rejectedBy',
+                    'offers' => fn ($q) => $q->with(['approvalSteps.approver.personal', 'creator'])->orderByDesc('version'),
+                    'onboarding.employee.personal',
+                    'onboarding.employee.employment',
                 ]);
             },
         ];
@@ -335,6 +352,24 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
                 'reason'                   => $data['reason'] ?? null,
                 'changed_at'               => now(),
             ]);
+
+            // Record rejection details if stage is rejected
+            if ($data['stage'] === 'rejected') {
+                $reasonId = $data['rejection_reason_id'] ?? null;
+                if (!$reasonId) {
+                    $reasonId = \App\Models\RejectionReason::where('is_active', true)->orderBy('sort_order')->value('id');
+                }
+
+                if ($reasonId) {
+                    \App\Models\ApplicationRejection::create([
+                        'candidate_application_id' => $application->id,
+                        'rejection_reason_id'      => $reasonId,
+                        'rejected_at_stage'        => $fromStage,
+                        'notes'                    => $data['rejection_notes'] ?? ($data['reason'] ?? null),
+                        'rejected_by'              => $user->id,
+                    ]);
+                }
+            }
 
             // Sync opening filled status if attached to an opening
             if ($application->job_opening_id) {
@@ -829,6 +864,35 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
             });
         }
 
+        if (!empty($filters['psychotest_result'])) {
+            if ($filters['psychotest_result'] === 'untested') {
+                $query->whereDoesntHave('assessments');
+            } else {
+                $query->whereHas('assessments', function ($q) use ($filters) {
+                    $q->where('conclusion', $filters['psychotest_result']);
+                });
+            }
+        }
+
+        if (!empty($filters['interview_status'])) {
+            if ($filters['interview_status'] === 'not_scheduled') {
+                $query->whereDoesntHave('interviewRounds');
+            } elseif ($filters['interview_status'] === 'done') {
+                $query->whereHas('interviewRounds', function ($q) {
+                    $q->where('status', 'done');
+                });
+            } elseif ($filters['interview_status'] === 'awaiting_evaluation') {
+                $query->whereHas('interviewRounds', function ($q) {
+                    $q->where('status', 'scheduled')
+                      ->whereHas('evaluations', fn ($e) => $e->where('status', 'draft'));
+                });
+            } elseif ($filters['interview_status'] === 'scheduled') {
+                $query->whereHas('interviewRounds', function ($q) {
+                    $q->where('status', 'scheduled');
+                });
+            }
+        }
+
         return $query;
     }
 
@@ -902,12 +966,20 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
 
     private function branchScopeId(User $user): ?int
     {
-        if ($user->isRecruitmentAdministrator() || $user->isRecruitmentMonitor()) {
+        if ($user->isRecruitmentAdministrator()) {
+            return null;
+        }
+
+        $branch = $user->employee?->employment?->branch;
+        if ($branch && strtolower($branch->name) === 'head office') {
             return null;
         }
 
         $branchId = $user->employee?->employment?->branch_id;
         if (!$branchId) {
+            if ($user->isRecruitmentMonitor()) {
+                return null;
+            }
             throw new AuthorizationException('The user does not have an assigned branch.');
         }
 

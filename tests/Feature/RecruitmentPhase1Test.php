@@ -110,7 +110,7 @@ class RecruitmentPhase1Test extends TestCase
         $candidateService->updateCandidateApplication(
             $app1->candidate,
             $app1,
-            ['stage' => 'joined'],
+            ['stage' => 'joined', 'reason' => 'Candidate joined as direct placement'],
             $this->admin
         );
 
@@ -132,7 +132,7 @@ class RecruitmentPhase1Test extends TestCase
         $candidateService->updateCandidateApplication(
             $app2->candidate,
             $app2,
-            ['stage' => 'joined'],
+            ['stage' => 'joined', 'reason' => 'Candidate joined as direct placement'],
             $this->admin
         );
 
@@ -312,6 +312,11 @@ class RecruitmentPhase1Test extends TestCase
             'personal_id'   => $personal->id,
             'employment_id' => $employment->id,
             'is_active'     => true,
+        ]);
+
+        \App\Models\RecruitmentMonitor::create([
+            'employee_id' => $employee->id,
+            'assigned_by' => $this->admin->id,
         ]);
 
         /** @var JobOpeningService $openingService */

@@ -59,6 +59,21 @@ class Employee extends Model
             })
             ->orderByDesc('effective_start_date');
     }
+    public function interviewEvaluations()
+    {
+        return $this->hasMany(\App\Models\InterviewEvaluation::class, 'interviewer_employee_id');
+    }
+
+    public function interviewRounds()
+    {
+        return $this->belongsToMany(
+            \App\Models\InterviewRound::class,
+            'interview_round_interviewers',
+            'employee_id',
+            'interview_round_id'
+        )->withTimestamps();
+    }
+
     public function logs()
     {
         return $this->hasMany(AttendanceLog::class);

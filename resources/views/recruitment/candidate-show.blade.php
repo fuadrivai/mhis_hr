@@ -337,23 +337,28 @@
                                                     <div class="modal-body">
 
                                                         <div class="form-group">
-
                                                             <label for="stage_{{ $application->id }}">Target Stage <span class="text-danger">*</span></label>
-
-                                                            <select name="stage" id="stage_{{ $application->id }}" class="form-control" required>
-
+                                                            <select name="stage" id="stage_{{ $application->id }}" class="form-control stage-selector" data-target="{{ $application->id }}" required>
                                                                 @foreach ($stages as $value => $label)
-
                                                                     <option value="{{ $value }}" @selected($application->stage === $value)>
-
                                                                         {{ $label }}
-
                                                                     </option>
-
                                                                 @endforeach
-
                                                             </select>
+                                                        </div>
 
+                                                        <div class="form-group rejection-group-{{ $application->id }}" style="display: {{ $application->stage === 'rejected' ? 'block' : 'none' }};">
+                                                            <label for="rejection_reason_id_{{ $application->id }}">Rejection Reason <span class="text-danger">*</span></label>
+                                                            <select name="rejection_reason_id" id="rejection_reason_id_{{ $application->id }}" class="form-control">
+                                                                <option value="">-- Select Master Rejection Reason --</option>
+                                                                @foreach ($rejectionReasons as $rReason)
+                                                                    <option value="{{ $rReason->id }}">{{ $rReason->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="alert alert-info gate-notice-{{ $application->id }}" style="display: none; font-size: 12px; margin-bottom: 15px;">
+                                                            <i class="fa fa-info-circle"></i> <span class="gate-notice-text"></span>
                                                         </div>
 
 
@@ -966,6 +971,417 @@
 
 
 
+        {{-- Phase 3: Psychotest Assessments Panel --}}
+        @foreach ($candidate->applications as $application)
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2>
+                        <i class="fa fa-file-text-o text-primary"></i> Psychotest Assessments —
+                        <small>
+                            {{ $application->jobOpening?->title ?: ($application->position_applied ?: 'Application #' . $application->id) }}
+                            ({{ $application->branch?->name }})
+                        </small>
+                    </h2>
+                    <ul class="nav navbar-right panel_toolbox">
+                        <li>
+                            <button type="button" class="btn btn-success btn-xs" style="color: #fff; margin-top: 5px;" data-toggle="modal" data-target="#uploadPsychotestModal-{{ $application->id }}">
+                                <i class="fa fa-upload"></i> Upload Psychotest Report
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content table-responsive">
+                    @if ($application->assessments->isNotEmpty())
+                        <table class="table table-striped table-bordered table-sm" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 120px;">Assessed Date</th>
+                                    <th style="width: 160px;" class="text-center">Conclusion</th>
+                                    <th>Notes / Summary</th>
+                                    <th style="width: 220px;">Report Document</th>
+                                    <th style="width: 160px;">Uploaded By</th>
+                                    <th style="width: 80px;" class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($application->assessments as $assessment)
+                                    <tr>
+                                        <td>{{ $assessment->assessed_at ? $assessment->assessed_at->format('d M Y') : '-' }}</td>
+                                        <td class="text-center">
+                                            <span class="label label-{{ $assessment->conclusion_badge_class }}" style="font-size: 11px;">
+                                                {{ $assessment->conclusion_label }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $assessment->notes ?: '-' }}</td>
+                                        <td>
+                                            <a href="{{ route('recruitment.assessments.download', [$candidate->id, $application->id, $assessment->id]) }}" class="btn btn-primary btn-xs" target="_blank">
+                                                <i class="fa fa-file-pdf-o"></i> {{ $assessment->original_filename }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ $assessment->uploadedBy?->name ?: 'System' }}</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <form method="POST" action="{{ route('recruitment.assessments.destroy', [$candidate->id, $application->id, $assessment->id]) }}" style="display:inline;" onsubmit="return confirm('Delete this psychotest assessment?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-danger btn-xs" title="Delete assessment">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @else
+                        <p class="text-muted text-center" style="padding: 15px;">No psychotest assessment uploaded yet for this application.</p>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Modal Upload Psychotest -->
+            <div class="modal fade" id="uploadPsychotestModal-{{ $application->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form method="POST" action="{{ route('recruitment.assessments.store', [$candidate->id, $application->id]) }}" enctype="multipart/form-data">
+                            @csrf
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span></button>
+                                <h4 class="modal-title">Upload Psychotest Assessment Report</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label>Assessment Date <span class="text-danger">*</span></label>
+                                    <input type="date" name="assessed_at" class="form-control" value="{{ date('Y-m-d') }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Psychological Assessment Conclusion <span class="text-danger">*</span></label>
+                                    <select name="conclusion" class="form-control" required>
+                                        <option value="">-- Select Conclusion --</option>
+                                        <option value="recommended">Recommended (Disarankan)</option>
+                                        <option value="considered">Considered (Dipertimbangkan)</option>
+                                        <option value="not_recommended">Not Recommended (Tidak Disarankan)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Assessment Notes / Highlights</label>
+                                    <textarea name="notes" class="form-control" rows="3" placeholder="Summary of cognitive, personality, or behavioral observations from psychologist"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Psychotest Report PDF <span class="text-danger">*</span> <small class="text-muted">(Max 10MB, PDF only)</small></label>
+                                    <input type="file" name="assessment_file" class="form-control" accept=".pdf" required>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success">Upload Report</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Phase 3: Interview Rounds & Panel Evaluations Panel --}}
+            <div class="x_panel">
+                <div class="x_title">
+                    <h2>
+                        <i class="fa fa-users text-primary"></i> Interview Rounds & Evaluations —
+                        <small>
+                            {{ $application->jobOpening?->title ?: ($application->position_applied ?: 'Application #' . $application->id) }}
+                            ({{ $application->branch?->name }})
+                        </small>
+                    </h2>
+                    <ul class="nav navbar-right panel_toolbox">
+                        <li>
+                            <button type="button" class="btn btn-success btn-xs" style="color: #fff; margin-top: 5px;" data-toggle="modal" data-target="#scheduleInterviewModal-{{ $application->id }}">
+                                <i class="fa fa-calendar-plus-o"></i> Schedule Interview Round
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                    @if ($application->interviewRounds->isNotEmpty())
+                        @foreach ($application->interviewRounds as $round)
+                            <div class="panel panel-default" style="margin-bottom: 20px; border-left: 4px solid #2A3F54;">
+                                <div class="panel-heading" style="padding: 10px 15px;">
+                                    <div class="row">
+                                        <div class="col-md-8 col-sm-8">
+                                            <h4 style="margin: 0; font-size: 15px;">
+                                                <strong>Round {{ $round->round_no }}: {{ $round->round_type_label }}</strong>
+                                                <span class="label label-{{ $round->status_badge_class }}" style="margin-left: 8px;">
+                                                    {{ ucfirst($round->status) }}
+                                                </span>
+                                            </h4>
+                                            <small class="text-muted" style="margin-top: 4px; display: inline-block;">
+                                                <i class="fa fa-calendar"></i> {{ $round->scheduled_at ? $round->scheduled_at->format('d M Y H:i') : '-' }} WIB
+                                                @if ($round->location_or_link)
+                                                    &nbsp;|&nbsp; <i class="fa fa-map-marker"></i>
+                                                    @if (str_starts_with($round->location_or_link, 'http'))
+                                                        <a href="{{ $round->location_or_link }}" target="_blank" rel="noopener noreferrer">Join Meeting</a>
+                                                    @else
+                                                        {{ $round->location_or_link }}
+                                                    @endif
+                                                @endif
+                                            </small>
+                                        </div>
+                                        <div class="col-md-4 col-sm-4 text-right">
+                                            @if ($round->status === 'scheduled')
+                                                <form method="POST" action="{{ route('recruitment.interviews.cancel-round', [$candidate->id, $application->id, $round->id]) }}" style="display:inline;" onsubmit="return confirm('Cancel this interview round?');">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-default btn-xs text-danger" title="Cancel this round">
+                                                        <i class="fa fa-times"></i> Cancel Round
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="panel-body" style="padding: 12px 15px;">
+                                    @if ($round->notes)
+                                        <p style="margin-bottom: 12px; font-size: 12px; color: #555;">
+                                            <strong>Round Notes:</strong> {{ $round->notes }}
+                                        </p>
+                                    @endif
+
+                                    <table class="table table-bordered table-striped table-sm" style="margin-bottom: 0;">
+                                        <thead>
+                                            <tr class="bg-light">
+                                                <th style="width: 220px;">Assigned Interviewer</th>
+                                                <th style="width: 140px;" class="text-center">Evaluation Status</th>
+                                                <th style="width: 180px;" class="text-center">Recommendation</th>
+                                                <th style="width: 100px;" class="text-center">Avg Score</th>
+                                                <th>Feedback Summary</th>
+                                                <th style="width: 140px;" class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse ($round->interviewers as $interviewer)
+                                                @php
+                                                    $eval = $round->evaluations->firstWhere('interviewer_employee_id', $interviewer->id);
+                                                    $isSubmitted = $eval && $eval->status === 'submitted';
+                                                    $pName = trim(($interviewer->personal?->first_name ?? '') . ' ' . ($interviewer->personal?->last_name ?? ''));
+                                                    $empName = !empty($pName) ? $pName : ($interviewer->user?->name ?? "Employee #{$interviewer->id}");
+                                                @endphp
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ $empName }}</strong><br>
+                                                        <small class="text-muted">{{ $interviewer->employment?->job_position?->name ?? ($interviewer->employment?->job_position_name ?? 'Staff') }}</small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if ($isSubmitted)
+                                                            <span class="label label-success"><i class="fa fa-check"></i> Submitted</span><br>
+                                                            <small class="text-muted">{{ $eval->submitted_at ? $eval->submitted_at->format('d/m/Y H:i') : '' }}</small>
+                                                        @else
+                                                            <span class="label label-warning"><i class="fa fa-clock-o"></i> Pending Draft</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if ($eval && $eval->overall_recommendation)
+                                                            <span class="label label-{{ $eval->recommendation_badge_class }}">
+                                                                {{ $eval->recommendation_label }}
+                                                            </span>
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center font-weight-bold">
+                                                        @if ($eval && $eval->averageScore())
+                                                            <span class="badge">{{ $eval->averageScore() }} / 5</span>
+                                                        @else
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if ($eval && ($eval->strengths || $eval->concerns))
+                                                            @if ($eval->strengths)
+                                                                <small class="text-success d-block"><strong>Strengths:</strong> {{ Str::limit($eval->strengths, 80) }}</small>
+                                                            @endif
+                                                            @if ($eval->concerns)
+                                                                <small class="text-danger d-block"><strong>Concerns:</strong> {{ Str::limit($eval->concerns, 80) }}</small>
+                                                            @endif
+                                                        @else
+                                                            <span class="text-muted">No feedback recorded yet</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if ($eval)
+                                                            @if ($eval->attachment_path)
+                                                                <a href="{{ route('recruitment.interviews.evaluations.download-attachment', [$candidate->id, $application->id, $eval->id]) }}" class="btn btn-default btn-xs" target="_blank" title="Download physical form attachment">
+                                                                    <i class="fa fa-paperclip"></i>
+                                                                </a>
+                                                            @else
+                                                                <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#uploadAttachmentModal-{{ $eval->id }}" title="Upload physical form scan">
+                                                                    <i class="fa fa-upload"></i>
+                                                                </button>
+                                                            @endif
+
+                                                            @if ($isSubmitted)
+                                                                <button type="button" class="btn btn-warning btn-xs" data-toggle="modal" data-target="#reopenEvalModal-{{ $eval->id }}" title="Reopen evaluation for changes">
+                                                                    <i class="fa fa-undo"></i> Reopen
+                                                                </button>
+                                                            @endif
+                                                        @endif
+                                                    </td>
+                                                </tr>
+
+                                                @if ($eval)
+                                                    <!-- Modal Upload Attachment -->
+                                                    <div class="modal fade" id="uploadAttachmentModal-{{ $eval->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                                        <div class="modal-dialog">
+                                                            <div class="modal-content">
+                                                                <form method="POST" action="{{ route('recruitment.interviews.evaluations.upload-attachment', [$candidate->id, $application->id, $eval->id]) }}" enctype="multipart/form-data">
+                                                                    @csrf
+                                                                    <div class="modal-header">
+                                                                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span></button>
+                                                                        <h4 class="modal-title">Attach Physical Form Scan for {{ $empName }}</h4>
+                                                                    </div>
+                                                                    <div class="modal-body">
+                                                                        <div class="form-group">
+                                                                            <label>Select Document File <small class="text-muted">(PDF or Image, max 10MB)</small></label>
+                                                                            <input type="file" name="attachment" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                                                        <button type="submit" class="btn btn-primary">Upload Attachment</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Modal Reopen Evaluation -->
+                                                    <div class="modal fade" id="reopenEvalModal-{{ $eval->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                                        <div class="modal-dialog">
+                                                            <div class="modal-content">
+                                                                <form method="POST" action="{{ route('recruitment.interviews.evaluations.reopen', [$candidate->id, $application->id, $eval->id]) }}">
+                                                                    @csrf
+                                                                    <div class="modal-header">
+                                                                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span></button>
+                                                                        <h4 class="modal-title">Reopen Interview Evaluation</h4>
+                                                                    </div>
+                                                                    <div class="modal-body">
+                                                                        <p class="text-muted">
+                                                                            Reopening will return this evaluation to <strong>Draft</strong> status, allowing the interviewer to edit their scores and recommendation.
+                                                                        </p>
+                                                                        <div class="form-group">
+                                                                            <label>Mandatory Reason for Reopening <span class="text-danger">*</span></label>
+                                                                            <textarea name="reason" class="form-control" rows="3" placeholder="e.g. Additional panel discussion required or typo correction requested" required></textarea>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                                                        <button type="submit" class="btn btn-warning">Reopen Evaluation</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            @empty
+                                                <tr>
+                                                    <td colspan="6" class="text-center text-muted">No interviewers assigned to this round.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <p class="text-muted text-center" style="padding: 15px;">No interview rounds scheduled yet for this application.</p>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Modal Schedule Interview Round -->
+            <div class="modal fade" id="scheduleInterviewModal-{{ $application->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <form method="POST" action="{{ route('recruitment.interviews.store-round', [$candidate->id, $application->id]) }}">
+                            @csrf
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span></button>
+                                <h4 class="modal-title">Schedule Interview Round</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6 col-sm-6">
+                                        <div class="form-group">
+                                            <label>Round Type <span class="text-danger">*</span></label>
+                                            <select name="round_type" class="form-control" required>
+                                                <option value="hr">HR Interview</option>
+                                                <option value="user">User / Hiring Manager</option>
+                                                <option value="panel">Panel Interview</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-sm-6">
+                                        <div class="form-group">
+                                            <label>Schedule Date & Time <span class="text-danger">*</span></label>
+                                            <input type="datetime-local" name="scheduled_at" class="form-control" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Select Interviewers <span class="text-danger">*</span> <small class="text-muted">(Employees with system login account)</small></label>
+                                    <select name="interviewers[]" class="form-control select2-interviewer" multiple="multiple" style="width: 100%;" required data-placeholder="Search and select interviewers...">
+                                        @foreach ($assignableInterviewers as $emp)
+                                            @php
+                                                $pName = trim(($emp->personal?->first_name ?? '') . ' ' . ($emp->personal?->last_name ?? ''));
+                                                $eName = !empty($pName) ? $pName : ($emp->user?->name ?? "Employee #{$emp->id}");
+                                            @endphp
+                                            <option value="{{ $emp->id }}">{{ $eName }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Meeting Location or Online Link</label>
+                                    <input type="text" name="location_or_link" class="form-control" placeholder="e.g. Meeting Room 2, Bintaro Campus or https://meet.google.com/xyz-abcd-efg" maxlength="500">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Notes / Briefing for Interviewers</label>
+                                    <textarea name="notes" class="form-control" rows="2" placeholder="Focus areas, duration, or special instructions"></textarea>
+                                </div>
+
+                                {{-- AI Suggested Interview Questions (from Phase 2 matching result) --}}
+                                @if ($application->latestCvMatchResult && !empty($application->latestCvMatchResult->interview_questions))
+                                    <div class="panel panel-info" style="margin-top: 15px; margin-bottom: 0;">
+                                        <div class="panel-heading" style="padding: 6px 12px; font-size: 13px;">
+                                            <i class="fa fa-lightbulb-o"></i> <strong>AI Suggested Interview Questions (Screening Insights):</strong>
+                                        </div>
+                                        <div class="panel-body" style="padding: 10px 15px; background-color: #f7fbfe;">
+                                            <ol style="margin-bottom: 0; padding-left: 20px;">
+                                                @foreach ($application->latestCvMatchResult->interview_questions as $question)
+                                                    <li style="margin-bottom: 4px; font-size: 12px; color: #23527c;">{{ $question }}</li>
+                                                @endforeach
+                                            </ol>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success">Schedule Interview</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+
+        {{-- Phase 4: Job Offers & Approval Workflow Panel --}}
+        @include('recruitment.partials.offer-panel')
+
+        {{-- Phase 4: Contract & Onboarding Panel --}}
+        @include('recruitment.partials.onboarding-panel')
+
         {{-- Stage History Timeline Panel --}}
 
         @foreach ($candidate->applications as $application)
@@ -1121,13 +1537,98 @@
                 language: {
 
                     emptyTable: 'This candidate has no application history.'
-
                 }
-
             });
 
-        });
+            // Prevent Bootstrap 3 focus fighting with Select2 in modals
+            if ($.fn.modal && $.fn.modal.Constructor) {
+                $.fn.modal.Constructor.prototype.enforceFocus = function() {};
+            }
 
+            // Prevent clicks inside modal-dialog from bubbling up to backdrop
+            $(document).on('click', '.modal-dialog', function(e) {
+                e.stopPropagation();
+            });
+
+            $('.modal').on('shown.bs.modal', function() {
+                var $modal = $(this);
+                var $parent = $modal.find('.modal-content').length ? $modal.find('.modal-content') : $modal;
+                $modal.find('.select2-interviewer, .select2-approver').each(function() {
+                    var $sel = $(this);
+                    if (!$sel.hasClass('select2-hidden-accessible')) {
+                        $sel.select2({
+                            width: '100%',
+                            dropdownParent: $parent,
+                            placeholder: $sel.data('placeholder') || 'Search and select...'
+                        });
+                    }
+                });
+            });
+
+            // Stage selection change event
+            $(document).on('change', '.stage-selector', function() {
+                var appId = $(this).data('target');
+                var val = $(this).val();
+                var $rejectionGroup = $('.rejection-group-' + appId);
+                var $gateNotice = $('.gate-notice-' + appId);
+                var $noticeText = $gateNotice.find('.gate-notice-text');
+
+                if (val === 'rejected') {
+                    $rejectionGroup.slideDown(200);
+                } else {
+                    $rejectionGroup.slideUp(200);
+                }
+
+                if (val === 'contract_signing') {
+                    $noticeText.text('Gate Notice: Moving to Contract Signing requires an accepted offer. If missing, a mandatory reason is required to override.');
+                    $gateNotice.slideDown(200);
+                } else if (val === 'joined') {
+                    $noticeText.text('Gate Notice: Moving to Joined requires a signed contract and join date. If missing, a mandatory reason is required to override.');
+                    $gateNotice.slideDown(200);
+                } else {
+                    $gateNotice.slideUp(200);
+                }
+            });
+
+            // Dynamic approver row addition
+            $(document).on('click', '.btn-add-approver', function() {
+                var appId = $(this).data('target');
+                var $container = $('#approver-rows-' + appId);
+                var count = $container.find('.approver-row').length;
+                var nextLevel = count + 1;
+
+                var $firstRow = $container.find('.approver-row').first();
+                if ($firstRow.length) {
+                    var $clone = $firstRow.clone();
+                    $clone.find('input[type="number"]').attr('name', 'approvers[' + count + '][level]').val(nextLevel);
+                    $clone.find('select').attr('name', 'approvers[' + count + '][employee_id]').val('');
+                    // Remove any select2 containers that were cloned
+                    $clone.find('.select2-container').remove();
+                    $clone.find('select').removeClass('select2-hidden-accessible');
+                    $container.append($clone);
+
+                    // Reinitialize select2
+                    var $modal = $container.closest('.modal');
+                    var $parent = $modal.find('.modal-content').length ? $modal.find('.modal-content') : $modal;
+                    $clone.find('.select2-approver').select2({
+                        width: '100%',
+                        dropdownParent: $parent,
+                        placeholder: 'Choose Approver (Employee)'
+                    });
+                }
+            });
+
+            // Remove approver row
+            $(document).on('click', '.btn-remove-approver', function() {
+                var $row = $(this).closest('.approver-row');
+                var $container = $row.closest('[id^="approver-rows-"]');
+                if ($container.find('.approver-row').length > 1) {
+                    $row.remove();
+                } else {
+                    $row.find('select').val('').trigger('change');
+                }
+            });
+        });
     </script>
 
 @endsection

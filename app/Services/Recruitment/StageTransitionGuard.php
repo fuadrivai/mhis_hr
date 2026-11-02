@@ -117,18 +117,70 @@ class StageTransitionGuard
                 }
             }
 
-            // Normal forward step: gate checks for future phases
-            $this->checkForwardGates($application, $targetStage, $user);
+            // Normal forward step: gate checks for pipeline progression
+            $this->checkForwardGates($application, $targetStage, $reason, $user);
         }
     }
 
     /**
-     * Placeholder hooks for Phase 3 and Phase 4 gates.
+     * Phase gates for forward pipeline progression.
      */
-    protected function checkForwardGates(CandidateApplication $application, string $targetStage, User $user): void
-    {
-        // Phase 3 gate: offer requires completed interview evaluations (to be expanded in Phase 3)
-        // Phase 4 gate: contract_signing requires accepted offer; joined requires signed contract (to be expanded in Phase 4)
+    protected function checkForwardGates(
+        CandidateApplication $application,
+        string $targetStage,
+        ?string $reason,
+        User $user
+    ): void {
+        // Phase 3 gate: advancing to 'offer' requires completed interview evaluations
+        if ($targetStage === 'offer') {
+            $hasDoneRound = $application->interviewRounds()
+                ->where('status', 'done')
+                ->exists();
+
+            $hasPendingEvaluations = $application->interviewRounds()
+                ->whereHas('evaluations', function ($q) {
+                    $q->where('status', '!=', 'submitted');
+                })
+                ->exists();
+
+            $isInterviewComplete = $hasDoneRound && !$hasPendingEvaluations;
+
+            if (!$isInterviewComplete) {
+                if (empty(trim((string) $reason))) {
+                    throw ValidationException::withMessages([
+                        'stage' => 'Advancing to Offer stage requires at least one completed interview round with all evaluations submitted. To override this requirement, please provide a mandatory explanation in the reason field.',
+                    ]);
+                }
+            }
+        }
+
+        // Phase 4 gate: advancing to 'contract_signing' requires an accepted offer
+        if ($targetStage === 'contract_signing') {
+            $hasAcceptedOffer = $application->offers()
+                ->where('status', 'accepted')
+                ->exists();
+
+            if (!$hasAcceptedOffer) {
+                if (empty(trim((string) $reason))) {
+                    throw ValidationException::withMessages([
+                        'stage' => 'Advancing to Contract Signing requires an accepted job offer. To override this requirement, please provide a mandatory explanation in the reason field.',
+                    ]);
+                }
+            }
+        }
+
+        // Phase 4 gate: advancing to 'joined' requires signed contract and join date recorded
+        if ($targetStage === 'joined') {
+            $onboarding = $application->onboarding;
+            $isContractSigned = $onboarding && $onboarding->contract_status === 'signed' && !empty($onboarding->join_date);
+
+            if (!$isContractSigned) {
+                if (empty(trim((string) $reason))) {
+                    throw ValidationException::withMessages([
+                        'stage' => 'Advancing to Joined stage requires a signed contract and a confirmed join date. To override this requirement, please provide a mandatory explanation in the reason field.',
+                    ]);
+                }
+            }
+        }
     }
 }
-

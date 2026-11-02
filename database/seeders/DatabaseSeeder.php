@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             DocumentCategorySeeder::class,
             DegreeSeeder::class,
             JobRequirementSeeder::class,
+            EvaluationCompetencySeeder::class,
+            RejectionReasonSeeder::class,
         ]);
 
         $fuad = User::firstOrCreate([

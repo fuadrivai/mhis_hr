@@ -21,6 +21,10 @@ class Employment extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+    public function position()
+    {
+        return $this->belongsTo(Position::class, 'job_position_id');
+    }
     public function job_position()
     {
         return $this->belongsTo(Position::class);

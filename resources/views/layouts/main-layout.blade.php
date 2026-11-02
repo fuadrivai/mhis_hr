@@ -160,6 +160,15 @@
                                                     </li>
                                                 </ul>
                                             </li>
+                                            <li class="{{ Request::is('recruitment/my-interviews*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('recruitment.my-interviews.index') }}">My Interviews</a>
+                                            </li>
+                                            <li class="{{ Request::is('recruitment/my-approvals*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('recruitment.my-approvals.index') }}">My Approvals</a>
+                                            </li>
+                                            <li class="{{ request()->routeIs('recruitment.index') && request()->route('section') === 'reports' ? 'current-page' : '' }}">
+                                                <a href="{{ route('recruitment.index', ['section' => 'reports']) }}">Reports & Analytics</a>
+                                            </li>
                                             <li class="{{ Request::is('recruitment/settings*') ? 'active' : '' }}">
                                                 <a>Settings <span class="fa fa-chevron-down"></span></a>
                                                 <ul class="nav child_menu"
@@ -167,9 +176,27 @@
                                                     <li class="{{ request()->routeIs('recruitment.settings.job-requirements*') ? 'current-page' : '' }}">
                                                         <a href="{{ route('recruitment.settings.job-requirements') }}">Job Requirements</a>
                                                     </li>
+                                                    <li class="{{ request()->routeIs('recruitment.settings.evaluation-competencies*') ? 'current-page' : '' }}">
+                                                        <a href="{{ route('recruitment.settings.evaluation-competencies.index') }}">Evaluation Competencies</a>
+                                                    </li>
+                                                    <li class="{{ request()->routeIs('recruitment.settings.rejection-reasons*') ? 'current-page' : '' }}">
+                                                        <a href="{{ route('recruitment.settings.rejection-reasons.index') }}">Rejection Reasons</a>
+                                                    </li>
                                                 </ul>
                                             </li>
                                         </ul>
+                                    </li>
+                                @endif
+
+                                @if (!$canAccessRecruitment && auth()->user()?->isAssignedInterviewer())
+                                    <li class="{{ Request::is('recruitment/my-interviews*') ? 'current-page' : '' }}">
+                                        <a href="{{ route('recruitment.my-interviews.index') }}"><i class="fa fa-calendar-check-o"></i> My Interviews</a>
+                                    </li>
+                                @endif
+
+                                @if (!$canAccessRecruitment && auth()->user()?->isAssignedOfferApprover())
+                                    <li class="{{ Request::is('recruitment/my-approvals*') ? 'current-page' : '' }}">
+                                        <a href="{{ route('recruitment.my-approvals.index') }}"><i class="fa fa-check-square-o"></i> My Approvals</a>
                                     </li>
                                 @endif
 

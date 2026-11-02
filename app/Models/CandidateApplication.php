@@ -59,4 +59,56 @@ class CandidateApplication extends Model
     {
         return $this->hasOne(CvMatchResult::class, 'candidate_application_id')->latestOfMany();
     }
+
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(ApplicationAssessment::class, 'candidate_application_id')->orderBy('assessed_at', 'desc');
+    }
+
+    public function latestAssessment(): HasOne
+    {
+        return $this->hasOne(ApplicationAssessment::class, 'candidate_application_id')->latestOfMany('assessed_at');
+    }
+
+    public function interviewRounds(): HasMany
+    {
+        return $this->hasMany(InterviewRound::class, 'candidate_application_id')->orderBy('round_no', 'asc');
+    }
+
+    public function latestInterviewRound(): HasOne
+    {
+        return $this->hasOne(InterviewRound::class, 'candidate_application_id')->latestOfMany('scheduled_at');
+    }
+
+    public function rejections(): HasMany
+    {
+        return $this->hasMany(ApplicationRejection::class, 'candidate_application_id')->latest();
+    }
+
+    public function latestRejection(): HasOne
+    {
+        return $this->hasOne(ApplicationRejection::class, 'candidate_application_id')->latestOfMany();
+    }
+
+    public function offers(): HasMany
+    {
+        return $this->hasMany(Offer::class, 'candidate_application_id')->orderBy('version', 'desc')->latest();
+    }
+
+    public function latestOffer(): HasOne
+    {
+        return $this->hasOne(Offer::class, 'candidate_application_id')->latestOfMany('version');
+    }
+
+    public function activeOffer(): HasOne
+    {
+        return $this->hasOne(Offer::class, 'candidate_application_id')
+            ->whereNotIn('status', ['cancelled'])
+            ->latestOfMany('version');
+    }
+
+    public function onboarding(): HasOne
+    {
+        return $this->hasOne(ApplicationOnboarding::class, 'candidate_application_id');
+    }
 }

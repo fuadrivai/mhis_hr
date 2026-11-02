@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Candidate;
 use App\Models\CandidateApplication;
 use App\Models\CvMatchResult;
+use App\Models\Employee;
+use App\Models\EvaluationCompetency;
 use App\Services\CandidateRegistrationService;
 use App\Services\Implement\CandidateRegistrationImplement;
 use App\Services\Recruitment\Ai\CvMatchingService;
@@ -47,12 +49,30 @@ class CandidateRegistrationController extends Controller
         $candidate = $this->candidateRegistrationService->getCandidateDetails($candidate, auth()->user());
         $filterData = $this->candidateRegistrationService->getCandidateIndexFilterData(auth()->user());
 
+        $assignableInterviewers = Employee::whereNotNull('user_id')
+            ->has('user')
+            ->with(['user', 'personal', 'employment.job_position'])
+            ->get()
+            ->sortBy(function ($emp) {
+                $pName = trim(($emp->personal?->first_name ?? '') . ' ' . ($emp->personal?->last_name ?? ''));
+                return strtolower(!empty($pName) ? $pName : ($emp->user?->name ?? ''));
+            })
+            ->values();
+
+        $evaluationCompetencies = EvaluationCompetency::active()->get();
+        $rejectionReasons = \App\Models\RejectionReason::where('is_active', true)->orderBy('sort_order')->get();
+        $assignableApprovers = $assignableInterviewers;
+
         return view('recruitment.candidate-show', [
-            'candidate' => $candidate,
-            'assignableHrPics' => $filterData['assignableHrPics'],
-            'stages' => $filterData['stages'],
-            'title' => 'Candidate Profile: ' . $candidate->full_name,
-            'section' => 'candidates',
+            'candidate'              => $candidate,
+            'assignableHrPics'        => $filterData['assignableHrPics'],
+            'stages'                 => $filterData['stages'],
+            'assignableInterviewers' => $assignableInterviewers,
+            'assignableApprovers'    => $assignableApprovers,
+            'rejectionReasons'       => $rejectionReasons,
+            'evaluationCompetencies' => $evaluationCompetencies,
+            'title'                  => 'Candidate Profile: ' . $candidate->full_name,
+            'section'                => 'candidates',
         ]);
     }
 
@@ -91,6 +111,8 @@ class CandidateRegistrationController extends Controller
             'stage_substatus' => 'nullable|string|max:50',
             'reason' => 'nullable|string|max:1000',
             'hr_pic_id' => 'nullable|integer|exists:users,id',
+            'rejection_reason_id' => 'nullable|required_if:stage,rejected|integer|exists:rejection_reasons,id',
+            'rejection_notes' => 'nullable|string|max:1000',
         ]);
         $this->candidateRegistrationService->updateCandidateApplication(
             $candidate,
@@ -604,6 +626,8 @@ class CandidateRegistrationController extends Controller
             'applied_from' => 'nullable|date',
             'applied_to' => 'nullable|date|after_or_equal:applied_from',
             'inactive_days' => 'nullable|in:30,60,90,180',
+            'psychotest_result' => 'nullable|in:recommended,considered,not_recommended,untested',
+            'interview_status' => 'nullable|in:not_scheduled,scheduled,awaiting_evaluation,done',
             'sort' => 'nullable|in:candidate,applied_at,position,branch,stage,last_activity_at,updated_at',
             'direction' => 'nullable|in:asc,desc',
             'per_page' => 'nullable|in:25,50,100',
