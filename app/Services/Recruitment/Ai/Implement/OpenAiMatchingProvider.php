@@ -58,7 +58,6 @@ class OpenAiMatchingProvider implements AiMatchingProvider
 
         $payload = $this->buildChatPayload($messages, [
             'response_format' => ['type' => 'json_object'],
-            'temperature'     => 0.1,
         ]);
 
         try {
@@ -199,7 +198,7 @@ class OpenAiMatchingProvider implements AiMatchingProvider
         ], $options);
 
         // Handle temperature
-        $defaultTemp = $options['temperature'] ?? null;
+        $defaultTemp = array_key_exists('temperature', $options) ? $options['temperature'] : 0.1;
         unset($payload['temperature']);
         $temp = $this->getTemperature($defaultTemp);
         if ($temp !== null) {
