@@ -15,9 +15,11 @@ return [
     |--------------------------------------------------------------------------
     */
     'openai' => [
-        'api_key'  => env('OPENAI_API_KEY', env('AI_API_KEY', '')),
-        'model'    => env('OPENAI_MODEL', env('AI_MODEL', 'gpt-4o-mini')),
-        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'api_key'          => env('OPENAI_API_KEY', env('AI_API_KEY', '')),
+        'model'            => env('OPENAI_MODEL', env('AI_MODEL', 'gpt-4o-mini')),
+        'base_url'         => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'temperature'      => env('OPENAI_TEMPERATURE', null),
+        'reasoning_effort' => env('OPENAI_REASONING_EFFORT', null),
     ],
 
     /*
@@ -42,4 +44,3 @@ return [
     'prompt_version'      => 'v1',
     'consent_v2_version'  => 'candidate-privacy-v2',
 ];
-

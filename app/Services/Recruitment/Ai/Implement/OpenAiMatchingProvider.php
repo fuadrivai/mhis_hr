@@ -51,20 +51,22 @@ class OpenAiMatchingProvider implements AiMatchingProvider
             . "\n\nCANDIDATE CV:\n"
             . $redactedCv;
 
+        $messages = [
+            ['role' => $this->getSystemRole(), 'content' => $systemPrompt],
+            ['role' => 'user', 'content' => $userPayload],
+        ];
+
+        $payload = $this->buildChatPayload($messages, [
+            'response_format' => ['type' => 'json_object'],
+            'temperature'     => 0.1,
+        ]);
+
         try {
             $response = Http::withToken($this->apiKey)
                 ->withoutVerifying()
                 ->timeout($this->timeout)
                 ->retry(2, 600, throw: false)
-                ->post("{$this->baseUrl}/chat/completions", [
-                    'model'           => $this->model,
-                    'messages'        => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => $userPayload],
-                    ],
-                    'response_format' => ['type' => 'json_object'],
-                    'temperature'     => 0.1,
-                ]);
+                ->post("{$this->baseUrl}/chat/completions", $payload);
 
             if (!$response->successful()) {
                 throw new RuntimeException("OpenAI API call failed ({$response->status()}): {$response->body()}");
@@ -97,20 +99,22 @@ class OpenAiMatchingProvider implements AiMatchingProvider
             ? (string) file_get_contents($promptFile)
             : "Extract contact info from CV: full_name, email, phone, current_city. Return JSON.";
 
+        $messages = [
+            ['role' => $this->getSystemRole(), 'content' => $systemPrompt],
+            ['role' => 'user', 'content' => "Extract identity from this CV text:\n\n" . mb_substr($rawCvText, 0, 4000)],
+        ];
+
+        $payload = $this->buildChatPayload($messages, [
+            'response_format' => ['type' => 'json_object'],
+            'temperature'     => 0.0,
+        ]);
+
         try {
             $response = Http::withToken($this->apiKey)
                 ->withoutVerifying()
                 ->timeout($this->timeout)
                 ->retry(2, 500, throw: false)
-                ->post("{$this->baseUrl}/chat/completions", [
-                    'model'           => $this->model,
-                    'messages'        => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => "Extract identity from this CV text:\n\n" . mb_substr($rawCvText, 0, 4000)],
-                    ],
-                    'response_format' => ['type' => 'json_object'],
-                    'temperature'     => 0.0,
-                ]);
+                ->post("{$this->baseUrl}/chat/completions", $payload);
 
             if ($response->successful()) {
                 $content = $response->json('choices.0.message.content');
@@ -140,6 +144,83 @@ class OpenAiMatchingProvider implements AiMatchingProvider
     public function getModelName(): string
     {
         return $this->model;
+    }
+
+    /**
+     * Determine if the model is an OpenAI reasoning model (e.g. o1, o3, gpt-5, gpt-6, luna)
+     * which restricts custom temperature (only default 1 is supported) and prefers developer role.
+     */
+    private function isReasoningModel(): bool
+    {
+        return (bool) preg_match('/(?:^o1|^o3|^gpt-5|^gpt-6|luna|reason)/i', $this->model);
+    }
+
+    /**
+     * Determine the system message role ('developer' for reasoning models, 'system' for standard models).
+     */
+    private function getSystemRole(): string
+    {
+        return $this->isReasoningModel() ? 'developer' : 'system';
+    }
+
+    /**
+     * Resolve the temperature parameter for API calls.
+     * Returns null if temperature should be omitted from payload (allowing OpenAI default of 1).
+     */
+    private function getTemperature(?float $default = 0.1): ?float
+    {
+        $configured = config('ai.openai.temperature');
+        if ($configured !== null && $configured !== '') {
+            $val = (float) $configured;
+            // If it's a reasoning model and configured temperature is NOT 1, omit it to prevent API error
+            if ($this->isReasoningModel() && abs($val - 1.0) > 0.001) {
+                return null;
+            }
+            return $val;
+        }
+
+        // Reasoning models reject custom temperatures (only 1 is supported).
+        // Omitting temperature lets OpenAI apply its model default safely.
+        if ($this->isReasoningModel()) {
+            return null;
+        }
+
+        return $default;
+    }
+
+    /**
+     * Build the request payload for chat completions with model-specific adjustments.
+     */
+    private function buildChatPayload(array $messages, array $options = []): array
+    {
+        $payload = array_merge([
+            'model'    => $this->model,
+            'messages' => $messages,
+        ], $options);
+
+        // Handle temperature
+        $defaultTemp = $options['temperature'] ?? null;
+        unset($payload['temperature']);
+        $temp = $this->getTemperature($defaultTemp);
+        if ($temp !== null) {
+            $payload['temperature'] = $temp;
+        }
+
+        // Handle reasoning models specific adjustments
+        if ($this->isReasoningModel()) {
+            $reasoningEffort = config('ai.openai.reasoning_effort');
+            if (!empty($reasoningEffort)) {
+                $payload['reasoning_effort'] = (string) $reasoningEffort;
+            }
+
+            // Convert max_tokens to max_completion_tokens for reasoning models
+            if (isset($payload['max_tokens'])) {
+                $payload['max_completion_tokens'] = $payload['max_tokens'];
+                unset($payload['max_tokens']);
+            }
+        }
+
+        return $payload;
     }
 
     private function normalizeMatchResponse(array $data, array $requirements): array
@@ -342,22 +423,24 @@ class OpenAiMatchingProvider implements AiMatchingProvider
             ]
         ];
 
+        $messages = [
+            [
+                'role'    => 'user',
+                'content' => $payloadContent,
+            ]
+        ];
+
+        $payload = $this->buildChatPayload($messages, [
+            'temperature' => 0.0,
+            'max_tokens'  => 3000,
+        ]);
+
         try {
             $response = Http::withToken($this->apiKey)
                 ->withoutVerifying()
                 ->timeout($this->timeout)
                 ->retry(2, 600, throw: false)
-                ->post("{$this->baseUrl}/chat/completions", [
-                    'model'       => $this->model,
-                    'messages'    => [
-                        [
-                            'role'    => 'user',
-                            'content' => $payloadContent,
-                        ]
-                    ],
-                    'temperature' => 0.0,
-                    'max_tokens'  => 3000,
-                ]);
+                ->post("{$this->baseUrl}/chat/completions", $payload);
 
             if ($response->successful()) {
                 return (string) $response->json('choices.0.message.content');
@@ -371,4 +454,3 @@ class OpenAiMatchingProvider implements AiMatchingProvider
         }
     }
 }
-
