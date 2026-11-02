@@ -41,6 +41,7 @@ return [
     'timeout'             => (int) env('AI_TIMEOUT', 45),
     'max_tokens'          => (int) env('AI_MAX_TOKENS', 4096),
     'mandatory_score_cap' => (int) env('AI_MANDATORY_SCORE_CAP', 60),
+    'python_binary'       => env('PYTHON_BINARY', null),
     'prompt_version'      => 'v1',
     'consent_v2_version'  => 'candidate-privacy-v2',
 ];

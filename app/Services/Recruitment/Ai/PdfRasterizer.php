@@ -8,6 +8,34 @@ use Throwable;
 class PdfRasterizer
 {
     /**
+     * Resolve the Python binary executable.
+     */
+    public function getPythonBinary(): string
+    {
+        $configured = config('ai.python_binary', env('PYTHON_BINARY'));
+        if (!empty($configured)) {
+            return (string) $configured;
+        }
+
+        // On Windows, 'python' is standard. On Unix/Linux, 'python3' is typically used.
+        if (DIRECTORY_SEPARATOR === '\\') {
+            return 'python';
+        }
+
+        $python3 = trim((string) @shell_exec('command -v python3 2>/dev/null'));
+        if (!empty($python3)) {
+            return $python3;
+        }
+
+        $python = trim((string) @shell_exec('command -v python 2>/dev/null'));
+        if (!empty($python)) {
+            return $python;
+        }
+
+        return 'python3';
+    }
+
+    /**
      * Render the first N pages of a PDF to temporary PNG files.
      *
      * @param string $pdfPath
@@ -53,11 +81,12 @@ PY;
         $scriptPath = $tmpDir . '/render_pdf_' . uniqid() . '.py';
         file_put_contents($scriptPath, $pythonScript);
 
-        $cmd = 'python ' . escapeshellarg($scriptPath) . ' '
+        $binary = escapeshellcmd($this->getPythonBinary());
+        $cmd = $binary . ' ' . escapeshellarg($scriptPath) . ' '
             . escapeshellarg(realpath($pdfPath) ?: $pdfPath) . ' '
             . escapeshellarg($tmpDir) . ' '
             . escapeshellarg($prefix) . ' '
-            . $maxPages;
+            . $maxPages . ' 2>&1';
 
         $output = [];
         $exitCode = 0;
