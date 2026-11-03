@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\ValidationException;
 
 use function App\Helpers\prepareAttendance;
 use function App\Helpers\sendMessage;
@@ -153,6 +154,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
         try {
             $employee = Employee::findOrFail($request['requester_employee_id']);
             $timeoff = TimeOff::findOrFail($request['timeoff_id']);
+            $this->ensureNoOverlappingTimeOff($employee, $request['dynamic_fields'] ?? []);
             $approvalRule = $this->approvalEngine->resolveApprovalRule($employee);
             $activeAcademicYear = $this->academicYearService->getActiveAcademicYear();
 
@@ -284,6 +286,41 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 ]
             );
             throw $th;
+        }
+    }
+
+    private function ensureNoOverlappingTimeOff(Employee $employee, array $dynamicFields): void
+    {
+        $startDate = $dynamicFields['start_date'] ?? $dynamicFields['date'] ?? null;
+        $endDate = $dynamicFields['end_date'] ?? $startDate;
+
+        if (!$startDate || !$endDate) {
+            return;
+        }
+
+        $startDate = Carbon::parse($startDate)->toDateString();
+        $endDate = Carbon::parse($endDate)->toDateString();
+
+        $hasConflictingRequest = ApprovalRequest::query()
+            ->where('requester_employee_id', $employee->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->whereHas('data', function ($query) use ($startDate, $endDate) {
+                $query
+                    ->whereRaw(
+                        "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.end_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) >= ?",
+                        [$startDate]
+                    )
+                    ->whereRaw(
+                        "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date'))) <= ?",
+                        [$endDate]
+                    );
+            })
+            ->exists();
+
+        if ($hasConflictingRequest) {
+            throw ValidationException::withMessages([
+                'dynamic_fields.start_date' => 'Karyawan sudah memiliki pengajuan timeoff pada tanggal tersebut.',
+            ]);
         }
     }
 
