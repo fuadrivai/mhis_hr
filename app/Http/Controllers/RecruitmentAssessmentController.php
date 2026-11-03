@@ -24,17 +24,26 @@ class RecruitmentAssessmentController extends Controller
             'assessed_at'     => 'required|date',
             'conclusion'      => 'required|in:recommended,considered,not_recommended',
             'notes'           => 'nullable|string|max:2000',
-            'assessment_file' => 'required|file|mimes:pdf|max:10240',
+            'document_url'    => 'nullable|string|max:2048',
+            'assessment_file' => 'nullable|file|mimes:pdf|max:10240',
         ]);
+
+        if (!$request->filled('document_url') && !$request->hasFile('assessment_file')) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Please provide a document link (Google Docs, Google Drive, PDF link) or upload a PDF report.');
+        }
 
         try {
             $this->assessmentService->uploadAssessment(
                 $application,
                 [
-                    'type'        => 'psychotest',
-                    'assessed_at' => $request->input('assessed_at'),
-                    'conclusion'  => $request->input('conclusion'),
-                    'notes'       => $request->input('notes'),
+                    'type'         => 'psychotest',
+                    'assessed_at'  => $request->input('assessed_at'),
+                    'conclusion'   => $request->input('conclusion'),
+                    'notes'        => $request->input('notes'),
+                    'document_url' => $request->input('document_url'),
                 ],
                 $request->file('assessment_file'),
                 $request->user()
@@ -42,7 +51,7 @@ class RecruitmentAssessmentController extends Controller
 
             return redirect()
                 ->route('recruitment.candidates.show', ['candidate' => $candidate->id, 'application' => $application->id])
-                ->with('success', 'Psychotest assessment report uploaded successfully.');
+                ->with('success', 'Psychotest assessment report saved successfully.');
         } catch (\Exception $e) {
             return redirect()
                 ->back()
@@ -59,6 +68,10 @@ class RecruitmentAssessmentController extends Controller
     ): Response {
         if ($assessment->candidate_application_id !== $application->id) {
             abort(404, 'Assessment not found for this candidate application.');
+        }
+
+        if ($assessment->document_url) {
+            return redirect()->away($assessment->document_url);
         }
 
         return $this->assessmentService->streamAssessmentFile($assessment, $request->user());
@@ -87,4 +100,3 @@ class RecruitmentAssessmentController extends Controller
         }
     }
 }
-

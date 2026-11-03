@@ -45,5 +45,42 @@ class ApplicationAssessment extends Model
             default           => ucfirst(str_replace('_', ' ', (string) $this->conclusion)),
         };
     }
-}
 
+    public function getDocumentDisplayLabelAttribute(): string
+    {
+        if (!empty($this->document_url)) {
+            $url = strtolower($this->document_url);
+            if (str_contains($url, 'docs.google.com')) {
+                return 'Google Docs';
+            }
+            if (str_contains($url, 'drive.google.com')) {
+                return 'Google Drive';
+            }
+            if (str_ends_with($url, '.pdf') || str_contains($url, '.pdf?')) {
+                return 'PDF Document';
+            }
+            return 'View Document Link';
+        }
+
+        return $this->original_filename ?: 'Psychotest Report';
+    }
+
+    public function getDocumentIconClassAttribute(): string
+    {
+        if (!empty($this->document_url)) {
+            $url = strtolower($this->document_url);
+            if (str_contains($url, 'docs.google.com')) {
+                return 'fa fa-file-text-o';
+            }
+            if (str_contains($url, 'drive.google.com')) {
+                return 'fa fa-cloud';
+            }
+            if (str_ends_with($url, '.pdf') || str_contains($url, '.pdf?')) {
+                return 'fa fa-file-pdf-o';
+            }
+            return 'fa fa-external-link';
+        }
+
+        return 'fa fa-file-pdf-o';
+    }
+}

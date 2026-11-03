@@ -14,7 +14,7 @@ interface RecruitmentAssessmentService
     public function uploadAssessment(
         CandidateApplication $application,
         array $data,
-        UploadedFile $file,
+        ?UploadedFile $file,
         User $user
     ): ApplicationAssessment;
 
@@ -24,4 +24,3 @@ interface RecruitmentAssessmentService
 
     public function streamAssessmentFile(ApplicationAssessment $assessment, User $user): Response;
 }
-

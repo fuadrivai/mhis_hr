@@ -20,6 +20,7 @@
                         <tr>
                             <th>Candidate</th>
                             <th>Position / Opening</th>
+                            <th>Psychotest</th>
                             <th>Round</th>
                             <th>Schedule</th>
                             <th>Location / Link</th>
@@ -42,6 +43,18 @@
                                 <td>
                                     <strong>{{ $round->candidateApplication->jobOpening->title ?? $round->candidateApplication->position_applied ?? '-' }}</strong><br>
                                     <small class="text-muted">{{ $round->candidateApplication->branch->name ?? '' }}</small>
+                                </td>
+                                <td>
+                                    @php
+                                        $assessItem = $round->candidateApplication->assessments?->first();
+                                    @endphp
+                                    @if ($assessItem)
+                                        <span class="label label-{{ $assessItem->conclusion_badge_class }}" style="font-size: 11px;">
+                                            {{ $assessItem->conclusion_label }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted" style="font-size: 11px;">--</span>
+                                    @endif
                                 </td>
                                 <td>
                                     <span class="label label-info">{{ $round->round_type_label }}</span>
@@ -84,7 +97,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted" style="padding: 24px;">
+                                <td colspan="8" class="text-center text-muted" style="padding: 24px;">
                                     <i class="fa fa-calendar-o fa-2x text-muted" style="margin-bottom: 8px; display: block;"></i>
                                     You currently have no interview rounds assigned to you.
                                 </td>

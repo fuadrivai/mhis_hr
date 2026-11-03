@@ -288,9 +288,9 @@
 
                                     @if ($application->resume_path)
 
-                                        <a href="{{ route('recruitment.candidates.resume', [$candidate, $application]) }}" class="btn btn-default btn-xs">
+                                        <a href="{{ route('recruitment.candidates.resume', [$candidate, $application]) }}" class="btn btn-info btn-xs" target="_blank" rel="noopener noreferrer">
 
-                                            <i class="fa fa-download"></i> Download CV
+                                            <i class="fa fa-file-pdf-o"></i> View CV
 
                                         </a>
 
@@ -985,7 +985,7 @@
                     <ul class="nav navbar-right panel_toolbox">
                         <li>
                             <button type="button" class="btn btn-success btn-xs" style="color: #fff; margin-top: 5px;" data-toggle="modal" data-target="#uploadPsychotestModal-{{ $application->id }}">
-                                <i class="fa fa-upload"></i> Upload Psychotest Report
+                                <i class="fa fa-plus-circle"></i> Add Psychotest Assessment
                             </button>
                         </li>
                     </ul>
@@ -1015,9 +1015,18 @@
                                         </td>
                                         <td>{{ $assessment->notes ?: '-' }}</td>
                                         <td>
-                                            <a href="{{ route('recruitment.assessments.download', [$candidate->id, $application->id, $assessment->id]) }}" class="btn btn-primary btn-xs" target="_blank">
-                                                <i class="fa fa-file-pdf-o"></i> {{ $assessment->original_filename }}
-                                            </a>
+                                            @if ($assessment->document_url)
+                                                <a href="{{ $assessment->document_url }}" class="btn btn-info btn-xs" target="_blank" rel="noopener noreferrer">
+                                                    <i class="{{ $assessment->document_icon_class }}"></i> {{ $assessment->document_display_label }}
+                                                    <i class="fa fa-external-link" style="font-size: 9px; margin-left: 2px;"></i>
+                                                </a>
+                                            @elseif ($assessment->file_path)
+                                                <a href="{{ route('recruitment.assessments.download', [$candidate->id, $application->id, $assessment->id]) }}" class="btn btn-primary btn-xs" target="_blank" rel="noopener noreferrer">
+                                                    <i class="fa fa-file-pdf-o"></i> {{ $assessment->original_filename ?: 'View PDF' }}
+                                                </a>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
                                         <td>
                                             <small class="text-muted">{{ $assessment->uploadedBy?->name ?: 'System' }}</small>
@@ -1070,13 +1079,18 @@
                                     <textarea name="notes" class="form-control" rows="3" placeholder="Summary of cognitive, personality, or behavioral observations from psychologist"></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label>Psychotest Report PDF <span class="text-danger">*</span> <small class="text-muted">(Max 10MB, PDF only)</small></label>
-                                    <input type="file" name="assessment_file" class="form-control" accept=".pdf" required>
+                                    <label>Psychotest Report Link <small class="text-muted">(Google Docs, Google Drive, PDF Link, etc.)</small></label>
+                                    <input type="url" name="document_url" class="form-control" placeholder="https://docs.google.com/... or https://drive.google.com/...">
+                                    <small class="text-muted">Paste the shareable link to Google Docs, Google Drive, or PDF report here.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Or Upload PDF File <small class="text-muted">(Optional if link is provided, max 10MB)</small></label>
+                                    <input type="file" name="assessment_file" class="form-control" accept=".pdf">
                                 </div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-success">Upload Report</button>
+                                <button type="submit" class="btn btn-success">Save Assessment</button>
                             </div>
                         </form>
                     </div>

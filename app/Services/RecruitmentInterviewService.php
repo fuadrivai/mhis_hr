@@ -12,12 +12,21 @@ use Illuminate\Http\UploadedFile;
 
 interface RecruitmentInterviewService
 {
+    public function getAssignableInterviewers(): Collection;
+
     public function scheduleRound(
         CandidateApplication $application,
         array $data,
         array $interviewerEmployeeIds,
         User $user
     ): InterviewRound;
+
+    public function bulkScheduleRounds(
+        array $applicationIds,
+        array $data,
+        array $interviewerEmployeeIds,
+        User $user
+    ): array;
 
     public function updateRound(
         InterviewRound $round,
@@ -62,4 +71,3 @@ interface RecruitmentInterviewService
 
     public function getEvaluationSummaryForInterviewer(InterviewRound $round, Employee $interviewer): ?array;
 }
-

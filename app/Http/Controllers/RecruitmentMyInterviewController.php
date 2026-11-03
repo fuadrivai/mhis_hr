@@ -64,8 +64,8 @@ class RecruitmentMyInterviewController extends Controller
             $peerSummary = $this->interviewService->getEvaluationSummaryForInterviewer($round, $employee);
         }
 
-        // Load candidate application with candidate info (without salary/sensitive fields)
-        $application = $round->candidateApplication()->with(['candidate', 'jobOpening'])->first();
+        // Load candidate application with candidate info & assessments (without salary/sensitive fields)
+        $application = $round->candidateApplication()->with(['candidate', 'jobOpening', 'branch', 'assessments.uploadedBy'])->first();
 
         return view('recruitment.my-interviews.evaluate', [
             'round'              => $round,
@@ -162,13 +162,60 @@ class RecruitmentMyInterviewController extends Controller
         }
 
         $application = $round->candidateApplication;
-        if (!$application || !$application->resume_path || !Storage::disk('local')->exists($application->resume_path)) {
+        if (!$application || !$application->resume_path) {
             abort(404, 'Candidate resume file not found.');
         }
 
-        return Storage::disk('local')->response(
-            $application->resume_path,
-            $application->original_filename ?? 'candidate-cv.pdf'
-        );
+        $fullPath = \App\Services\Implement\CandidateRegistrationImplement::resolveResumeFullPath($application->resume_path);
+        if (!$fullPath || !file_exists($fullPath)) {
+            abort(404, 'Candidate resume file not found on disk.');
+        }
+
+        $mime = is_file($fullPath) ? (mime_content_type($fullPath) ?: 'application/pdf') : 'application/pdf';
+        $filename = $application->original_filename ?: basename($fullPath);
+
+        return response()->file($fullPath, [
+            'Content-Type'        => $mime,
+            'Content-Disposition' => 'inline; filename="' . addslashes($filename) . '"',
+        ]);
+    }
+
+    public function viewCandidateAssessment(
+        Request $request,
+        InterviewRound $round,
+        \App\Models\ApplicationAssessment $assessment
+    ): Response {
+        $user = $request->user();
+        $employee = $user->employee;
+
+        if (!$employee) {
+            abort(403, 'Employee profile not found.');
+        }
+
+        $isAssigned = $round->interviewers()->where('employees.id', $employee->id)->exists();
+        if (!$isAssigned && !$user->isRecruitmentAdministrator() && !$user->isRecruitmentMonitor()) {
+            abort(403, 'Unauthorized to view candidate assessment for this round.');
+        }
+
+        if ($assessment->candidate_application_id !== $round->candidate_application_id) {
+            abort(404, 'Assessment not found for this candidate application.');
+        }
+
+        if ($assessment->document_url) {
+            return redirect()->away($assessment->document_url);
+        }
+
+        if (!$assessment->file_path || !Storage::disk('local')->exists($assessment->file_path)) {
+            abort(404, 'Assessment report file not found on private storage.');
+        }
+
+        $fullPath = Storage::disk('local')->path($assessment->file_path);
+        $mime = is_file($fullPath) ? (mime_content_type($fullPath) ?: 'application/pdf') : 'application/pdf';
+        $filename = $assessment->original_filename ?: 'psychotest-report.pdf';
+
+        return response()->file($fullPath, [
+            'Content-Type'        => $mime,
+            'Content-Disposition' => 'inline; filename="' . addslashes($filename) . '"',
+        ]);
     }
 }

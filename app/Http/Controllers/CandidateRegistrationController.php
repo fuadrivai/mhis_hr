@@ -28,11 +28,13 @@ class CandidateRegistrationController extends Controller
         $candidates = $this->candidateRegistrationService->getCandidateIndexData($user, $filters);
         $filterData = $this->candidateRegistrationService->getCandidateIndexFilterData($user);
 
+        $interviewService = app(\App\Services\RecruitmentInterviewService::class);
         return view('recruitment.candidate-index', array_merge($filterData, [
-            'candidates' => $candidates,
-            'filters' => $filters,
-            'title' => 'Candidate Database',
-            'section' => 'candidates',
+            'candidates'             => $candidates,
+            'filters'                => $filters,
+            'title'                  => 'Candidate Database',
+            'section'                => 'candidates',
+            'assignableInterviewers' => $interviewService->getAssignableInterviewers(),
         ]));
     }
 
@@ -487,7 +489,13 @@ class CandidateRegistrationController extends Controller
             auth()->user()
         );
 
-        return Storage::disk('local')->download($path);
+        $mime = is_file($path) ? (mime_content_type($path) ?: 'application/pdf') : 'application/pdf';
+        $filename = $application->original_filename ?: basename($path);
+
+        return response()->file($path, [
+            'Content-Type'        => $mime,
+            'Content-Disposition' => 'inline; filename="' . addslashes($filename) . '"',
+        ]);
     }
 
     public function selfRegistrationForm()

@@ -79,17 +79,100 @@
                                 <th class="text-muted">Candidate Resume:</th>
                                 <td>
                                     @if ($application->resume_path)
-                                        <a href="{{ route('recruitment.my-interviews.cv', $round->id) }}" class="btn btn-primary btn-xs" target="_blank">
-                                            <i class="fa fa-file-pdf-o"></i> View / Download CV
+                                        <a href="{{ route('recruitment.my-interviews.cv', $round->id) }}" class="btn btn-info btn-xs" target="_blank" rel="noopener noreferrer">
+                                            <i class="fa fa-file-pdf-o"></i> View Candidate CV
                                         </a>
                                     @else
                                         <span class="text-muted">No CV attached</span>
                                     @endif
                                 </td>
                             </tr>
+                            <tr>
+                                <th class="text-muted">Psychotest:</th>
+                                <td>
+                                    @php
+                                        $primaryAssessment = $application->assessments ? $application->assessments->first() : null;
+                                    @endphp
+                                    @if ($primaryAssessment)
+                                        <span class="label label-{{ $primaryAssessment->conclusion_badge_class }}" style="font-size: 11px;">
+                                            {{ $primaryAssessment->conclusion_label }}
+                                        </span>
+                                        @if ($primaryAssessment->document_url)
+                                            <a href="{{ $primaryAssessment->document_url }}" class="btn btn-default btn-xs" target="_blank" rel="noopener noreferrer" style="margin-left: 6px;">
+                                                <i class="{{ $primaryAssessment->document_icon_class }}"></i> {{ $primaryAssessment->document_display_label }}
+                                                <i class="fa fa-external-link" style="font-size: 9px; margin-left: 2px;"></i>
+                                            </a>
+                                        @elseif ($primaryAssessment->file_path)
+                                            <a href="{{ route('recruitment.my-interviews.assessment', [$round->id, $primaryAssessment->id]) }}" class="btn btn-default btn-xs" target="_blank" rel="noopener noreferrer" style="margin-left: 6px;">
+                                                <i class="fa fa-file-pdf-o"></i> View Report
+                                            </a>
+                                        @endif
+                                    @else
+                                        <span class="text-muted">Not assessed yet</span>
+                                    @endif
+                                </td>
+                            </tr>
                         </table>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Candidate Psychotest Assessment Panel for Interviewer -->
+        <div class="x_panel">
+            <div class="x_title">
+                <h2>
+                    <i class="fa fa-file-text-o text-primary"></i> Psychotest Assessment
+                    <small>Candidate psychological evaluation & report link</small>
+                </h2>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                @if ($application->assessments && $application->assessments->isNotEmpty())
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-sm" style="margin-bottom: 0;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 130px;">Assessed Date</th>
+                                    <th style="width: 160px;" class="text-center">Conclusion</th>
+                                    <th>Notes / Highlights</th>
+                                    <th style="width: 240px;" class="text-center">Report Document / Link</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($application->assessments as $assessment)
+                                    <tr>
+                                        <td>{{ $assessment->assessed_at ? $assessment->assessed_at->format('d M Y') : '-' }}</td>
+                                        <td class="text-center">
+                                            <span class="label label-{{ $assessment->conclusion_badge_class }}" style="font-size: 11px;">
+                                                {{ $assessment->conclusion_label }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $assessment->notes ?: '-' }}</td>
+                                        <td class="text-center">
+                                            @if ($assessment->document_url)
+                                                <a href="{{ $assessment->document_url }}" class="btn btn-info btn-xs" target="_blank" rel="noopener noreferrer">
+                                                    <i class="{{ $assessment->document_icon_class }}"></i> {{ $assessment->document_display_label }}
+                                                    <i class="fa fa-external-link" style="font-size: 9px; margin-left: 2px;"></i>
+                                                </a>
+                                            @elseif ($assessment->file_path)
+                                                <a href="{{ route('recruitment.my-interviews.assessment', [$round->id, $assessment->id]) }}" class="btn btn-primary btn-xs" target="_blank" rel="noopener noreferrer">
+                                                    <i class="fa fa-file-pdf-o"></i> {{ $assessment->original_filename ?: 'View PDF Report' }}
+                                                </a>
+                                            @else
+                                                <span class="text-muted">No report linked</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <p class="text-muted text-center" style="padding: 12px; margin-bottom: 0;">
+                        <i class="fa fa-info-circle text-muted"></i> No psychotest assessment report has been linked for this candidate yet.
+                    </p>
+                @endif
             </div>
         </div>
 

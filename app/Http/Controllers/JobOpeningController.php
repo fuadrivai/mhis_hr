@@ -89,9 +89,11 @@ class JobOpeningController extends Controller
 
         $details = $this->jobOpeningService->getOpeningDetails($jobOpening, $user);
 
+        $interviewService = app(\App\Services\RecruitmentInterviewService::class);
         return view('recruitment.job-openings.show', array_merge($details, [
-            'title'   => 'Job Opening: ' . $jobOpening->title,
-            'section' => 'openings',
+            'title'                  => 'Job Opening: ' . $jobOpening->title,
+            'section'                => 'openings',
+            'assignableInterviewers' => $interviewService->getAssignableInterviewers(),
         ]));
     }
 

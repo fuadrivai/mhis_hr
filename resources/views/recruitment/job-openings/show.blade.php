@@ -189,10 +189,18 @@
                             <?php $apps = $applicationsByStage[$stageKey] ?? []; ?>
                             <div role="tabpanel" class="tab-pane fade {{ $loop->first ? 'active in' : '' }}" id="tab_{{ $stageKey }}">
                                 @if (count($apps) > 0)
+                                    <div style="margin-bottom: 10px;" class="text-right">
+                                        <button type="button" class="btn btn-warning btn-sm btnOpenBulkScheduleModal" style="display: none;" data-toggle="modal" data-target="#bulkScheduleInterviewModal">
+                                            <i class="fa fa-calendar-plus-o"></i> Bulk Schedule Interview (<span class="bulkSelectedCount">0</span>)
+                                        </button>
+                                    </div>
                                     <div class="table-responsive">
                                         <table class="table table-striped table-bordered table-hover table-candidates">
                                             <thead>
                                                 <tr>
+                                                    <th style="width: 35px;" class="text-center">
+                                                        <input type="checkbox" class="bulkSelectAllCandidates" title="Select all in this tab">
+                                                    </th>
                                                     <th>Code</th>
                                                     <th>Candidate Name</th>
                                                     <th>Contact</th>
@@ -205,6 +213,9 @@
                                             <tbody>
                                                 @foreach ($apps as $app)
                                                     <tr>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="candidate-row-select" value="{{ $app->id }}" data-candidate-name="{{ $app->candidate?->full_name }}" data-code="{{ $app->candidate?->candidate_code }}" data-position="{{ $opening->title }}">
+                                                        </td>
                                                         <td>{{ $app->candidate?->candidate_code ?: '--' }}</td>
                                                         <td>
                                                             <strong>
@@ -278,4 +289,158 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Bulk Schedule Interview -->
+    <div class="modal fade" id="bulkScheduleInterviewModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="POST" action="{{ route('recruitment.interviews.bulk-schedule') }}" id="bulkScheduleForm">
+                    @csrf
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span></button>
+                        <h4 class="modal-title">
+                            <i class="fa fa-calendar-plus-o text-primary"></i> Bulk Schedule Interview Rounds & Evaluations
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Selected Candidates List -->
+                        <div class="form-group">
+                            <label>Selected Candidates (<span id="modalSelectedCount">0</span> candidates)</label>
+                            <div id="bulkSelectedCandidatesContainer" style="max-height: 120px; overflow-y: auto; padding: 10px; background: #f9f9f9; border: 1px solid #e5e5e5; border-radius: 4px;">
+                                <!-- Populated by JS -->
+                            </div>
+                            <div id="bulkApplicationIdsInputs"></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 col-sm-12">
+                                <div class="form-group">
+                                    <label>Round Type <span class="text-danger">*</span></label>
+                                    <select name="round_type" class="form-control" required>
+                                        <option value="user" selected>User / Hiring Manager</option>
+                                        <option value="hr">HR Interview</option>
+                                        <option value="panel">Panel Interview</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-12">
+                                <div class="form-group">
+                                    <label>Start Date & Time <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" name="scheduled_at" class="form-control" required value="{{ now()->addDay()->setHour(9)->setMinute(0)->format('Y-m-d\TH:i') }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-12">
+                                <div class="form-group">
+                                    <label>Time Slot Interval</label>
+                                    <select name="slot_interval_minutes" class="form-control">
+                                        <option value="0">Same Time for All (Simultaneous / Panel)</option>
+                                        <option value="15">15 mins interval per candidate</option>
+                                        <option value="30" selected>30 mins interval per candidate</option>
+                                        <option value="45">45 mins interval per candidate</option>
+                                        <option value="60">60 mins interval (1 hour each)</option>
+                                    </select>
+                                    <small class="text-muted">Stagger candidate interview times automatically.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Select Interviewers (Employees) <span class="text-danger">*</span> <small class="text-muted">(You can select more than one interviewer)</small></label>
+                            <select name="interviewers[]" class="form-control select2-bulk-interviewers" multiple="multiple" style="width: 100%;" required data-placeholder="Choose interviewers (employees with system accounts)...">
+                                @if (!empty($assignableInterviewers))
+                                    @foreach ($assignableInterviewers as $emp)
+                                        @php
+                                            $pName = trim(($emp->personal?->first_name ?? '') . ' ' . ($emp->personal?->last_name ?? ''));
+                                            $eName = !empty($pName) ? $pName : ($emp->user?->name ?? "Employee #{$emp->id}");
+                                            $posName = $emp->employment?->job_position?->name ?? $emp->job_position?->name ?? '';
+                                        @endphp
+                                        <option value="{{ $emp->id }}">
+                                            {{ $eName }} {{ $posName ? "({$posName})" : '' }}
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            <small class="text-muted">An interview evaluation draft will be automatically generated for every selected interviewer.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Meeting Location or Online Link</label>
+                            <input type="text" name="location_or_link" class="form-control" placeholder="e.g. Meeting Room 2, Campus or https://meet.google.com/xyz-abcd-efg" maxlength="500">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Notes / Briefing for Interviewers</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Focus competencies, questions to ask, or candidate evaluation guidelines"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btnSubmitBulkSchedule">
+                            <i class="fa fa-calendar-check-o"></i> Schedule Interviews & Set Evaluations
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('content-script')
+<script>
+$(function() {
+    function updateBulkState() {
+        var $checked = $('.candidate-row-select:checked');
+        var count = $checked.length;
+        $('.bulkSelectedCount').text(count);
+        $('#modalSelectedCount').text(count);
+
+        if (count > 0) {
+            $('.btnOpenBulkScheduleModal').show();
+        } else {
+            $('.btnOpenBulkScheduleModal').hide();
+        }
+
+        var $container = $('#bulkSelectedCandidatesContainer');
+        var $inputs = $('#bulkApplicationIdsInputs');
+        $container.empty();
+        $inputs.empty();
+
+        $checked.each(function() {
+            var appId = $(this).val();
+            var name = $(this).data('candidate-name');
+            var code = $(this).data('code');
+            var pos = $(this).data('position');
+
+            $container.append(
+                '<span class="label label-primary" style="display: inline-block; margin: 3px; font-size: 12px; padding: 5px 8px; font-weight: normal;">' +
+                '<strong>' + name + '</strong> (' + (code || 'ID:' + appId) + ')' +
+                (pos ? ' - ' + pos : '') +
+                '</span>'
+            );
+
+            $inputs.append('<input type="hidden" name="application_ids[]" value="' + appId + '">');
+        });
+    }
+
+    $(document).on('change', '.bulkSelectAllCandidates', function() {
+        var $tab = $(this).closest('.tab-pane');
+        var isChecked = $(this).is(':checked');
+        $tab.find('.candidate-row-select').prop('checked', isChecked);
+        updateBulkState();
+    });
+
+    $(document).on('change', '.candidate-row-select', function() {
+        updateBulkState();
+    });
+
+    $('#bulkScheduleInterviewModal').on('shown.bs.modal', function() {
+        if ($.fn.select2) {
+            $('.select2-bulk-interviewers').select2({
+                dropdownParent: $('#bulkScheduleInterviewModal'),
+                width: '100%'
+            });
+        }
+    });
+});
+</script>
 @endsection

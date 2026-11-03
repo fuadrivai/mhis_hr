@@ -50,6 +50,39 @@ class RecruitmentInterviewController extends Controller
         }
     }
 
+    public function bulkStoreRounds(Request $request)
+    {
+        $request->validate([
+            'application_ids'       => 'required|array|min:1',
+            'application_ids.*'     => 'required|integer|exists:candidate_applications,id',
+            'round_type'            => 'required|in:hr,user,panel',
+            'scheduled_at'          => 'required|date',
+            'slot_interval_minutes' => 'nullable|integer|min:0|max:180',
+            'location_or_link'      => 'nullable|string|max:500',
+            'notes'                 => 'nullable|string|max:2000',
+            'interviewers'          => 'required|array|min:1',
+            'interviewers.*'        => 'required|integer|exists:employees,id',
+        ]);
+
+        try {
+            $result = $this->interviewService->bulkScheduleRounds(
+                $request->input('application_ids', []),
+                $request->only(['round_type', 'scheduled_at', 'slot_interval_minutes', 'location_or_link', 'notes']),
+                $request->input('interviewers', []),
+                $request->user()
+            );
+
+            return redirect()
+                ->back()
+                ->with('success', "Successfully scheduled interview rounds for {$result['scheduled_count']} candidate(s) with assigned interviewers.");
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', $e->getMessage());
+        }
+    }
+
     public function updateRound(
         Request $request,
         Candidate $candidate,

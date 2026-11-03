@@ -497,5 +497,167 @@ class RecruitmentPhase3Test extends TestCase
         $response = $this->actingAs($mgmtUser)->get(route('recruitment.job-openings.index'));
         $response->assertStatus(403);
     }
-}
+    public function test_cv_inline_view_and_absolute_path_resolution(): void
+    {
+        $application = $this->createTestApplication();
 
+        // 1. Create a dummy CV on disk
+        $dummyCvContent = "%PDF-1.4 test candidate cv";
+        $dummyPath = 'recruitment/cv/test_cv_' . uniqid() . '.pdf';
+        Storage::disk('local')->put($dummyPath, $dummyCvContent);
+
+        $application->resume_path = $dummyPath;
+        $application->save();
+
+        // Test HR viewing CV inline
+        $response = $this->actingAs($this->admin)->get(route('recruitment.candidates.resume', [
+            'candidate'   => $application->candidate_id,
+            'application' => $application->id,
+        ]));
+        $response->assertOk();
+        $this->assertStringContainsString('inline', (string) $response->headers->get('content-disposition'));
+
+        // 2. Test with simulated server absolute prefix (e.g. var/www/hub/mhis_hr/storage/app/recruitment/cv/...)
+        $application->resume_path = 'var/www/hub/mhis_hr/storage/app/' . $dummyPath;
+        $application->save();
+
+        $responsePrefix = $this->actingAs($this->admin)->get(route('recruitment.candidates.resume', [
+            'candidate'   => $application->candidate_id,
+            'application' => $application->id,
+        ]));
+        $responsePrefix->assertOk();
+        $this->assertStringContainsString('inline', (string) $responsePrefix->headers->get('content-disposition'));
+    }
+
+    public function test_psychotest_link_assessment_and_interviewer_visibility(): void
+    {
+        /** @var RecruitmentAssessmentService $assessmentService */
+        $assessmentService = $this->app->make(RecruitmentAssessmentService::class);
+        /** @var RecruitmentInterviewService $interviewService */
+        $interviewService = $this->app->make(RecruitmentInterviewService::class);
+
+        $application = $this->createTestApplication();
+
+        // Set up candidate CV
+        $dummyCvContent = "%PDF-1.4 test candidate cv";
+        $dummyPath = 'recruitment/cv/interviewer_cv_' . uniqid() . '.pdf';
+        Storage::disk('local')->put($dummyPath, $dummyCvContent);
+        $application->resume_path = $dummyPath;
+        $application->save();
+
+        // 1. Create Psychotest with Google Docs link (no file upload)
+        $docUrl = 'https://docs.google.com/document/d/1example_psychotest_doc/edit';
+        $assessment = $assessmentService->uploadAssessment(
+            $application,
+            [
+                'conclusion'   => 'recommended',
+                'assessed_at'  => date('Y-m-d'),
+                'notes'        => 'Exemplary psychological test scores. Excellent logical reasoning.',
+                'document_url' => $docUrl,
+            ],
+            null,
+            $this->admin
+        );
+
+        $this->assertInstanceOf(ApplicationAssessment::class, $assessment);
+        $this->assertSame($docUrl, $assessment->document_url);
+        $this->assertSame('Google Docs', $assessment->document_display_label);
+        $this->assertNull($assessment->file_path);
+
+        // 2. Schedule interview with an interviewer
+        [$interviewerUser, $interviewerEmp] = $this->createTestUserWithEmployee('Assigned Interviewer', roleId: 0);
+        $round = $interviewService->scheduleRound(
+            $application,
+            [
+                'round_type'   => 'user',
+                'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s'),
+            ],
+            [$interviewerEmp->id],
+            $this->admin
+        );
+
+        // 3. Interviewer opens evaluation page
+        $evalResponse = $this->actingAs($interviewerUser)->get(route('recruitment.my-interviews.show', $round->id));
+        $evalResponse->assertOk();
+
+        // Interviewer can see CV link and Psychotest Assessment with Google Docs link
+        $evalResponse->assertSee('View Candidate CV');
+        $evalResponse->assertSee('Psychotest Assessment');
+        $evalResponse->assertSee('Recommended');
+        $evalResponse->assertSee('Exemplary psychological test scores');
+        $evalResponse->assertSee('Google Docs');
+        $evalResponse->assertSee($docUrl);
+
+        // 4. Interviewer can view CV inline
+        $cvResponse = $this->actingAs($interviewerUser)->get(route('recruitment.my-interviews.cv', $round->id));
+        $cvResponse->assertOk();
+        $this->assertStringContainsString('inline', (string) $cvResponse->headers->get('content-disposition'));
+
+        // 5. Interviewer accesses assessment route -> redirects to external Google Docs link
+        $assessResponse = $this->actingAs($interviewerUser)->get(route('recruitment.my-interviews.assessment', [
+            'round'      => $round->id,
+            'assessment' => $assessment->id,
+        ]));
+        $assessResponse->assertRedirect($docUrl);
+    }
+    public function test_bulk_schedule_interview_rounds_and_evaluations_for_multiple_employees(): void
+    {
+        /** @var RecruitmentInterviewService $interviewService */
+        $interviewService = $this->app->make(RecruitmentInterviewService::class);
+
+        $app1 = $this->createTestApplication();
+        $app2 = $this->createTestApplication();
+
+        [$interviewerUser1, $emp1] = $this->createTestUserWithEmployee('Panelist Alpha', roleId: 0);
+        [$interviewerUser2, $emp2] = $this->createTestUserWithEmployee('Panelist Beta', roleId: 0);
+
+        // Call HTTP bulk schedule endpoint
+        $response = $this->actingAs($this->admin)->post(route('recruitment.interviews.bulk-schedule'), [
+            'application_ids'       => [$app1->id, $app2->id],
+            'round_type'            => 'panel',
+            'scheduled_at'          => '2026-11-10 09:00:00',
+            'slot_interval_minutes' => 30,
+            'location_or_link'      => 'https://meet.google.com/test-panel',
+            'notes'                 => 'Bulk scheduled panel interview',
+            'interviewers'          => [$emp1->id, $emp2->id],
+        ]);
+
+        $response->assertSessionHas('success');
+
+        // Check Application 1
+        $app1->refresh();
+        $this->assertSame('interview', $app1->stage);
+        $this->assertSame('scheduled', $app1->stage_substatus);
+
+        $round1 = $app1->interviewRounds()->first();
+        $this->assertNotNull($round1);
+        $this->assertSame('panel', $round1->round_type);
+        $this->assertSame('2026-11-10 09:00:00', $round1->scheduled_at->format('Y-m-d H:i:s'));
+        $this->assertCount(2, $round1->interviewers);
+        $this->assertCount(2, $round1->evaluations);
+        $this->assertTrue($round1->interviewers->contains('id', $emp1->id));
+        $this->assertTrue($round1->interviewers->contains('id', $emp2->id));
+
+        // Check Application 2 (Scheduled with 30 min interval)
+        $app2->refresh();
+        $this->assertSame('interview', $app2->stage);
+        $this->assertSame('scheduled', $app2->stage_substatus);
+
+        $round2 = $app2->interviewRounds()->first();
+        $this->assertNotNull($round2);
+        $this->assertSame('panel', $round2->round_type);
+        $this->assertSame('2026-11-10 09:30:00', $round2->scheduled_at->format('Y-m-d H:i:s'));
+        $this->assertCount(2, $round2->interviewers);
+        $this->assertCount(2, $round2->evaluations);
+        $this->assertTrue($round2->interviewers->contains('id', $emp1->id));
+        $this->assertTrue($round2->interviewers->contains('id', $emp2->id));
+
+        // Interviewer 1 sees both assigned rounds
+        $assignedRoundsUser1 = $interviewService->getInterviewerAssignedRounds($emp1);
+        $this->assertCount(2, $assignedRoundsUser1);
+
+        // Interviewer 2 opens page and sees the candidate evaluation form
+        $evalResponse = $this->actingAs($interviewerUser2)->get(route('recruitment.my-interviews.show', $round1->id));
+        $evalResponse->assertOk();
+    }
+}

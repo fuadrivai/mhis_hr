@@ -173,6 +173,8 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             ->whereNumber('candidate')
             ->whereNumber('application')
             ->name('recruitment.interviews.store-round');
+        Route::post('recruitment/interviews/bulk-schedule', [RecruitmentInterviewController::class, 'bulkStoreRounds'])
+            ->name('recruitment.interviews.bulk-schedule');
         Route::put('recruitment/candidates/{candidate}/applications/{application}/interviews/{round}', [RecruitmentInterviewController::class, 'updateRound'])
             ->whereNumber('candidate')
             ->whereNumber('application')
@@ -214,6 +216,10 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('recruitment/my-interviews/{round}/cv', [RecruitmentMyInterviewController::class, 'downloadCandidateCv'])
             ->whereNumber('round')
             ->name('recruitment.my-interviews.cv');
+        Route::get('recruitment/my-interviews/{round}/assessment/{assessment}', [RecruitmentMyInterviewController::class, 'viewCandidateAssessment'])
+            ->whereNumber('round')
+            ->whereNumber('assessment')
+            ->name('recruitment.my-interviews.assessment');
 
         // Phase 3: Settings > Evaluation Competencies
         Route::get('recruitment/settings/evaluation-competencies', [RecruitmentCompetencyController::class, 'index'])

@@ -3,6 +3,7 @@
 namespace App\Services\Implement;
 
 use App\Mail\RecruitmentInterviewInvitationMail;
+use Carbon\Carbon;
 use App\Models\CandidateApplication;
 use App\Models\Employee;
 use App\Models\EvaluationCompetency;
@@ -30,6 +31,155 @@ class RecruitmentInterviewImplement implements RecruitmentInterviewService
     public function __construct(CandidateRegistrationService $candidateService)
     {
         $this->candidateService = $candidateService;
+    }
+
+    public function getAssignableInterviewers(): Collection
+    {
+        return Employee::whereNotNull('user_id')
+            ->where('is_active', true)
+            ->with(['personal', 'user'])
+            ->get()
+            ->sortBy(fn (Employee $e) => strtolower($e->personal?->first_name ?? $e->user?->name ?? ''))
+            ->values();
+    }
+
+    public function bulkScheduleRounds(
+        array $applicationIds,
+        array $data,
+        array $interviewerEmployeeIds,
+        User $user
+    ): array {
+        if (empty($applicationIds)) {
+            throw ValidationException::withMessages([
+                'application_ids' => 'Please select at least one candidate application to schedule.',
+            ]);
+        }
+
+        if (empty($interviewerEmployeeIds)) {
+            throw ValidationException::withMessages([
+                'interviewers' => 'Please select at least one interviewer for these rounds.',
+            ]);
+        }
+
+        $applications = CandidateApplication::whereIn('id', $applicationIds)
+            ->with(['candidate', 'branch'])
+            ->get();
+
+        if ($applications->isEmpty()) {
+            throw ValidationException::withMessages([
+                'application_ids' => 'No valid candidate applications found.',
+            ]);
+        }
+
+        // Validate branch scoping and permissions on all applications
+        foreach ($applications as $app) {
+            $this->ensureCanManageInterviews($user, $app);
+        }
+
+        // Validate all interviewers exist and have user accounts
+        $employees = Employee::whereIn('id', $interviewerEmployeeIds)->with(['user', 'personal'])->get();
+        if ($employees->count() !== count(array_unique($interviewerEmployeeIds))) {
+            throw ValidationException::withMessages([
+                'interviewers' => 'One or more selected interviewers could not be found.',
+            ]);
+        }
+
+        foreach ($employees as $employee) {
+            if (!$employee->user_id || !$employee->user) {
+                $empName = $employee->personal ? ($employee->personal->first_name . ' ' . $employee->personal->last_name) : "Employee #{$employee->id}";
+                throw ValidationException::withMessages([
+                    'interviewers' => "Selected interviewer '{$empName}' does not have an active system login account.",
+                ]);
+            }
+        }
+
+        $baseScheduledAt = $data['scheduled_at'] ?? null;
+        if (!$baseScheduledAt) {
+            throw ValidationException::withMessages([
+                'scheduled_at' => 'Interview schedule date and time is required.',
+            ]);
+        }
+
+        $roundType = $data['round_type'] ?? 'user';
+        if (!in_array($roundType, ['hr', 'user', 'panel'], true)) {
+            throw ValidationException::withMessages([
+                'round_type' => 'Please select a valid interview round type (HR, User, or Panel).',
+            ]);
+        }
+
+        $slotInterval = isset($data['slot_interval_minutes']) ? max(0, (int) $data['slot_interval_minutes']) : 0;
+
+        return DB::transaction(function () use ($applications, $data, $interviewerEmployeeIds, $user, $roundType, $baseScheduledAt, $slotInterval, $employees) {
+            $createdRounds = [];
+
+            foreach ($applications->values() as $index => $application) {
+                $candidateScheduledAt = $slotInterval > 0
+                    ? Carbon::parse($baseScheduledAt)->addMinutes($index * $slotInterval)->format('Y-m-d H:i:s')
+                    : Carbon::parse($baseScheduledAt)->format('Y-m-d H:i:s');
+
+                $maxRoundNo = (int) $application->interviewRounds()->max('round_no');
+                $roundNo = $maxRoundNo + 1;
+
+                $round = InterviewRound::create([
+                    'candidate_application_id' => $application->id,
+                    'round_no'                 => $roundNo,
+                    'round_type'               => $roundType,
+                    'scheduled_at'             => $candidateScheduledAt,
+                    'location_or_link'         => $data['location_or_link'] ?? null,
+                    'status'                   => 'scheduled',
+                    'notes'                    => $data['notes'] ?? null,
+                    'created_by'               => $user->id,
+                ]);
+
+                foreach ($interviewerEmployeeIds as $employeeId) {
+                    InterviewRoundInterviewer::firstOrCreate([
+                        'interview_round_id' => $round->id,
+                        'employee_id'        => $employeeId,
+                    ]);
+
+                    InterviewEvaluation::firstOrCreate([
+                        'interview_round_id'      => $round->id,
+                        'interviewer_employee_id' => $employeeId,
+                    ], [
+                        'status' => 'draft',
+                    ]);
+                }
+
+                // Stage transition
+                $this->candidateService->updateCandidateApplication(
+                    $application->candidate,
+                    $application,
+                    [
+                        'stage'           => 'interview',
+                        'stage_substatus' => 'scheduled',
+                        'reason'          => "Bulk Interview Round {$roundNo} ({$round->round_type_label}) scheduled",
+                    ],
+                    $user
+                );
+
+                // Optional email invitation
+                if (config('recruitment.mail.enabled', false)) {
+                    foreach ($employees as $employee) {
+                        try {
+                            if ($employee->user && $employee->user->email) {
+                                Mail::to($employee->user->email)->send(
+                                    new RecruitmentInterviewInvitationMail($round, $employee)
+                                );
+                            }
+                        } catch (\Throwable $e) {
+                            Log::warning('Failed sending interview invitation email: ' . $e->getMessage());
+                        }
+                    }
+                }
+
+                $createdRounds[] = $round;
+            }
+
+            return [
+                'scheduled_count' => count($createdRounds),
+                'rounds'          => $createdRounds,
+            ];
+        });
     }
 
     public function scheduleRound(
@@ -441,6 +591,7 @@ class RecruitmentInterviewImplement implements RecruitmentInterviewService
             ->with([
                 'candidateApplication.candidate',
                 'candidateApplication.jobOpening',
+                'candidateApplication.assessments',
                 'evaluations' => function ($query) use ($interviewer) {
                     $query->where('interviewer_employee_id', $interviewer->id);
                 },

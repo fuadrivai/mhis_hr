@@ -668,6 +668,50 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
         return CandidateImport::templateHeadings();
     }
 
+    public static function resolveResumeFullPath(?string $resumePath): ?string
+    {
+        if (empty($resumePath)) {
+            return null;
+        }
+
+        // 1. Direct file on disk
+        if (file_exists($resumePath) && is_file($resumePath)) {
+            return realpath($resumePath) ?: $resumePath;
+        }
+
+        // 2. Relative to local storage disk root
+        if (Storage::disk('local')->exists($resumePath)) {
+            return Storage::disk('local')->path($resumePath);
+        }
+
+        // 3. Extract recruitment/ portion in case path contains absolute server prefixes
+        $normalizedSlash = str_replace('\\', '/', $resumePath);
+        $pos = stripos($normalizedSlash, 'recruitment/');
+        if ($pos !== false) {
+            $relative = substr($normalizedSlash, $pos);
+            if (Storage::disk('local')->exists($relative)) {
+                return Storage::disk('local')->path($relative);
+            }
+            $storageAppPath = storage_path('app/' . $relative);
+            if (file_exists($storageAppPath) && is_file($storageAppPath)) {
+                return $storageAppPath;
+            }
+        }
+
+        // 4. Check relative to storage_path('app/...')
+        $storageAppPath = storage_path('app/' . ltrim($resumePath, '/\\'));
+        if (file_exists($storageAppPath) && is_file($storageAppPath)) {
+            return $storageAppPath;
+        }
+
+        // 5. Public disk
+        if (Storage::disk('public')->exists($resumePath)) {
+            return Storage::disk('public')->path($resumePath);
+        }
+
+        return null;
+    }
+
     public function getResumePath(
         Candidate $candidate,
         CandidateApplication $application,
@@ -679,11 +723,12 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
         }
 
         $this->assertBranchAccess($application->branch, $user);
-        if (!$application->resume_path || !Storage::disk('local')->exists($application->resume_path)) {
-            abort(404);
+        $fullPath = static::resolveResumeFullPath($application->resume_path);
+        if (!$fullPath || !file_exists($fullPath)) {
+            abort(404, 'Candidate resume file not found.');
         }
 
-        return Storage::disk('local')->path($application->resume_path);
+        return $fullPath;
     }
 
     private function readImportRows($file): array

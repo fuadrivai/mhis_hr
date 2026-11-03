@@ -286,19 +286,7 @@ class CvMatchingImplement implements CvMatchingService
      */
     private function resolveCvFilePath(string $resumePath): ?string
     {
-        if (file_exists($resumePath)) {
-            return $resumePath;
-        }
-
-        if (Storage::disk('local')->exists($resumePath)) {
-            return Storage::disk('local')->path($resumePath);
-        }
-
-        if (Storage::disk('public')->exists($resumePath)) {
-            return Storage::disk('public')->path($resumePath);
-        }
-
-        return null;
+        return \App\Services\Implement\CandidateRegistrationImplement::resolveResumeFullPath($resumePath);
     }
 
     /**
