@@ -132,12 +132,10 @@ class CandidateRegistrationImplement implements CandidateRegistrationService
                 'last_activity_at' => 'last_activity_at',
                 default => 'applied_at',
             };
-            $latestValue = CandidateApplication::query()
+            $latestValue = (clone $applications)
                 ->select($sortColumn)
                 ->whereColumn('candidate_id', 'candidates.id')
-                ->whereIn('id', (clone $applications)
-                    ->selectRaw('MAX(id)')
-                    ->groupBy('candidate_id'))
+                ->latest('id')
                 ->limit(1);
             $candidateQuery->orderBy($latestValue, $direction);
         }

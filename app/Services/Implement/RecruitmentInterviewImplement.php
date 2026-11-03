@@ -37,7 +37,7 @@ class RecruitmentInterviewImplement implements RecruitmentInterviewService
     {
         return Employee::whereNotNull('user_id')
             ->where('is_active', true)
-            ->with(['personal', 'user'])
+            ->with(['personal', 'user', 'employment.job_position'])
             ->get()
             ->sortBy(fn (Employee $e) => strtolower($e->personal?->first_name ?? $e->user?->name ?? ''))
             ->values();
