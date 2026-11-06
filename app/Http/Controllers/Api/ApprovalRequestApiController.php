@@ -7,6 +7,7 @@ use App\Models\Approval;
 use App\Services\ApprovalRequestService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\ValidationException;
 
 class ApprovalRequestApiController extends Controller
 {
@@ -24,6 +25,9 @@ class ApprovalRequestApiController extends Controller
             'timeoff_id' => 'required|exists:timeoffs,id',
             'note' => 'nullable|string',
             'dynamic_fields' => 'nullable|array',
+            'dynamic_fields.start_date' => 'nullable|date',
+            'dynamic_fields.end_date' => 'nullable|date',
+            'dynamic_fields.date' => 'nullable|date',
             'attachments.*' => 'nullable|file|max:10240',
         ]);
 
@@ -33,6 +37,12 @@ class ApprovalRequestApiController extends Controller
             $approvalRequest = $this->approvalRequestService->post($validated);
 
             return response()->json($approvalRequest);
+        } catch (ValidationException $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors(),
+            ], 422);
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,
