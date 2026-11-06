@@ -18,6 +18,9 @@ class RoleSeeder extends Seeder
             ['name' => 'admin', 'description' => 'Administrator'],
             ['name' => 'editor', 'description' => 'Content editor'],
             ['name' => 'user', 'description' => 'Regular user'],
+            ['name' => 'security', 'description' => 'Visitor Security Desk access'],
+            ['name' => 'ga', 'description' => 'Branch visitor management access'],
+            ['name' => 'visitor-manager', 'description' => 'Visitor management and reporting access'],
         ];
 
         foreach ($roles as $role) {

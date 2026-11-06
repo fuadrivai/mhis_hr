@@ -9,6 +9,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "chillerlan/php-qrcode": "~5.0",
         "doctrine/dbal": "^3.0",
         "google/apiclient": "^2.16",
         "google/cloud-firestore": "1.41.1",

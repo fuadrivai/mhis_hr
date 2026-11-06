@@ -21,6 +21,16 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## MHIS HUB Visitor Management
+
+The Visitor Management module provides employee invitations, host approvals, walk-in registration, a unified Security Desk for check-in/check-out, visit history, reports, and configurable visitor categories and purposes.
+
+Run the application migrations to create the visitor tables. Run `php artisan db:seed --class=RoleSeeder` to add the `security`, `ga`, and `visitor-manager` roles, then assign those roles through the existing user-role management screens. Security and branch-level roles require the user's employee record to have an employment branch. Admin users can access all branches.
+
+Invitation and arrival notifications use the configured Laravel mail transport. Each visit uses a random opaque QR token, and lookups use only its hash. A pending approval temporarily retains an encrypted token copy so the visitor can receive the QR code after approval; that copy is removed after processing. The token is also shown once when the invitation is created.
+
+The employee invitation API is `POST /api/visitor/invitations` and uses the existing `auth_login` middleware. It accepts the same validated invitation fields as the web form and calls the shared `VisitorManagementService`; successful invitations return HTTP 201, while invitations awaiting host approval return HTTP 202. Guest email delivery and inline QR generation are handled by the service flow for both web and API requests.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.

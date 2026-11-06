@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\PositionApiController;
 use App\Http\Controllers\Api\PushNotificationApiController;
 use App\Http\Controllers\Api\ReligionApiController;
 use App\Http\Controllers\Api\TimeOffApiController;
+use App\Http\Controllers\Api\VisitorInvitationApiController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,6 +54,8 @@ Route::name('api.')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
         Route::delete('logout', [AuthController::class, 'logout']);
         Route::post('password/change', [AuthController::class, 'changePassword']);
+        Route::post('visitor/invitations', [VisitorInvitationApiController::class, 'store'])
+            ->name('visitor.invitations.store');
 
         Route::get('school/calendar', [GsheetLinkApiController::class, 'getSchoolCalendar']);
         Route::get('newsletter', [GsheetLinkApiController::class, 'getNewsletter']);

@@ -52,6 +52,7 @@ use App\Http\Controllers\JobRequirementController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\WhatsappSettingController;
 use App\Http\Controllers\WhatsappChatController;
+use App\Http\Controllers\VisitorManagementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -81,6 +82,30 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::group(['middleware' => 'auth'], function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/', [HomeController::class, 'index']);
+        Route::prefix('visitor')->name('visitor.')->group(function () {
+            Route::get('dashboard', [VisitorManagementController::class, 'dashboard'])->name('dashboard');
+            Route::post('list/search', [VisitorManagementController::class, 'searchList'])->name('search-list');
+            Route::get('list', [VisitorManagementController::class, 'index'])->name('index');
+            Route::get('invitations/create', [VisitorManagementController::class, 'create'])->name('create');
+            Route::post('invitations', [VisitorManagementController::class, 'store'])->name('store');
+            Route::get('approvals', [VisitorManagementController::class, 'approvals'])->name('approvals');
+            Route::post('{visit}/approval', [VisitorManagementController::class, 'processApproval'])->whereNumber('visit')->name('approval.process');
+            Route::get('security-desk', [VisitorManagementController::class, 'securityDesk'])->name('security-desk');
+            Route::post('security-desk/search', [VisitorManagementController::class, 'search'])->name('security-desk.search');
+            Route::post('security-desk/walk-in', [VisitorManagementController::class, 'storeWalkIn'])->name('security-desk.walk-in');
+            Route::post('{visit}/check-in', [VisitorManagementController::class, 'checkIn'])->whereNumber('visit')->name('check-in');
+            Route::post('{visit}/check-out', [VisitorManagementController::class, 'checkOut'])->whereNumber('visit')->name('check-out');
+            Route::post('{visit}/correct-check-out', [VisitorManagementController::class, 'correctCheckOut'])->whereNumber('visit')->name('correct-check-out');
+            Route::post('{visit}/cancel', [VisitorManagementController::class, 'cancel'])->whereNumber('visit')->name('cancel');
+            Route::get('history', [VisitorManagementController::class, 'history'])->name('history');
+            Route::get('reports', [VisitorManagementController::class, 'reports'])->name('reports');
+            Route::get('reports/export', [VisitorManagementController::class, 'export'])->name('reports.export');
+            Route::get('settings', [VisitorManagementController::class, 'settings'])->name('settings');
+            Route::post('settings/categories', [VisitorManagementController::class, 'storeCategory'])->name('settings.categories.store');
+            Route::put('settings/categories/{category}', [VisitorManagementController::class, 'updateCategory'])->whereNumber('category')->name('settings.categories.update');
+            Route::post('settings/purposes', [VisitorManagementController::class, 'storePurpose'])->name('settings.purposes.store');
+            Route::put('settings/purposes/{purpose}', [VisitorManagementController::class, 'updatePurpose'])->whereNumber('purpose')->name('settings.purposes.update');
+        });
         Route::get('clockin', [AttendanceLogController::class, 'clockin']);
                 Route::get('recruitment/job-openings', [JobOpeningController::class, 'index'])
             ->name('recruitment.job-openings.index');

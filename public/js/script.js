@@ -9,7 +9,6 @@ $(document).ready(function () {
             $search[0].focus();
         }
     });
-
     $(".number2").on("keyup", function (event) {
         if (event.which >= 37 && event.which <= 40) return;
         $(this).val(function (index, value) {
@@ -19,13 +18,45 @@ $(document).ready(function () {
         });
     });
 
-    $(".date-picker").datepicker({
-        format: "d MM yyyy",
-        orientation: "top auto",
-        autoclose: true,
-        todayHighlight: true,
-        language: "id",
-        clearBtn: true,
+    $(".date-picker").each(function () {
+        var options = {
+            format: $(this).data("date-format") || "d MM yyyy",
+            orientation: "top auto",
+            autoclose: true,
+            todayHighlight: true,
+            language: $(this).data("date-language") || "id",
+            clearBtn: true,
+        };
+        var startDate = $(this).data("date-start-date");
+        if (startDate) {
+            options.startDate = startDate;
+        }
+        $(this).datepicker(options);
+    });
+    var syncingVisitDate = false;
+    function formatVisitDate(date) {
+        var month = String(date.getMonth() + 1).padStart(2, "0");
+        var day = String(date.getDate()).padStart(2, "0");
+        return date.getFullYear() + "-" + month + "-" + day;
+    }
+    function syncVisitDate(date) {
+        if (!date || syncingVisitDate) {
+            return;
+        }
+        syncingVisitDate = true;
+        $("#visit-date-picker, .visit-schedule-date").each(function () {
+            var currentDate = $(this).datepicker("getDate");
+            if (!currentDate || formatVisitDate(currentDate) !== formatVisitDate(date)) {
+                $(this).datepicker("setDate", date);
+            }
+        });
+        $("#visit-date-value").val(formatVisitDate(date));
+        syncingVisitDate = false;
+    }
+    $("#visit-date-picker, .visit-schedule-date").on("changeDate", function (event) {
+        syncVisitDate(event.date);
+    }).on("clearDate", function () {
+        $("#visit-date-value").val("");
     });
 
     $(".month-picker").datepicker({
@@ -56,7 +87,6 @@ $(document).ready(function () {
         dropdown: true,
         scrollbar: false,
     });
-
     $(".modal").on("hidden.bs.modal", function (event) {
         resetForm($(".modal form"));
     });

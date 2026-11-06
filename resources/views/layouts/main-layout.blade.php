@@ -69,7 +69,45 @@
                                 $canAccessRecruitment = auth()->user()->canAccessRecruitment();
                                 $isWhatsappChatter = \App\Models\WhatsappChatter::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
                                 $isWhatsappMonitor = \App\Models\WhatsappMonitor::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
+                                $visitorEmployee = auth()->user()->employee;
+                                $canUseVisitorDesk = $isAdmin || auth()->user()->hasRole('security') || auth()->user()->hasRole('ga') || auth()->user()->hasRole('hrd') || (bool) ($visitorEmployee?->is_hrd);
+                                $canManageVisitors = $isAdmin || auth()->user()->hasRole('ga') || auth()->user()->hasRole('hrd') || auth()->user()->hasRole('visitor-manager') || (bool) ($visitorEmployee?->is_hrd);
                                 ?>
+
+                                <li class="{{ Request::is('visitor*') ? 'active' : '' }}">
+                                    <a><i class="fa fa-id-badge"></i> Visitor Management <span class="fa fa-chevron-down"></span></a>
+                                    <ul class="nav child_menu" style="display: {{ Request::is('visitor*') ? 'block' : 'none' }}">
+                                        <li class="{{ request()->routeIs('visitor.dashboard') ? 'current-page' : '' }}">
+                                            <a href="{{ route('visitor.dashboard') }}">Dashboard</a>
+                                        </li>
+                                        <li class="{{ request()->routeIs('visitor.index') || request()->routeIs('visitor.history') ? 'current-page' : '' }}">
+                                            <a href="{{ route('visitor.index') }}">My Invitations / Visits</a>
+                                        </li>
+                                        @if ($visitorEmployee)
+                                            <li class="{{ request()->routeIs('visitor.create') ? 'current-page' : '' }}">
+                                                <a href="{{ route('visitor.create') }}">New Invitation</a>
+                                            </li>
+                                        @endif
+                                        <li class="{{ request()->routeIs('visitor.approvals') ? 'current-page' : '' }}">
+                                            <a href="{{ route('visitor.approvals') }}">Approvals</a>
+                                        </li>
+                                        @if ($canUseVisitorDesk)
+                                            <li class="{{ request()->routeIs('visitor.security-desk*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('visitor.security-desk') }}">Unified Visitor Desk</a>
+                                            </li>
+                                        @endif
+                                        @if ($canManageVisitors)
+                                            <li class="{{ request()->routeIs('visitor.reports*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('visitor.reports') }}">Reports</a>
+                                            </li>
+                                        @endif
+                                        @if ($isAdmin)
+                                            <li class="{{ request()->routeIs('visitor.settings*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('visitor.settings') }}">Visitor Settings</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
 
                                 @if ($isWhatsappChatter)
                                     <li class={{ Request::is('whatsapp/chat*') ? 'current-page' : '' }}>

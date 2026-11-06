@@ -32,6 +32,8 @@ use App\Services\Implement\RecruitmentInterviewImplement;
 use App\Services\Implement\RecruitmentOfferImplement;
 use App\Services\Implement\RecruitmentOnboardingImplement;
 use App\Services\Implement\RecruitmentReportImplement;
+use App\Services\Implement\VisitorManagementImplement;
+use App\Services\VisitorManagementService;
 use App\Services\Recruitment\Ai\CvTextExtractor;
 use App\Services\Recruitment\Ai\AiMatchingProvider;
 use App\Services\Recruitment\Ai\CvMatchingService;
@@ -77,6 +79,7 @@ class AppServiceProvider extends ServiceProvider
         RecruitmentOfferService::class => RecruitmentOfferImplement::class,
         RecruitmentOnboardingService::class => RecruitmentOnboardingImplement::class,
         RecruitmentReportService::class => RecruitmentReportImplement::class,
+        VisitorManagementService::class => VisitorManagementImplement::class,
     ];
 
     public function register()
