@@ -36,6 +36,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::name('api.')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('guest')->name('login');
+    Route::post('/password/forgot', [AuthController::class, 'sendResetLinkEmail'])
+        ->middleware('throttle:5,1')
+        ->name('password.email');
+    Route::post('/password/reset', [AuthController::class, 'resetPassword'])
+        ->middleware('throttle:5,1')
+        ->name('password.reset');
     Route::post('/payslip/post', [PayslipApiController::class, 'post']);
     Route::post('/push/notif', [PushNotificationApiController::class, 'sendMessage']);
     Route::get('attendance/summary', [AttendanceApiController::class, 'getSummaryReport']);

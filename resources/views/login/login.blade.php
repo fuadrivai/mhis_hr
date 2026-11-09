@@ -312,6 +312,17 @@
             line-height: 1.5;
         }
 
+        .login-status {
+            margin: 14px 0 0;
+            padding: 10px 12px;
+            border: 1px solid #b7dfc8;
+            border-radius: 8px;
+            background: #f0fff4;
+            color: #276749;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
         @media (max-width: 767px) {
             body.login-page {
                 padding: 20px;
@@ -459,9 +470,15 @@
                     <button type="submit" class="btn login-submit">
                         <span>Sign in</span>
                     </button>
+                    @if (session('status'))
+                        <p class="login-status" role="status">{{ session('status') }}</p>
+                    @endif
                     @if (session()->has('LoginError'))
                         <p class="login-error" role="alert">{{ session('LoginError') }}</p>
                     @endif
+                    <p style="margin: 16px 0 0; text-align: center;">
+                        <a href="{{ route('password.request') }}">Forgot your password?</a>
+                    </p>
                 </form>
             </div>
         </section>

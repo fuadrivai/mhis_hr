@@ -68,6 +68,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::get('/login', [AuthController::class, 'index'])->middleware('guest')->name('login-page');
+    Route::get('/password/forgot', [AuthController::class, 'forgotPassword'])->name('password.request');
+    Route::post('/password/email', [AuthController::class, 'sendResetLinkEmail'])
+        ->middleware('throttle:5,1')
+        ->name('password.email');
+    Route::get('/password/reset/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/password/reset', [AuthController::class, 'resetPassword'])
+        ->middleware('throttle:5,1')
+        ->name('password.update');
     Route::get('live-attendance', [AttendanceController::class, 'liveAttendance']);
     Route::resource('attendance', AttendanceController::class);
     Route::post('/login', [AuthController::class, 'authenticate']);

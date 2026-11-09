@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AuthService;
+use App\Services\PasswordResetService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
 {
@@ -30,6 +32,38 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         return $this->authService->login($credentials, $request['device_id'], $request['device']);
+    }
+
+    public function sendResetLinkEmail(Request $request, PasswordResetService $passwordResetService)
+    {
+        $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+
+        $passwordResetService->sendResetLink($request->input('email'));
+
+        return response()->json([
+            'message' => 'If an account exists for that email address, a password reset link has been sent.',
+        ]);
+    }
+
+    public function resetPassword(Request $request, PasswordResetService $passwordResetService)
+    {
+        $credentials = $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $status = $passwordResetService->reset($credentials);
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json(['message' => 'Your password has been reset successfully.']);
+        }
+
+        return response()->json([
+            'message' => 'This password reset link is invalid or has expired.',
+        ], 422);
     }
 
     public function register(Request $request)

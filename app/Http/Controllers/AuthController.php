@@ -5,11 +5,57 @@ namespace App\Http\Controllers;
 use App\Models\Role;
 use App\Models\Session;
 use App\Models\User;
+use App\Services\PasswordResetService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
 {
+    public function forgotPassword()
+    {
+        return view('login.password', ['mode' => 'request']);
+    }
+
+    public function sendResetLinkEmail(Request $request, PasswordResetService $passwordResetService)
+    {
+        $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+
+        $passwordResetService->sendResetLink($request->input('email'));
+
+        return back()->with('status', 'If an account exists for that email address, a password reset link has been sent.');
+    }
+
+    public function showResetForm(Request $request, string $token)
+    {
+        return view('login.password', [
+            'mode' => 'reset',
+            'token' => $token,
+            'email' => $request->query('email', ''),
+        ]);
+    }
+
+    public function resetPassword(Request $request, PasswordResetService $passwordResetService)
+    {
+        $credentials = $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $status = $passwordResetService->reset($credentials);
+
+        if ($status === Password::PASSWORD_RESET) {
+            return redirect('/login')->with('status', 'Your password has been reset. You can now sign in.');
+        }
+
+        return back()
+            ->withInput($request->only('email'))
+            ->withErrors(['email' => 'This password reset link is invalid or has expired.']);
+    }
+
     /**
      * Display a listing of the resource.
      *
