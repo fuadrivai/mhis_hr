@@ -410,6 +410,36 @@ class ApprovalRequestImplement implements ApprovalRequestService{
 
     public function getApprovalByUser($request)
     {
+        return $this->approvalByUserQuery($request)->get();
+    }
+
+    public function getNextApprovalByUser($user, int $approvalId)
+    {
+        $approvals = $this->approvalByUserQuery(['user' => $user])
+            ->where(function ($query) use ($approvalId) {
+                $query->where('approvals.id', $approvalId)
+                    ->orWhere(function ($pendingQuery) {
+                        $pendingQuery->where('approvals.status', 'pending')
+                            ->whereHas('approvalRequest', function ($requestQuery) {
+                                $requestQuery->where('status', 'pending');
+                            });
+                    });
+            })->get();
+
+        $currentIndex = $approvals->search(fn ($approval) => (int) $approval->id === $approvalId);
+        if ($currentIndex === false) {
+            abort(404, 'Approval not found.');
+        }
+
+        $current = $approvals[$currentIndex];
+        return $approvals->slice($currentIndex + 1)
+            ->concat($approvals->take($currentIndex))
+            ->first(fn ($approval) => $approval->status === 'pending'
+                && $approval->approval_request_id !== $current->approval_request_id);
+    }
+
+    private function approvalByUserQuery($request)
+    {
         try {
             $payload = is_array($request) ? $request : $request->all();
             $userId = data_get($payload, 'user.id') ?? auth()->id();
@@ -431,12 +461,22 @@ class ApprovalRequestImplement implements ApprovalRequestService{
             $year = is_numeric($year) ? (int) $year : null;
 
             $dynamicFilters = collect($payload)
-                ->except(['user', 'month', 'year'])
+                ->except(['user', 'month', 'year', 'status'])
                 ->filter(fn ($value) => is_scalar($value) && $value !== '')
                 ->toArray();
 
             $query = Approval::where('approver_employee_id', $employee->id)
-                // ->where('status', 'pending')
+                // Pending approvals are visible only once all previous steps are no longer pending
+                ->where(function ($visibleQuery) {
+                    $visibleQuery->where('approvals.status', '!=', 'pending')
+                        ->orWhereNotExists(function ($previousStepQuery) {
+                            $previousStepQuery->select(DB::raw(1))
+                                ->from('approvals as previous_approvals')
+                                ->whereColumn('previous_approvals.approval_request_id', 'approvals.approval_request_id')
+                                ->whereColumn('previous_approvals.step_order', '<', 'approvals.step_order')
+                                ->where('previous_approvals.status', 'pending');
+                        });
+                })
                 ->whereHas('approvalRequest', function ($approvalRequestQuery) use ($dynamicFilters, $month, $year) {
                     foreach ($dynamicFilters as $key => $value) {
                         $approvalRequestQuery->whereHas('data', function ($approvalRequestDataQuery) use ($key, $value) {
@@ -479,7 +519,17 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                     }
                 });
 
-            return $query->get();
+            $status = data_get($payload, 'status');
+            if (is_string($status) && $status !== '' && $status !== 'all') {
+                $query->where('approvals.status', $status);
+            }
+
+            return $query->orderByDesc(
+                ApprovalRequestData::selectRaw(
+                    "COALESCE(NULLIF(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.start_date')), 'null'), ''), NULLIF(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.date')), 'null'), ''))"
+                )->whereColumn('approval_request_data.approval_request_id', 'approvals.approval_request_id')
+                    ->limit(1)
+            )->orderByDesc('approvals.id');
         } catch (\Throwable $th) {
             throw new \Exception($th->getMessage());
         }

@@ -31,6 +31,14 @@ Invitation and arrival notifications use the configured Laravel mail transport. 
 
 The employee invitation API is `POST /api/visitor/invitations` and uses the existing `auth_login` middleware. It accepts the same validated invitation fields as the web form and calls the shared `VisitorManagementService`; successful invitations return HTTP 201, while invitations awaiting host approval return HTTP 202. Guest email delivery and inline QR generation are handled by the service flow for both web and API requests.
 
+## Time-off next approval API
+
+`GET /api/time/request/approval/{approvalId}/next` uses the existing `Authorization` session token. Pass the current approval's top-level `id` from `GET /api/time/request/approval`, not `approval_request.id`. No request body or user ID is required.
+
+The endpoint finds the next pending approval assigned to the authenticated user whose earlier steps are no longer pending and whose request is still pending. It uses the same descending time-off date and approval ID order as the approval list, wraps to the beginning, and ignores the list's month, year, status, and other filters. It can be called after the current approval is processed; it will not return another step of the same request.
+
+The response is `{"data": <approval>}`, with the same approval and related request fields as an item in the approval list. If no other eligible request exists, it returns `{"data": null}` with HTTP 200. An approval that is not visible to the current user or does not exist returns HTTP 404; a missing or invalid session token returns HTTP 403.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.

@@ -86,6 +86,24 @@ class ApprovalRequestApiController extends Controller
         );
         return response()->json($requests);
     }
+
+    public function getNextApprovalByUser(Request $request, int $approvalId)
+    {
+        $approval = $this->approvalRequestService->getNextApprovalByUser($request['user'], $approvalId);
+
+        if ($approval) {
+            $approval->load(
+                'approvalRequest.type',
+                'approvalRequest.data',
+                'approvalRequest.requester.personal',
+                'approvalRequest.requester.employment',
+                'approver',
+            );
+        }
+
+        return response()->json(['data' => $approval]);
+    }
+
     public function action(Request $request)
     {
         $request['user']= $request['user'];

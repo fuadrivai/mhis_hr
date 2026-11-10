@@ -22,116 +22,112 @@ class AnnouncementImplement implements AnnouncementService
 {
     function get($request = null)
     {
-        try {
-            $query = Announcement::with(['branches', 'jobLevels', 'organizations', 'positions', 'category', 'creator.personal', 'updater']);
-            $limit = null;
+        $query = Announcement::with(['branches', 'jobLevels', 'organizations', 'positions', 'category', 'creator.personal', 'updater']);
+        $limit = null;
 
-            if ($request !== null) {
-                $user = null;
+        if ($request !== null) {
+            $user = null;
 
-                if (is_array($request)) {
-                    $user = data_get($request, 'user');
-                } elseif (is_object($request)) {
-                    $user = data_get($request, 'user');
+            if (is_array($request)) {
+                $user = data_get($request, 'user');
+            } elseif (is_object($request)) {
+                $user = data_get($request, 'user');
 
-                    if (!$user && method_exists($request, 'user')) {
-                        $user = $request->user();
-                    }
+                if (!$user && method_exists($request, 'user')) {
+                    $user = $request->user();
                 }
+            }
 
-                if (!$user) {
-                    $user = auth()->user();
-                }
+            if (!$user) {
+                $user = auth()->user();
+            }
 
-                $isAdmin = false;
-                if ($user) {
-                    $roles = collect(data_get($user, 'roles', []));
-                    $isAdmin = $roles->contains(function ($role) {
-                        return (int) data_get($role, 'id') === 1 || strtolower((string) data_get($role, 'name')) === 'admin';
-                    });
-                }
+            $isAdmin = false;
+            if ($user) {
+                $roles = collect(data_get($user, 'roles', []));
+                $isAdmin = $roles->contains(function ($role) {
+                    return (int) data_get($role, 'id') === 1 || strtolower((string) data_get($role, 'name')) === 'admin';
+                });
+            }
 
-                if (is_array($request)) {
+            if (is_array($request)) {
+                $limit = data_get($request, 'limit', data_get($request, 'per_page', data_get($request, 'take')));
+            } elseif (is_object($request)) {
+                if (method_exists($request, 'input')) {
+                    $limit = $request->input('limit', $request->input('per_page', $request->input('take')));
+                } else {
                     $limit = data_get($request, 'limit', data_get($request, 'per_page', data_get($request, 'take')));
-                } elseif (is_object($request)) {
-                    if (method_exists($request, 'input')) {
-                        $limit = $request->input('limit', $request->input('per_page', $request->input('take')));
-                    } else {
-                        $limit = data_get($request, 'limit', data_get($request, 'per_page', data_get($request, 'take')));
-                    }
                 }
+            }
 
-                if (!$isAdmin) {
-                    $employment = optional(optional($user)->employee)->employment;
+            if (!$isAdmin) {
+                $employment = optional(optional($user)->employee)->employment;
 
-                    $query->where(function ($announcementQuery) use ($employment) {
-                        $announcementQuery->where('all_employees', true);
+                $query->where(function ($announcementQuery) use ($employment) {
+                    $announcementQuery->where('all_employees', true);
 
-                        if (!$employment) {
-                            return;
-                        }
+                    if (!$employment) {
+                        return;
+                    }
 
-                        $announcementQuery->orWhere(function ($audienceQuery) use ($employment) {
-                            $audienceQuery->where('all_employees', false);
+                    $announcementQuery->orWhere(function ($audienceQuery) use ($employment) {
+                        $audienceQuery->where('all_employees', false);
 
-                            $audienceQuery->where(function ($branchScope) use ($employment) {
-                                $branchScope->doesntHave('branches');
+                        $audienceQuery->where(function ($branchScope) use ($employment) {
+                            $branchScope->doesntHave('branches');
 
-                                if (!empty($employment->branch_id)) {
-                                    $branchScope->orWhereHas('branches', function ($branchQuery) use ($employment) {
-                                        $branchQuery->where('branches.id', $employment->branch_id);
-                                    });
-                                }
-                            });
+                            if (!empty($employment->branch_id)) {
+                                $branchScope->orWhereHas('branches', function ($branchQuery) use ($employment) {
+                                    $branchQuery->where('branches.id', $employment->branch_id);
+                                });
+                            }
+                        });
 
-                            $audienceQuery->where(function ($organizationScope) use ($employment) {
-                                $organizationScope->doesntHave('organizations');
+                        $audienceQuery->where(function ($organizationScope) use ($employment) {
+                            $organizationScope->doesntHave('organizations');
 
-                                if (!empty($employment->organization_id)) {
-                                    $organizationScope->orWhereHas('organizations', function ($organizationQuery) use ($employment) {
-                                        $organizationQuery->where('organizations.id', $employment->organization_id);
-                                    });
-                                }
-                            });
+                            if (!empty($employment->organization_id)) {
+                                $organizationScope->orWhereHas('organizations', function ($organizationQuery) use ($employment) {
+                                    $organizationQuery->where('organizations.id', $employment->organization_id);
+                                });
+                            }
+                        });
 
-                            $audienceQuery->where(function ($jobLevelScope) use ($employment) {
-                                $jobLevelScope->doesntHave('jobLevels');
+                        $audienceQuery->where(function ($jobLevelScope) use ($employment) {
+                            $jobLevelScope->doesntHave('jobLevels');
 
-                                if (!empty($employment->job_level_id)) {
-                                    $jobLevelScope->orWhereHas('jobLevels', function ($jobLevelQuery) use ($employment) {
-                                        $jobLevelQuery->where('job_levels.id', $employment->job_level_id);
-                                    });
-                                }
-                            });
+                            if (!empty($employment->job_level_id)) {
+                                $jobLevelScope->orWhereHas('jobLevels', function ($jobLevelQuery) use ($employment) {
+                                    $jobLevelQuery->where('job_levels.id', $employment->job_level_id);
+                                });
+                            }
+                        });
 
-                            $audienceQuery->where(function ($positionScope) use ($employment) {
-                                $positionScope->doesntHave('positions');
+                        $audienceQuery->where(function ($positionScope) use ($employment) {
+                            $positionScope->doesntHave('positions');
 
-                                if (!empty($employment->job_position_id)) {
-                                    $positionScope->orWhereHas('positions', function ($positionQuery) use ($employment) {
-                                        $positionQuery->where('positions.id', $employment->job_position_id);
-                                    });
-                                }
-                            });
+                            if (!empty($employment->job_position_id)) {
+                                $positionScope->orWhereHas('positions', function ($positionQuery) use ($employment) {
+                                    $positionQuery->where('positions.id', $employment->job_position_id);
+                                });
+                            }
                         });
                     });
+                });
 
-                    $query->where('publish_at', '<=', Carbon::now());
-                }
-
+                $query->where('publish_at', '<=', Carbon::now());
             }
 
-            $query->orderByDesc('publish_at')->orderByDesc('id');
-
-            if (is_numeric($limit) && (int) $limit > 0) {
-                $query->limit((int) $limit);
-            }
-
-            $announcements = $query->get();
-            return $announcements;
-        } catch (\Throwable $th) {
-            return response()->json(["message" => $th->getMessage()], 500);
         }
+
+        $query->orderByDesc('publish_at')->orderByDesc('id');
+
+        if (is_numeric($limit) && (int) $limit > 0) {
+            $query->limit((int) $limit);
+        }
+
+        $announcements = $query->get();
+        return $announcements;
     }
     function show($id) {
         return Announcement::with(['branches', 'jobLevels', 'organizations', 'positions', 'category', 'creator', 'updater'])->find($id);

@@ -75,7 +75,7 @@
                                 ?>
 
                                 <li class="{{ Request::is('visitor*') ? 'active' : '' }}">
-                                    <a><i class="fa fa-id-badge"></i> Visitor Management <span class="fa fa-chevron-down"></span></a>
+                                    <a><i class="fa fa-users"></i> Visitor Management <span class="fa fa-chevron-down"></span></a>
                                     <ul class="nav child_menu" style="display: {{ Request::is('visitor*') ? 'block' : 'none' }}">
                                         <li class="{{ request()->routeIs('visitor.dashboard') ? 'current-page' : '' }}">
                                             <a href="{{ route('visitor.dashboard') }}">Dashboard</a>
