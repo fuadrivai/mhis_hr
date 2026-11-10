@@ -25,6 +25,7 @@ class ApprovalRequestApiController extends Controller
             'timeoff_id' => 'required|exists:timeoffs,id',
             'note' => 'nullable|string',
             'dynamic_fields' => 'nullable|array',
+            'dynamic_fields.*' => 'nullable',
             'dynamic_fields.start_date' => 'nullable|date',
             'dynamic_fields.end_date' => 'nullable|date',
             'dynamic_fields.date' => 'nullable|date',

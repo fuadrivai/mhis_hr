@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Services\AcademicYearService;
 use App\Services\ApprovalEngine;
 use App\Services\ApprovalRequestService;
+use App\Services\TimeOffEmailDetails;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -300,6 +301,12 @@ class ApprovalRequestImplement implements ApprovalRequestService{
 
         $startDate = Carbon::parse($startDate)->toDateString();
         $endDate = Carbon::parse($endDate)->toDateString();
+
+        if ($endDate < $startDate) {
+            throw ValidationException::withMessages([
+                'dynamic_fields.end_date' => 'Tanggal akhir tidak boleh sebelum tanggal mulai.',
+            ]);
+        }
 
         $hasConflictingRequest = ApprovalRequest::query()
             ->where('requester_employee_id', $employee->id)
@@ -836,17 +843,6 @@ class ApprovalRequestImplement implements ApprovalRequestService{
         try {
             $requester = $approvalRequest->requester->load('personal');
             $timeoff = $approvalRequest->type;
-            $requestData = $approvalRequest->data;
-            $startDate = data_get($requestData, 'payload.start_date');
-            $formattedStartDate = null;
-            if (!empty($startDate)) {
-                try {
-                    $formattedStartDate = \Carbon\Carbon::parse($startDate)->format('D, M d, Y');
-                } catch (\Throwable $th) {
-                    $formattedStartDate = $startDate;
-                }
-            }
-
             $pendingApproval = $approvalRequest->approvals()
                 ->where('status', 'pending')
                 ->orderBy('step_order')
@@ -866,12 +862,12 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 return;
             }
 
+            $details = (new TimeOffEmailDetails())->build($requester, $approvalRequest->data->payload ?? []);
             $expiresAt = now()->addDays(7);
             $data = [
                 'approver_name' => $approval->approver->personal->fullname ?? null,
                 'requester_name' => $requester->personal->fullname ?? null,
                 'timeoff_name' => $timeoff->name ?? null,
-                'timeoff_date'=> $formattedStartDate,
                 'reason' => $approvalRequest->note?? null,
                 'approve_url' => URL::temporarySignedRoute('api.time.request.email-action', $expiresAt, [
                     'user_id' => $approval->approver->user_id,
@@ -887,7 +883,7 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 ]),
                 'subject'=>'Approval Request Pending',
                 'template'=>'email-template.timeoff-request',
-            ];
+            ] + $details;
             Mail::mailer('smtp')->to($email)->send(new TimeoffMail($data));
         } catch (\Exception $e) {
             logger()->error('Failed to send email notification', [
@@ -902,17 +898,6 @@ class ApprovalRequestImplement implements ApprovalRequestService{
         try {
             $requester = $approvalRequest->requester->load('personal');
             $timeoff = $approvalRequest->type;
-            $requestData = $approvalRequest->data;
-            $startDate = data_get($requestData, 'payload.start_date');
-            $formattedStartDate = null;
-            if (!empty($startDate)) {
-                try {
-                    $formattedStartDate = \Carbon\Carbon::parse($startDate)->format('D, M d, Y');
-                } catch (\Throwable $th) {
-                    $formattedStartDate = $startDate;
-                }
-            }
-
             $email = $requester->personal->email ?? null;
             if (!$email) {
                 logger()->warning('Requester email not found', [
@@ -922,16 +907,16 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 return;
             }
 
+            $details = (new TimeOffEmailDetails())->build($requester, $approvalRequest->data->payload ?? []);
             $data = [
                 'requester_name' => $requester->personal->fullname ?? null,
                 'approver_name' => $approvalRequest['approver_name'] ?? null,
                 'reason' => $approvalRequest['approver_note'] ?? null,
                 'timeoff_name' => $timeoff->name ?? null,
-                'timeoff_date'=> $formattedStartDate,
                 'subject'=>'Approval Request ' . $approvalRequest->status,
                 'template'=>'email-template.timeoff-approved-rejected',
                 'status'=> $approvalRequest->status,
-            ];
+            ] + $details;
             Mail::mailer('smtp')->to($email)->send(new TimeoffMail($data));
         } catch (\Exception $e) {
             logger()->error('Failed to send email notification to requester', [

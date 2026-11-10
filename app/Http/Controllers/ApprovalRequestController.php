@@ -12,7 +12,10 @@ use App\Models\Organization;
 use App\Models\Position;
 use App\Services\ApprovalRequestService;
 use App\Services\EmployeeService;
+use App\Services\ScheduledWorkDays;
+use App\Services\TimeOffEmailDetails;
 use App\Services\TimeOffService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Yajra\DataTables\Utilities\Request as UtilitiesRequest;
@@ -54,10 +57,16 @@ class ApprovalRequestController extends Controller
 
     public function dataTable(UtilitiesRequest $request)
     {
-        $approvalRequests = $this->approvalRequestService->getDataTable($request);
+        $approvalRequests = $this->approvalRequestService->getDataTable($request)
+            ->with(['requester.schedules.schedule.details.shift', 'requester.shiftOverrides.shift']);
 
         if ($request->ajax()) {
             return datatables()->of($approvalRequests)
+                ->processWith(function ($approvalRequest) {
+                    if ($approvalRequest->requester) {
+                        $approvalRequest->requester->makeHidden(['schedules', 'shiftOverrides']);
+                    }
+                })
                 ->addColumn('fullname', function ($approvalRequest) {
                     return optional(optional($approvalRequest->requester)->personal)->fullname ?? '--';
                 })
@@ -70,11 +79,20 @@ class ApprovalRequestController extends Controller
                 ->addColumn('end_date', function ($approvalRequest) {
                     return data_get($approvalRequest->data, 'payload.end_date') ?? '--';
                 })
+                ->addColumn('scheduled_days', function ($approvalRequest) {
+                    return $this->scheduledDays($approvalRequest);
+                })
                 ->addColumn('start_time', function ($approvalRequest) {
                     return data_get($approvalRequest->data, 'payload.start_time') ?? '--';
                 })
                 ->addColumn('end_time', function ($approvalRequest) {
                     return data_get($approvalRequest->data, 'payload.end_time') ?? '--';
+                })
+                ->addColumn('time_duration', function ($approvalRequest) {
+                    return $this->timeDuration($approvalRequest);
+                })
+                ->addColumn('has_time_fields', function ($approvalRequest) {
+                    return $this->timeFields($approvalRequest)->isNotEmpty();
                 })
                 ->make(true);
         }
@@ -108,6 +126,7 @@ class ApprovalRequestController extends Controller
             'timeoff_id' => 'required|exists:timeoffs,id',
             'note' => 'nullable|string',
             'dynamic_fields' => 'nullable|array',
+            'dynamic_fields.*' => 'nullable',
             'dynamic_fields.start_date' => 'nullable|date',
             'dynamic_fields.end_date' => 'nullable|date',
             'dynamic_fields.date' => 'nullable|date',
@@ -210,6 +229,8 @@ class ApprovalRequestController extends Controller
             'type',
             'requester.personal',
             'requester.employment',
+            'requester.schedules.schedule.details.shift',
+            'requester.shiftOverrides.shift',
             'approvals.approver.personal',
             'histories.approver.personal',
         ]);
@@ -226,6 +247,9 @@ class ApprovalRequestController extends Controller
             'employees' => $employees,
             'timeoffs' => $timeoffs,
             'nextRequest' => $nextRequest,
+            'scheduledDays' => $this->scheduledDays($request),
+            'timeDuration' => $this->timeDuration($request),
+            'timeFields' => $this->timeFields($request),
         ]);
     }
 
@@ -279,6 +303,8 @@ class ApprovalRequestController extends Controller
             'approvalRequest.data',
             'approvalRequest.requester.personal',
             'approvalRequest.requester.employment',
+            'approvalRequest.requester.schedules.schedule.details.shift',
+            'approvalRequest.requester.shiftOverrides.shift',
             'approver.personal',
         ])->where('approver_employee_id', $employee->id);
 
@@ -340,6 +366,12 @@ class ApprovalRequestController extends Controller
 
         if ($request->ajax()) {
             return datatables()->of($approvals)
+                ->processWith(function ($approval) {
+                    $requester = optional($approval->approvalRequest)->requester;
+                    if ($requester) {
+                        $requester->makeHidden(['schedules', 'shiftOverrides']);
+                    }
+                })
                 ->addColumn('fullname', function ($approval) {
                     return optional(optional($approval->approvalRequest)->requester)->personal->fullname ?? '--';
                 })
@@ -352,11 +384,20 @@ class ApprovalRequestController extends Controller
                 ->addColumn('end_date', function ($approval) {
                     return data_get($approval->approvalRequest, 'data.payload.end_date') ?? '--';
                 })
+                ->addColumn('scheduled_days', function ($approval) {
+                    return $this->scheduledDays($approval->approvalRequest);
+                })
                 ->addColumn('start_time', function ($approval) {
                     return data_get($approval->approvalRequest, 'data.payload.start_time') ?? '--';
                 })
                 ->addColumn('end_time', function ($approval) {
                     return data_get($approval->approvalRequest, 'data.payload.end_time') ?? '--';
+                })
+                ->addColumn('time_duration', function ($approval) {
+                    return $this->timeDuration($approval->approvalRequest);
+                })
+                ->addColumn('has_time_fields', function ($approval) {
+                    return $this->timeFields($approval->approvalRequest)->isNotEmpty();
                 })
                 ->filter(function ($query) use ($request) {
                     $keyword = trim((string) $request->input('search.value'));
@@ -377,5 +418,67 @@ class ApprovalRequestController extends Controller
                 })
                 ->make(true);
         }
+
+    }
+
+    private function scheduledDays(?ApprovalRequest $approvalRequest): int|string|null
+    {
+        $startDate = data_get($approvalRequest, 'data.payload.start_date') ?: data_get($approvalRequest, 'data.payload.date');
+        $endDate = data_get($approvalRequest, 'data.payload.end_date') ?: $startDate;
+        $employee = $approvalRequest ? $approvalRequest->requester : null;
+
+        if (!$employee || !$startDate || !$endDate) {
+            return null;
+        }
+
+        try {
+            $start = Carbon::parse($startDate)->startOfDay();
+            $end = Carbon::parse($endDate)->startOfDay();
+        } catch (\Carbon\Exceptions\InvalidFormatException $exception) {
+            logger()->warning('Invalid time off dates in approval request', [
+                'approval_request_id' => $approvalRequest->id,
+                'error' => $exception->getMessage(),
+            ]);
+            return 'invalid';
+        }
+
+        if ($end->lt($start)) {
+            logger()->warning('Time off end date is before start date', [
+                'approval_request_id' => $approvalRequest->id,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]);
+            return 'invalid';
+        }
+
+        return (new ScheduledWorkDays())->count($employee, $start, $end);
+    }
+
+    private function timeDuration(?ApprovalRequest $approvalRequest): ?string
+    {
+        $payload = data_get($approvalRequest, 'data.payload', []);
+        try {
+            return (new TimeOffEmailDetails())->elapsedTime($payload);
+        } catch (\InvalidArgumentException $exception) {
+            logger()->warning('Invalid time off time range', [
+                'approval_request_id' => $approvalRequest->id,
+                'error' => $exception->getMessage(),
+            ]);
+            return 'invalid';
+        }
+
+    }
+
+    private function timeFields(?ApprovalRequest $approvalRequest): \Illuminate\Support\Collection
+    {
+        $payload = data_get($approvalRequest, 'data.payload', []);
+        return collect(data_get($approvalRequest, 'type.schema', []))->filter(function ($field) use ($payload) {
+            if (!in_array($field['name'] ?? '', ['start_time', 'end_time'], true)) {
+                return false;
+            }
+            $condition = $field['show_if'] ?? null;
+            return !$condition || !isset($payload[$condition['field']]) ||
+                (string) $payload[$condition['field']] === (string) $condition['value'];
+        });
     }
 }

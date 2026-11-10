@@ -299,10 +299,10 @@
                                 '--';
                             let endDate = full.end_date && full.end_date !== '--' ? moment(full
                                 .end_date).format('DD MMM YYYY') : '';
-                            let diffDays = endDate ? moment(full.end_date).diff(moment(data),
-                                'days') + 1 : 0;
-                            return (startDate === endDate || endDate === '') ? startDate :
-                                `${startDate} - ${endDate} <br>${diffDays} day(s)`;
+                            let duration = full.scheduled_days === 'invalid' ? '<br>Invalid date range' :
+                                (full.scheduled_days == null ? '' : `<br>${full.scheduled_days} day(s)`);
+                            return (startDate === endDate || endDate === '') ? startDate + (full.scheduled_days === 'invalid' ? duration : '') :
+                                `${startDate} - ${endDate}${duration}`;
                         }
                     },
                     {
@@ -315,12 +315,10 @@
                                 '--';
                             let endTime = full.end_time && full.end_time !== '--' ? moment(full
                                 .end_time, 'HH:mm:ss').format('HH:mm') : '--';
-                            let diffMinutes = moment(full.end_time, 'HH:mm:ss').diff(moment(data,
-                                'HH:mm:ss'), 'minutes');
-                            let hours = Math.floor(diffMinutes / 60);
-                            let minutes = diffMinutes % 60;
-                            return startTime === endTime ? startTime :
-                                `${startTime} - ${endTime}<br><small>${hours}h ${minutes}m</small>`;
+                            if (startTime === '--' && endTime === '--') return full.has_time_fields ? 'Not provided' : '--';
+                            let duration = full.time_duration === 'invalid' ? 'Invalid time range' : full.time_duration;
+                            let range = startTime === endTime ? startTime : `${startTime} - ${endTime}`;
+                            return duration ? `${range}<br><small>${duration}</small>` : range;
                         }
                     },
                     {

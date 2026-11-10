@@ -173,10 +173,11 @@
                             font-weight: bold;
                             color: #333;
                           ">
-                                                : {{ $data['timeoff_date'] }}
+                                                : {{ $data['timeoff_date'] ?? '' }}@if (!empty($data['timeoff_end_date'])) - {{ $data['timeoff_end_date'] }}@endif
                                             </p>
                                         </td>
                                     </tr>
+                                    @include('email-template.timeoff-duration')
                                     <tr>
                                         <td
                                             style="

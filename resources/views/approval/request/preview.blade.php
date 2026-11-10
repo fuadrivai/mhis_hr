@@ -35,6 +35,7 @@
                 ? count($fieldOrder)
                 : array_search($field, $fieldOrder, true),
         );
+        $hasTimeFields = $timeFields->isNotEmpty() || !empty($payload['start_time']) || !empty($payload['end_time']);
         $currentUser = auth()->user();
         $isAdmin = $currentUser && ($currentUser->hasRole('admin') || $currentUser->roles->contains('id', 1));
         $isAssignedApprover = $approvalRequest->approvals->contains(
@@ -116,12 +117,7 @@
                                 <dt>Policy</dt>
                                 <dd>{{ optional($approvalRequest->type)->name ?? '-' }}</dd>
                             </div>
-                            @foreach ($orderedPayload as $field => $value)
-                                <div class="approval-info-row">
-                                    <dt>{{ $schemaLabels->get($field, ucfirst(str_replace('_', ' ', $field))) }}</dt>
-                                    <dd>{{ is_array($value) ? implode(', ', $value) : $value }}</dd>
-                                </div>
-                            @endforeach
+                            @include('approval.request.payload-details')
                             @if ($approvalRequest->note)
                                 <div class="approval-info-row">
                                     <dt>Note</dt>
