@@ -27,6 +27,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOne(Employee::class);
     }
 
+    public function hasInactiveEmployee(): bool
+    {
+        return $this->employee()->where('is_active', 0)->exists();
+    }
+
     public function roles()
     {
         return $this->belongsToMany(

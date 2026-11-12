@@ -75,7 +75,14 @@ class AuthController extends Controller
                 'password' => ['required'],
             ]);
             $token = Auth::attempt($credentials);
-            if (isset($token)) {
+            if ($token) {
+                $authUser = Auth::user();
+                if ($authUser->hasInactiveEmployee()) {
+                    Auth::logout();
+
+                    return response()->view('login.inactive', [], 403);
+                }
+
                 $request->session()->regenerate();
                 //get JWT token login to system
                 $jwtToken = Auth::guard('api')->attempt($credentials);
@@ -120,7 +127,7 @@ class AuthController extends Controller
                 return redirect('/');
 
             }
-            return back()->with('LoginError', 'Email is not valid');
+            return back()->with('LoginError', 'Email or password is not valid');
         } catch (\Throwable $th) {
             return back()->with('LoginError', $th->getMessage());
         }

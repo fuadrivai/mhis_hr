@@ -39,6 +39,16 @@ class AuthImplement implements AuthService
 
             //checking user id talenta
             $user = Auth::guard('api')->user();
+            if ($user->hasInactiveEmployee()) {
+                Auth::guard('api')->logout();
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Employee account is inactive.',
+                    'logoutAll' => false,
+                ], 403);
+            }
+
             // if (!isset($user->user_id_talenta)) {
             //     $talentaUser =  getUserTalentaByEmail($user->email);
             //     $localUser = User::where('id', $user->id)->first();
