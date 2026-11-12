@@ -131,6 +131,8 @@ Route::name('api.')->group(function () {
                 Route::get('request/approval', [ApprovalRequestApiController::class, 'getApprovalByUser']);
                 Route::get('request/approval/{approvalId}/next', [ApprovalRequestApiController::class, 'getNextApprovalByUser'])
                     ->whereNumber('approvalId');
+                Route::get('request/approval/{approvalId}/previous', [ApprovalRequestApiController::class, 'getPreviousApprovalByUser'])
+                    ->whereNumber('approvalId');
                 Route::post('request/action', [ApprovalRequestApiController::class, 'action']);
                 Route::post('request/cancel/{id}', [ApprovalRequestApiController::class, 'cancel']);
                 Route::get('leave/balance/employee/{employeeId}', [LeaveAllocationApiController::class, 'getActiveByEmployeeId'])->name('leave.balance.employee');

@@ -445,6 +445,32 @@ class ApprovalRequestImplement implements ApprovalRequestService{
                 && $approval->approval_request_id !== $current->approval_request_id);
     }
 
+    public function getPreviousApprovalByUser($user, int $approvalId)
+    {
+        $approvals = $this->approvalByUserQuery(['user' => $user])
+            ->where(function ($query) use ($approvalId) {
+                $query->where('approvals.id', $approvalId)
+                    ->orWhere(function ($pendingQuery) {
+                        $pendingQuery->where('approvals.status', 'pending')
+                            ->whereHas('approvalRequest', function ($requestQuery) {
+                                $requestQuery->where('status', 'pending');
+                            });
+                    });
+            })->get();
+
+        $currentIndex = $approvals->search(fn ($approval) => (int) $approval->id === $approvalId);
+        if ($currentIndex === false) {
+            abort(404, 'Approval not found.');
+        }
+
+        $current = $approvals[$currentIndex];
+        return $approvals->slice(0, $currentIndex)
+            ->reverse()
+            ->concat($approvals->slice($currentIndex + 1)->reverse())
+            ->first(fn ($approval) => $approval->status === 'pending'
+                && $approval->approval_request_id !== $current->approval_request_id);
+    }
+
     private function approvalByUserQuery($request)
     {
         try {

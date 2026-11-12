@@ -9,6 +9,7 @@ interface ApprovalRequestService
     function getRequestByUser($request);
     function getApprovalByUser($request);
     function getNextApprovalByUser($user, int $approvalId);
+    function getPreviousApprovalByUser($user, int $approvalId);
     function show($id);
     function post($request);
     function put($request);

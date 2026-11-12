@@ -218,4 +218,44 @@ class ApprovalByUserFilterTest extends TestCase
         $this->getJson('/api/time/request/approval/999/next', $headers)->assertNotFound();
         $this->getJson('/api/time/request/approval/1/next')->assertForbidden();
     }
+
+    public function test_previous_approval_follows_user_order_and_wraps_around(): void
+    {
+        DB::table('approval_request_data')->insert([
+            'approval_request_id' => 5,
+            'payload' => json_encode(['date' => '2026-03-01']),
+        ]);
+
+        $headers = ['Authorization' => 'bearer test-token'];
+
+        $this->getJson('/api/time/request/approval/6/previous?month=12&year=1999&status=approved', $headers)
+            ->assertOk()
+            ->assertJsonPath('data.id', 7)
+            ->assertJsonPath('data.status', 'pending');
+
+        $this->getJson('/api/time/request/approval/7/previous', $headers)
+            ->assertOk()
+            ->assertJsonPath('data.id', 1);
+    }
+
+    public function test_previous_returns_null_when_no_other_eligible_request_exists(): void
+    {
+        DB::table('approvals')->where('id', 6)->update(['status' => 'approved']);
+        DB::table('approval_requests')->where('id', 5)->update(['status' => 'cancelled']);
+        DB::table('approvals')->where('id', 1)->update(['status' => 'approved']);
+
+        $this->getJson('/api/time/request/approval/1/previous', ['Authorization' => 'bearer test-token'])
+            ->assertOk()
+            ->assertExactJson(['data' => null]);
+    }
+
+    public function test_previous_rejects_another_users_approval_or_a_future_step(): void
+    {
+        $headers = ['Authorization' => 'bearer test-token'];
+
+        $this->getJson('/api/time/request/approval/3/previous', $headers)->assertNotFound();
+        $this->getJson('/api/time/request/approval/4/previous', $headers)->assertNotFound();
+        $this->getJson('/api/time/request/approval/999/previous', $headers)->assertNotFound();
+        $this->getJson('/api/time/request/approval/1/previous')->assertForbidden();
+    }
 }
