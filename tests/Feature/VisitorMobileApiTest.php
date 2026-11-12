@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\VisitorVisit;
+use App\Notifications\VisitorInvitationForGuest;
+use App\Notifications\VisitorVisitNotification;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -235,5 +239,41 @@ class VisitorMobileApiTest extends TestCase
                 ->assertOk()->assertJsonPath('total', 1)->assertJsonPath('data.0.id', $id)
                 ->assertJsonPath('data.0.can_cancel', true);
         }
+    }
+
+    public function test_guest_and_host_emails_use_the_timeoff_branded_template(): void
+    {
+        $id = $this->postJson('/api/visitor/invitations', $this->invitation([
+            'email' => 'guest@example.test',
+        ]), $this->headers())->assertCreated()->json('data.id');
+        $visit = VisitorVisit::with(['visitor', 'branch', 'host.user', 'purpose'])->findOrFail($id);
+
+        $guestMail = (new VisitorInvitationForGuest($visit, 'qr-token'))->toMail(new \stdClass());
+        $this->assertSame('email-template.visitor-notification', $guestMail->view['html']);
+        $guestHtml = $this->renderVisitorMail($guestMail);
+        $this->assertStringContainsString('Visitor Invitation', $guestHtml);
+        $this->assertStringContainsString('Visit date', $guestHtml);
+        $this->assertStringContainsString('Meeting location', $guestHtml);
+        $this->assertStringContainsString('Visitor invitation QR code', $guestHtml);
+        $this->assertStringContainsString('#f9f7f4', $guestHtml);
+
+        $hostMail = (new VisitorVisitNotification($visit, 'invitation'))->toMail((object) ['name' => 'Host']);
+        $this->assertSame('email-template.visitor-notification', $hostMail->view['html']);
+        $hostHtml = $this->renderVisitorMail($hostMail);
+        $this->assertStringContainsString('Visitor Invitation Created', $hostHtml);
+        $this->assertStringContainsString('Open Visitor Dashboard', $hostHtml);
+        $this->assertStringNotContainsString('Laravel Logo', $hostHtml);
+    }
+
+    private function renderVisitorMail(MailMessage $mail): string
+    {
+        return view($mail->view['html'], $mail->viewData + [
+            'message' => new class {
+                public function embedData($data, $name, $mime): string
+                {
+                    return 'cid:visitor-invitation';
+                }
+            },
+        ])->render();
     }
 }
