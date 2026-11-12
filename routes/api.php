@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\PushNotificationApiController;
 use App\Http\Controllers\Api\ReligionApiController;
 use App\Http\Controllers\Api\TimeOffApiController;
 use App\Http\Controllers\Api\VisitorInvitationApiController;
+use App\Http\Middleware\ResolveVisitorApiUser;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -60,8 +61,16 @@ Route::name('api.')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
         Route::delete('logout', [AuthController::class, 'logout']);
         Route::post('password/change', [AuthController::class, 'changePassword']);
-        Route::post('visitor/invitations', [VisitorInvitationApiController::class, 'store'])
-            ->name('visitor.invitations.store');
+        Route::prefix('visitor')->middleware(ResolveVisitorApiUser::class)->group(function () {
+            Route::get('form-options', [VisitorInvitationApiController::class, 'formOptions']);
+            Route::get('hosts', [VisitorInvitationApiController::class, 'hosts']);
+            Route::get('invitations', [VisitorInvitationApiController::class, 'index']);
+            Route::get('monitoring', [VisitorInvitationApiController::class, 'monitoring']);
+            Route::post('invitations', [VisitorInvitationApiController::class, 'store'])
+                ->name('visitor.invitations.store');
+            Route::get('invitations/{visit}', [VisitorInvitationApiController::class, 'show'])->whereNumber('visit');
+            Route::post('invitations/{visit}/cancel', [VisitorInvitationApiController::class, 'cancel'])->whereNumber('visit');
+        });
 
         Route::get('school/calendar', [GsheetLinkApiController::class, 'getSchoolCalendar']);
         Route::get('newsletter', [GsheetLinkApiController::class, 'getNewsletter']);
