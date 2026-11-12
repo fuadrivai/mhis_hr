@@ -30,6 +30,12 @@ class AuthMiddleware
                 return response()->json(["message" => "Forbidden"], 403);
             } else {
                 $user = $session->user;
+                $employee = $user?->employee;
+
+                if ($employee && (int) $employee->is_active === 0) {
+                    return response()->json(["message" => "Forbidden"], 403);
+                }
+
                 $request['user'] = $user;
                 return $next($request);
             }

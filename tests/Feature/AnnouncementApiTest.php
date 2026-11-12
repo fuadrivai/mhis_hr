@@ -43,6 +43,7 @@ class AnnouncementApiTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->unsignedBigInteger('employment_id')->nullable();
+            $table->boolean('is_active')->default(true);
         });
         Schema::create('employments', function (Blueprint $table) {
             $table->id();
@@ -88,6 +89,18 @@ class AnnouncementApiTest extends TestCase
             ->assertJson(['message' => 'Forbidden']);
 
         $this->getJson('/api/announcement', ['Authorization' => 'bearer invalid-token'])
+            ->assertForbidden()
+            ->assertJson(['message' => 'Forbidden']);
+    }
+
+    public function test_inactive_employee_gets_forbidden_for_announcement_requests(): void
+    {
+        DB::table('employees')->insert([
+            'user_id' => 1,
+            'is_active' => false,
+        ]);
+
+        $this->getJson('/api/announcement', ['Authorization' => 'bearer test-token'])
             ->assertForbidden()
             ->assertJson(['message' => 'Forbidden']);
     }
