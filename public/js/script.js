@@ -44,16 +44,21 @@ $(document).ready(function () {
             return;
         }
         syncingVisitDate = true;
-        $("#visit-date-picker, .visit-schedule-date").each(function () {
-            var currentDate = $(this).datepicker("getDate");
-            if (!currentDate || formatVisitDate(currentDate) !== formatVisitDate(date)) {
-                $(this).datepicker("setDate", date);
-            }
-        });
-        $("#visit-date-value").val(formatVisitDate(date));
+        var visitDate = formatVisitDate(date);
+        $("#visit-date-value").val(visitDate);
+        var $departureDate = $("#departure-date-picker");
+        var departureDate = $departureDate.datepicker("getDate");
+        $departureDate.datepicker("setStartDate", date);
+        if (departureDate && formatVisitDate(departureDate) < visitDate) {
+            $departureDate.datepicker("clearDates");
+        }
         syncingVisitDate = false;
     }
-    $("#visit-date-picker, .visit-schedule-date").on("changeDate", function (event) {
+    var initialVisitDate = $("#visit-date-picker").datepicker("getDate");
+    if (initialVisitDate) {
+        syncVisitDate(initialVisitDate);
+    }
+    $("#visit-date-picker").on("changeDate", function (event) {
         syncVisitDate(event.date);
     }).on("clearDate", function () {
         $("#visit-date-value").val("");

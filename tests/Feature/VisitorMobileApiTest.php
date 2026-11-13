@@ -35,6 +35,8 @@ class VisitorMobileApiTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->string('token');
+            $table->string('device')->nullable();
+            $table->string('device_id')->nullable();
         });
         Schema::create('roles', function (Blueprint $table) {
             $table->id();

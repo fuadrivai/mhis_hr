@@ -45,7 +45,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4 form-group">
+                        <div class="col-md-6 form-group">
                             <label>Host employee *</label>
                             <select name="host_employee_id" class="form-control select2" style="width: 100%" required>
                                 @foreach ($hosts as $host)
@@ -53,7 +53,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4 form-group">
+                        <div class="col-md-6 form-group">
                             <label>Branch (meeting location) *</label>
                             <select name="branch_id" class="form-control" required>
                                 @foreach ($branches as $branch)
@@ -61,34 +61,23 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4 form-group">
+                        <div class="col-md-3 form-group">
                             <label>Visit date *</label>
                             <input type="text" id="visit-date-picker" class="form-control date-picker" data-date-format="dd MM yyyy" data-date-language="en" data-date-start-date="{{ now()->format('d F Y') }}" value="{{ \Carbon\Carbon::parse(old('visit_date', now()->toDateString()))->format('d F Y') }}" autocomplete="off" readonly required>
                             <input type="hidden" id="visit-date-value" name="visit_date" value="{{ old('visit_date', now()->toDateString()) }}">
                         </div>
-                        <div class="col-md-6 form-group">
-                            <label>Expected arrival *</label>
-                            @php($arrivalDate = old('expected_arrival_date') ? \Carbon\Carbon::createFromFormat('!d F Y', old('expected_arrival_date')) : null)
-                            <div class="row">
-                                <div class="col-sm-7">
-                                    <input type="text" id="arrival-date-picker" name="expected_arrival_date" class="form-control date-picker visit-schedule-date" data-date-format="dd MM yyyy" data-date-language="en" data-date-start-date="{{ now()->format('d F Y') }}" value="{{ ($arrivalDate ?? \Carbon\Carbon::parse(old('visit_date', now()->toDateString())))->format('d F Y') }}" autocomplete="off" readonly required>
-                                </div>
-                                <div class="col-sm-5">
-                                    <input type="text" id="arrival-time-picker" name="expected_arrival_time" class="form-control time-picker" value="{{ old('expected_arrival_time') }}" autocomplete="off" required>
-                                </div>
-                            </div>
+                        <div class="col-md-3 form-group">
+                            <label>Expected arrival time *</label>
+                            <input type="text" id="arrival-time-picker" name="expected_arrival_time" class="form-control time-picker" value="{{ old('expected_arrival_time') }}" autocomplete="off" required>
                         </div>
-                        <div class="col-md-6 form-group">
-                            <label>Expected departure *</label>
-                            @php($departureDate = old('expected_departure_date') ? \Carbon\Carbon::createFromFormat('!d F Y', old('expected_departure_date')) : null)
-                            <div class="row">
-                                <div class="col-sm-7">
-                                    <input type="text" id="departure-date-picker" name="expected_departure_date" class="form-control date-picker visit-schedule-date" data-date-format="dd MM yyyy" data-date-language="en" data-date-start-date="{{ now()->format('d F Y') }}" value="{{ ($departureDate ?? \Carbon\Carbon::parse(old('visit_date', now()->toDateString())))->format('d F Y') }}" autocomplete="off" readonly required>
-                                </div>
-                                <div class="col-sm-5">
-                                    <input type="text" id="departure-time-picker" name="expected_departure_time" class="form-control time-picker" value="{{ old('expected_departure_time') }}" autocomplete="off" required>
-                                </div>
-                            </div>
+                        <div class="col-md-3 form-group">
+                            <label>Expected departure date (optional)</label>
+                            <input type="text" id="departure-date-picker" name="expected_departure_date" class="form-control date-picker" data-date-format="yyyy-mm-dd" data-date-language="en" value="{{ old('expected_departure_date') }}" autocomplete="off" readonly>
+                            <small class="text-muted">Only if different from visit date.</small>
+                        </div>
+                        <div class="col-md-3 form-group">
+                            <label>Expected departure time *</label>
+                            <input type="text" id="departure-time-picker" name="expected_departure_time" class="form-control time-picker" value="{{ old('expected_departure_time') }}" autocomplete="off" required>
                         </div>
                         <div class="col-md-6 form-group">
                             <label>Visitor photo (optional)</label>

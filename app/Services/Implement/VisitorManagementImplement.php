@@ -3,6 +3,7 @@
 namespace App\Services\Implement;
 
 use App\Models\Branch;
+use App\Models\Session;
 use App\Models\User;
 use App\Models\Visitor;
 use App\Models\VisitorApproval;
@@ -100,10 +101,14 @@ class VisitorManagementImplement implements VisitorManagementService
             }
 
             $this->log($visit, $user, 'registered', null, $visit->status, 'Visit registered.');
-            DB::afterCommit(function () use ($visit, $requiresApproval) {
+            DB::afterCommit(function () use ($visit, $requiresApproval, $method) {
                 $hostUser = $visit->host()->with('user')->first()?->user;
                 if ($hostUser) {
                     $hostUser->notify(new VisitorVisitNotification($visit, $requiresApproval ? 'approval' : 'invitation'));
+
+                    if ($method === 'employee_invitation') {
+                        $this->sendHostPushNotification($hostUser->id, $visit, $requiresApproval);
+                    }
                 }
             });
 
@@ -219,6 +224,41 @@ class VisitorManagementImplement implements VisitorManagementService
 
         Notification::route('mail', $visit->visitor->email)
             ->notify(new VisitorInvitationForGuest($visit, $qrToken));
+    }
+
+    private function sendHostPushNotification(int $userId, VisitorVisit $visit, bool $requiresApproval): void
+    {
+        $visit->loadMissing('visitor');
+        $sessions = Session::where('user_id', $userId)
+            ->where('device', 'android')
+            ->get();
+
+        $data = [
+            'title' => $requiresApproval ? 'Visitor Approval Request Pending' : 'New Visitor Invitation',
+            'body' => $requiresApproval
+                ? 'You have a new visitor request to approve for ' . $visit->visitor->full_name . '.'
+                : 'You have a new visitor invitation for ' . $visit->visitor->full_name
+                    . ' on ' . $visit->expected_arrival_at?->format('d M Y H:i') . '.',
+        ];
+
+        foreach ($sessions as $session) {
+            if (empty($session->device_id)) {
+                continue;
+            }
+
+            $result = sendMessage($session->device_id, $data);
+            $context = [
+                'session_id' => $session->id,
+                'visit_id' => $visit->id,
+                'result' => $result,
+            ];
+
+            if ($result['success'] ?? false) {
+                logger()->info('Visitor invitation FCM sent', $context);
+            } else {
+                logger()->warning('Visitor invitation FCM failed', $context);
+            }
+        }
     }
 
     public function checkIn(User $user, VisitorVisit $visit, array $data): VisitorVisit
