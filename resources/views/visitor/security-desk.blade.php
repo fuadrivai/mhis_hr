@@ -39,7 +39,7 @@
                             <div class="col-md-3"><strong>Visit date</strong><p id="visit-date"></p></div>
                             <div class="col-md-3"><strong>Expected arrival – departure</strong><p id="visit-time"></p></div>
                             <div class="col-md-3"><strong>Check-in / Badge</strong><p id="visit-checkin"></p></div>
-                            <div class="col-md-12"><strong>Additional visitor information</strong><p id="visit-notes"></p></div>
+                            <div class="col-md-12"><strong>Visit notes</strong><p id="visit-notes"></p></div>
                         </div>
                         <div id="check-in-section" style="display:none">
                             <hr><h4>Confirm Check-in</h4>
@@ -148,8 +148,7 @@
                                 <div class="col-md-4 form-group"><label>Branch (meeting location) *</label><select name="branch_id" class="form-control" required>@foreach ($branches as $branch)<option value="{{ $branch->id }}">{{ $branch->name }}</option>@endforeach</select></div>
                                 <div class="col-md-4 form-group"><label>Expected departure *</label><input type="datetime-local" name="expected_departure_at" class="form-control" value="{{ now()->addHour()->format('Y-m-d\TH:i') }}" required></div>
                                 <div class="col-md-6 form-group"><label>Visitor photo</label><input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/webp"></div>
-                                <div class="col-md-6 form-group"><label>Additional visitor information</label><input name="visitor_notes" class="form-control" maxlength="2000"></div>
-                                <div class="col-md-12 form-group"><label>Security notes</label><textarea name="notes" class="form-control" rows="2" maxlength="3000"></textarea></div>
+                                <div class="col-md-12 form-group"><label>Visit notes</label><textarea name="notes" class="form-control" rows="2" maxlength="3000"></textarea></div>
                             </div>
                             <p class="text-muted">Registration and check-in remain separate confirmations; verify the visitor before checking in.</p>
                             <button class="btn btn-primary" type="submit"><i class="fa fa-user-plus"></i> Register Walk-in</button>
@@ -181,7 +180,7 @@
                 $('#visit-date').text(visit.date);
                 $('#visit-time').text((visit.arrival || '—') + ' – ' + (visit.departure || '—'));
                 $('#visit-checkin').text((visit.check_in_at || 'Not checked in') + ' · Badge ' + (visit.badge_number || '—'));
-                $('#visit-notes').text(visit.visitor_notes || '—');
+                $('#visit-notes').text(visit.notes || '—');
                 $('#check-in-section, #check-out-section').hide();
                 if (visit.can_check_in) {
                     $('#check-in-form').attr('action', checkInUrl.replace('__VISIT__', visit.id));

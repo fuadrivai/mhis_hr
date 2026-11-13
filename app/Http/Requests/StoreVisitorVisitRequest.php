@@ -9,6 +9,47 @@ use App\Models\VisitorCategory;
 
 class StoreVisitorVisitRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $visitDate = $this->input('visit_date');
+        if (!is_string($visitDate)) {
+            return;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $visitDate);
+        $errors = \DateTimeImmutable::getLastErrors();
+        if (
+            !$date
+            || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))
+            || $date->format('Y-m-d') !== $visitDate
+        ) {
+            return;
+        }
+
+        $formattedDate = $date->format('d F Y');
+        $normalized = [
+            'expected_arrival_date' => $this->filled('expected_arrival_date')
+                ? $this->input('expected_arrival_date')
+                : $formattedDate,
+        ];
+
+        if (!$this->filled('expected_departure_date')) {
+            $normalized['expected_departure_date'] = $formattedDate;
+        } elseif (is_string($this->input('expected_departure_date'))) {
+            $departureDate = \DateTimeImmutable::createFromFormat('!Y-m-d', $this->input('expected_departure_date'));
+            $departureErrors = \DateTimeImmutable::getLastErrors();
+            if (
+                $departureDate
+                && ($departureErrors === false || ($departureErrors['warning_count'] === 0 && $departureErrors['error_count'] === 0))
+                && $departureDate->format('Y-m-d') === $this->input('expected_departure_date')
+            ) {
+                $normalized['expected_departure_date'] = $departureDate->format('d F Y');
+            }
+        }
+
+        $this->merge($normalized);
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->employee !== null;
@@ -31,7 +72,6 @@ class StoreVisitorVisitRequest extends FormRequest
             'expected_departure_date' => ['required', 'date_format:d F Y'],
             'expected_departure_time' => ['required', 'date_format:H:i'],
             'notes' => ['nullable', 'string', 'max:3000'],
-            'visitor_notes' => ['nullable', 'string', 'max:2000'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
@@ -44,8 +84,8 @@ class StoreVisitorVisitRequest extends FormRequest
             }
 
             $category = VisitorCategory::find($this->input('visitor_category_id'));
-            if ($category->requires_additional_info && empty($this->input('visitor_notes')) && empty($this->input('notes'))) {
-                $validator->errors()->add('visitor_notes', 'Additional visitor information is required for this category.');
+            if ($category->requires_additional_info && empty($this->input('notes'))) {
+                $validator->errors()->add('notes', 'Notes are required for this category.');
                 return;
             }
 
@@ -59,10 +99,14 @@ class StoreVisitorVisitRequest extends FormRequest
                 $this->input('expected_departure_date') . ' ' . $this->input('expected_departure_time')
             );
 
-            foreach (['expected_arrival_date', 'expected_departure_date'] as $field) {
-                if (\Carbon\Carbon::createFromFormat('!d F Y', $this->input($field))->toDateString() !== $visitDate) {
-                    $validator->errors()->add($field, 'Expected arrival and departure must be on the visit date.');
-                }
+            $arrivalDate = \Carbon\Carbon::createFromFormat('!d F Y', $this->input('expected_arrival_date'))->toDateString();
+            $departureDate = \Carbon\Carbon::createFromFormat('!d F Y', $this->input('expected_departure_date'))->toDateString();
+
+            if ($arrivalDate !== $visitDate) {
+                $validator->errors()->add('expected_arrival_date', 'Expected arrival must be on the visit date.');
+            }
+            if ($departureDate < $visitDate) {
+                $validator->errors()->add('expected_departure_date', 'Expected departure cannot be before the visit date.');
             }
 
             if ($departure->lessThanOrEqualTo($arrival)) {

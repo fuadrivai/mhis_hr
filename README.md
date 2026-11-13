@@ -33,7 +33,7 @@ The employee invitation API is `POST /api/visitor/invitations` and uses the exis
 
 ### Mobile Visitor API
 
-All endpoints require the existing `Authorization: bearer <token>` session header and an active employee profile. Send `Accept: application/json`. The server identifies the creator or host from the session; clients must not send a user or employee ID to select whose visits to access. The host list contains visits assigned to the logged-in employee; monitoring contains visits registered by the logged-in user. Either the host or creator can view details, but only the creator can cancel. An inaccessible or nonexistent visit returns 404.
+All endpoints require the existing `Authorization: bearer <token>` session header and an active employee profile. Send `Accept: application/json`. The server identifies the creator or host from the session; clients must not send a user or employee ID to select whose visits to access. The host list contains visits assigned to the logged-in employee; monitoring contains visits registered by the logged-in user for a different host. If the logged-in user created the visit for themselves as host, it appears only in the host list. Either the host or creator can view details, but only the creator can cancel. An inaccessible or nonexistent visit returns 404.
 
 **Form options:** `GET /api/visitor/form-options` returns:
 
@@ -49,7 +49,26 @@ All endpoints require the existing `Authorization: bearer <token>` session heade
 }
 ```
 
-Non-admin users can register visits only in their assigned branch. `GET /api/visitor/hosts?search=Name&per_page=20&page=1` returns a Laravel paginated response whose `data` contains host employee `id` and `name`. Both search and pagination parameters are optional; `per_page` is 1–100.
+Non-admin users can register visits only in their assigned branch. `GET /api/visitor/hosts?search=Name&per_page=20&page=1` returns a Laravel paginated response. Each host in `data` contains the employee `id`, name, branch, level, position, organization, and `avatar` URL. The name search matches the personal full name or account name. Both search and pagination parameters are optional; `per_page` is 1–100.
+
+```json
+{
+  "data": [
+    {
+      "id": 10,
+      "name": "Host Name",
+      "branch": "Head Office",
+      "level": "Senior",
+      "position": "Director",
+      "organization": "Operations",
+      "avatar": "https://example.test/storage/avatars/host.png"
+    }
+  ],
+  "current_page": 1,
+  "per_page": 20,
+  "total": 1
+}
+```
 
 **Create:** `POST /api/visitor/invitations` accepts JSON or multipart form data. Dates in the example are illustrative:
 
@@ -64,16 +83,15 @@ Non-admin users can register visits only in their assigned branch. `GET /api/vis
   "branch_id": 1,
   "host_employee_id": 10,
   "visit_date": "2027-01-20",
-  "expected_arrival_date": "20 January 2027",
   "expected_arrival_time": "09:00",
-  "expected_departure_date": "20 January 2027",
   "expected_departure_time": "10:00",
-  "notes": "Meeting",
-  "visitor_notes": null
+  "notes": "Meeting"
 }
 ```
 
-Provide at least one of `phone` or `email`. `company`, `notes`, and `visitor_notes` are optional; some categories require either notes field. An optional `photo` must be uploaded as multipart (`jpg`, `jpeg`, `png`, or `webp`, max 5 MB). Arrival and departure must be on `visit_date`, and departure must be later. The response is HTTP 201 (`expected`) or HTTP 202 (`pending_confirmation`):
+Provide at least one of `phone` or `email`. `company` and `notes` are optional; categories configured to require additional information require `notes`. An optional `photo` must be uploaded as multipart (`jpg`, `jpeg`, `png`, or `webp`, max 5 MB). Arrival is on `visit_date`. If departure is on a different date, include `expected_departure_date` in `YYYY-MM-DD` format; otherwise it defaults to `visit_date`. Departure cannot be before `visit_date` and its date-time must be later than arrival. The response is HTTP 201 (`expected`) or HTTP 202 (`pending_confirmation`):
+
+For example, an overnight installation arriving on January 20 at 21:00 and departing January 21 at 03:00 sends `visit_date: "2027-01-20"`, `expected_arrival_time: "21:00"`, `expected_departure_date: "2027-01-21"`, and `expected_departure_time: "03:00"`. The web form may continue sending its separate arrival and departure date fields.
 
 ```json
 {
@@ -93,15 +111,17 @@ Provide at least one of `phone` or `email`. `company`, `notes`, and `visitor_not
 
 Keep `data.id` for the detail and cancellation endpoints. Approval remains available through the existing web flow; this API does not expose an approval endpoint or a QR token.
 
-**Lists:** `GET /api/visitor/invitations` lists visits for the authenticated host. `GET /api/visitor/monitoring` lists visits created by the authenticated user, including invitations for other hosts. A self-created invitation appears in both lists. Both return a Laravel paginated object, with visits in `data` and pagination fields such as `current_page`, `last_page`, `per_page`, and `total`. Query parameters are optional:
+**Lists:** `GET /api/visitor/invitations` lists visits for the authenticated host. `GET /api/visitor/monitoring` lists visits created by the authenticated user for another host. An invitation created by the user for themselves as host appears only in `invitations`. Both return a Laravel paginated object, with visits in `data` and pagination fields such as `current_page`, `last_page`, `per_page`, and `total`. Query parameters are optional:
 
 - `view=all|today|upcoming|history` (default `all`): today uses the application's timezone; upcoming contains future `expected` or `pending_confirmation` visits; history contains `completed`, `rejected`, `cancelled`, and `no_show`.
 - `status=pending_confirmation|expected|rejected|checked_in|completed|cancelled|no_show`.
-- `from=YYYY-MM-DD`, `to=YYYY-MM-DD` (inclusive visit dates).
-- `search` searches visitor name, phone, email, or an exact visit code.
+- `query` searches visitor name, email, or phone using a partial match. It can be a single name, email address, or phone number.
+- `visit_date=YYYY-MM-DD` filters an exact visit date; `from=YYYY-MM-DD` and `to=YYYY-MM-DD` filter an inclusive date range.
+- `departure_after` accepts a date-time (ISO 8601 recommended), excludes visits whose `expected_departure_at` is at or before that time, and orders the remaining visits by expected arrival ascending. Combine it with `visit_date` to show today's visits that have not yet departed, and refresh the filter as the current time changes.
+- `search` is retained as a backward-compatible alias for `query` and also matches an exact visit code.
 - `per_page` (1–100; default 20) and `page`.
 
-Filters may be combined. Results are ordered by visit date descending, then ID descending.
+Filters may be combined. By default, results are ordered by visit date descending, then ID descending; when `departure_after` is supplied, results are ordered by expected arrival ascending, then ID ascending.
 
 **Detail:** `GET /api/visitor/invitations/{id}` is accessible to the host and creator and returns `{"data": ...}`. Each list item and detail uses the same shape. `can_cancel` is false for a host who is not also the creator:
 
@@ -118,7 +138,6 @@ Filters may be combined. Results are ordered by visit date descending, then ID d
     "check_in_at": null,
     "check_out_at": null,
     "notes": "Meeting",
-    "visitor_notes": null,
     "cancellation_reason": null,
     "can_cancel": true,
     "visitor": {"id": 7, "full_name": "Guest Name", "phone": "08123456789", "email": null, "company": "Example"},

@@ -52,15 +52,34 @@ class VisitorInvitationApiController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
         $hosts = Employee::query()->where('is_active', true)->whereNotNull('user_id')
-            ->whereHas('user', function (Builder $query) use ($filters) {
-                if (!empty($filters['search'])) {
-                    $query->where('name', 'like', '%' . trim($filters['search']) . '%');
-                }
-            })->with('user:id,name')->orderBy('id')
+            ->whereHas('user')
+            ->when(!empty($filters['search']), function (Builder $query) use ($filters) {
+                $term = '%' . trim($filters['search']) . '%';
+                $query->where(function (Builder $searchQuery) use ($term) {
+                    $searchQuery->whereHas('personal', fn (Builder $personalQuery) => $personalQuery->where('fullname', 'like', $term))
+                        ->orWhereHas('user', fn (Builder $userQuery) => $userQuery->where('name', 'like', $term));
+                });
+            })
+            ->with([
+                'user:id,name',
+                'personal' => fn ($query) => $query->without('religion')->select(['id', 'fullname', 'avatar']),
+                'employment.branch',
+                'employment.job_level',
+                'employment.job_position',
+                'employment.organization',
+            ])
+            ->orderBy('id')
             ->paginate($filters['per_page'] ?? 20)->withQueryString();
         $hosts->getCollection()->transform(fn (Employee $host) => [
             'id' => $host->id,
-            'name' => $host->user->name,
+            'name' => $host->personal?->fullname ?? $host->user->name,
+            'branch' => $host->employment?->branch?->name,
+            'level' => $host->employment?->job_level?->name,
+            'position' => $host->employment?->job_position?->name,
+            'organization' => $host->employment?->organization?->name,
+            'avatar' => $host->personal?->avatar
+                ? asset('storage/' . $host->personal->avatar)
+                : asset('images/user.png'),
         ]);
 
         return response()->json($hosts);
@@ -75,15 +94,21 @@ class VisitorInvitationApiController extends Controller
 
     public function monitoring(Request $request): JsonResponse
     {
-        $this->employee($request);
+        $employee = $this->employee($request);
 
-        return $this->listVisits($request, $this->ownedVisits($request));
+        return $this->listVisits(
+            $request,
+            $this->ownedVisits($request)->where('host_employee_id', '<>', $employee->id)
+        );
     }
 
     private function listVisits(Request $request, Builder $query): JsonResponse
     {
         $filters = $request->validate([
+            'query' => ['nullable', 'string', 'max:255'],
             'search' => ['nullable', 'string', 'max:255'],
+            'visit_date' => ['nullable', 'date_format:Y-m-d'],
+            'departure_after' => ['nullable', 'date'],
             'status' => ['nullable', Rule::in(['pending_confirmation', 'expected', 'rejected', 'checked_in', 'completed', 'cancelled', 'no_show'])],
             'view' => ['nullable', Rule::in(['all', 'today', 'upcoming', 'history'])],
             'from' => ['nullable', 'date_format:Y-m-d'],
@@ -92,8 +117,8 @@ class VisitorInvitationApiController extends Controller
         ]);
         $query->with(['visitor', 'branch', 'host.user', 'category', 'purpose']);
 
-        if (!empty($filters['search'])) {
-            $term = trim($filters['search']);
+        $term = trim((string) ($filters['query'] ?? $filters['search'] ?? ''));
+        if ($term !== '') {
             $query->where(function (Builder $builder) use ($term) {
                 $builder->where('visit_code', $term)
                     ->orWhereHas('visitor', function (Builder $visitor) use ($term) {
@@ -102,6 +127,15 @@ class VisitorInvitationApiController extends Controller
                             ->orWhere('email', 'like', '%' . $term . '%');
                     });
             });
+        }
+        if (!empty($filters['visit_date'])) {
+            $query->whereDate('visit_date', $filters['visit_date']);
+        }
+        if (!empty($filters['departure_after'])) {
+            $departureAfter = \Carbon\Carbon::parse($filters['departure_after'])
+                ->setTimezone(config('app.timezone'))
+                ->format('Y-m-d H:i:s');
+            $query->where('expected_departure_at', '>', $departureAfter);
         }
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
@@ -125,8 +159,13 @@ class VisitorInvitationApiController extends Controller
                 break;
         }
 
-        $visits = $query->orderByDesc('visit_date')->orderByDesc('id')
-            ->paginate($filters['per_page'] ?? 20)->withQueryString();
+        if (!empty($filters['departure_after'])) {
+            $query->orderBy('expected_arrival_at')->orderBy('id');
+        } else {
+            $query->orderByDesc('visit_date')->orderByDesc('id');
+        }
+
+        $visits = $query->paginate($filters['per_page'] ?? 20)->withQueryString();
         $visits->getCollection()->transform(fn (VisitorVisit $visit) => $this->visitData($visit, $request->user()->id));
 
         return response()->json($visits);
@@ -210,7 +249,6 @@ class VisitorInvitationApiController extends Controller
             'check_in_at' => $visit->check_in_at?->toIso8601String(),
             'check_out_at' => $visit->check_out_at?->toIso8601String(),
             'notes' => $visit->notes,
-            'visitor_notes' => $visit->visitor_notes,
             'cancellation_reason' => $visit->cancellation_reason,
             'can_cancel' => (int) $visit->registered_by === $userId
                 && in_array($visit->status, ['expected', 'pending_confirmation'], true)

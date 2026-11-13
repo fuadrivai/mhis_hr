@@ -54,7 +54,6 @@ class VisitorManagementImplement implements VisitorManagementService
                     'phone' => $data['phone'] ?? null,
                     'email' => $data['email'] ?? null,
                     'company' => $data['company'] ?? null,
-                    'notes' => $data['visitor_notes'] ?? null,
                     'photo_path' => $data['photo_path'] ?? null,
                 ]);
             } else {
@@ -87,7 +86,6 @@ class VisitorManagementImplement implements VisitorManagementService
                 'status' => $requiresApproval ? 'pending_confirmation' : 'expected',
                 'qr_token_hash' => hash('sha256', $qrToken),
                 'notes' => $data['notes'] ?? null,
-                'visitor_notes' => $data['visitor_notes'] ?? null,
                 'metadata' => $requiresApproval
                     ? ['pending_invitation_token' => Crypt::encryptString($qrToken)]
                     : null,

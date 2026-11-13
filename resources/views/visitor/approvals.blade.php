@@ -15,7 +15,7 @@
                                 <td>{{ $visit->visitor->full_name }}<br><small>{{ $visit->visitor->company }} · {{ $visit->visitor->phone }}</small></td>
                                 <td>{{ $visit->branch->name }} · {{ $visit->visit_date->format('d M Y') }}<br>{{ $visit->purpose->name }} / {{ $visit->category->name }}</td>
                                 <td>{{ $visit->host->user?->name ?? '—' }}</td>
-                                <td>{{ $visit->notes ?: '—' }}@if ($visit->visitor_notes)<br><small>Visitor info: {{ $visit->visitor_notes }}</small>@endif</td>
+                                <td>{{ $visit->notes ?: '—' }}</td>
                                 <td>
                                     <form method="POST" action="{{ route('visitor.approval.process', $visit) }}">
                                         @csrf

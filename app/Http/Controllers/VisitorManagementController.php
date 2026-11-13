@@ -211,7 +211,7 @@ class VisitorManagementController extends Controller
                 'visit_code' => $visit->visit_code,
                 'visitor' => $visit->visitor->full_name,
                 'company' => $visit->visitor->company,
-                'visitor_notes' => $visit->visitor_notes,
+                'notes' => $visit->notes,
                 'phone' => $visit->visitor->phone,
                 'category' => $visit->category->name,
                 'purpose' => $visit->purpose->name,
@@ -244,15 +244,14 @@ class VisitorManagementController extends Controller
             'host_employee_id' => ['required', Rule::exists('employees', 'id')->where('is_active', true)],
             'expected_departure_at' => ['required', 'date', 'after:now'],
             'notes' => ['nullable', 'string', 'max:3000'],
-            'visitor_notes' => ['nullable', 'string', 'max:2000'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
         if (\Carbon\Carbon::parse($validated['expected_departure_at'])->toDateString() !== now()->toDateString()) {
             return back()->withErrors(['expected_departure_at' => 'Walk-in visitors must depart on the registration date.'])->withInput();
         }
         $category = VisitorCategory::findOrFail($validated['visitor_category_id']);
-        if ($category->requires_additional_info && empty($validated['visitor_notes']) && empty($validated['notes'])) {
-            return back()->withErrors(['visitor_notes' => 'Additional information is required for this visitor category.'])->withInput();
+        if ($category->requires_additional_info && empty($validated['notes'])) {
+            return back()->withErrors(['notes' => 'Notes are required for this visitor category.'])->withInput();
         }
         if ($request->hasFile('photo')) {
             $validated['photo_path'] = $request->file('photo')->store('visitor-photos');

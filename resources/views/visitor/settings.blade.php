@@ -13,7 +13,7 @@
                             @csrf
                             <input name="name" class="form-control" placeholder="New category" required maxlength="255">
                             <label><input type="checkbox" name="requires_approval" value="1"> Approval required</label>
-                            <label><input type="checkbox" name="requires_additional_info" value="1"> Extra information required</label>
+                            <label><input type="checkbox" name="requires_additional_info" value="1"> Notes required</label>
                             <button class="btn btn-primary" type="submit">Add</button>
                         </form>
                         @foreach ($categories as $category)
@@ -27,7 +27,7 @@
                                         <input type="hidden" name="requires_additional_info" value="0">
                                         <label><input type="checkbox" name="is_active" value="1" @checked($category->is_active)> Active</label>
                                         <label><input type="checkbox" name="requires_approval" value="1" @checked($category->requires_approval)> Approval</label>
-                                        <label><input type="checkbox" name="requires_additional_info" value="1" @checked($category->requires_additional_info)> Extra info</label>
+                                        <label><input type="checkbox" name="requires_additional_info" value="1" @checked($category->requires_additional_info)> Notes required</label>
                                         <button class="btn btn-xs btn-success" type="submit">Save</button>
                                         <small class="text-muted">{{ $category->visits_count }} visits</small>
                                     </div>

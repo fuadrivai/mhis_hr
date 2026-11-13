@@ -95,10 +95,6 @@
                             <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="form-control">
                         </div>
                         <div class="col-md-6 form-group">
-                            <label>Additional visitor information</label>
-                            <textarea name="visitor_notes" class="form-control" rows="2" maxlength="2000">{{ old('visitor_notes') }}</textarea>
-                        </div>
-                        <div class="col-md-12 form-group">
                             <label>Visit notes</label>
                             <textarea name="notes" class="form-control" rows="3" maxlength="3000">{{ old('notes') }}</textarea>
                         </div>
