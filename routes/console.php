@@ -20,13 +20,26 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('attendance:generate-daily')->dailyAt('00:05');
+
 Schedule::command('visitor:mark-no-shows')->dailyAt('00:20')->withoutOverlapping();
-Schedule::command('attendance:compress-photos')->dailyAt('01:00')->withoutOverlapping(120);
-Schedule::command('attendance:compress-photos')->dailyAt('12:15')->withoutOverlapping(120);
+
+Schedule::command('attendance:compress-photos')
+    ->dailyAt('01:00')
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping(120)
+    ->appendOutputTo(storage_path('logs/attendance-compress.log'));
+
+Schedule::command('attendance:compress-photos')
+    ->dailyAt('12:15')
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping(120)
+    ->appendOutputTo(storage_path('logs/attendance-compress.log'));
+
 Schedule::command('holiday:generate-holiday')
     ->weeklyOn(0, '00:00')
     ->when(fn () => now()->format('m-d') !== '01-01')
     ->withoutOverlapping();
+
 Schedule::command('holiday:generate-holiday')
     ->yearlyOn(1, 1, '00:00')
     ->withoutOverlapping();
