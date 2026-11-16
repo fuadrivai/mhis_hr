@@ -31,6 +31,35 @@ Invitation and arrival notifications use the configured Laravel mail transport. 
 
 The employee invitation API is `POST /api/visitor/invitations` and uses the existing `auth_login` middleware. It accepts the same validated invitation fields as the web form and calls the shared `VisitorManagementService`; successful invitations return HTTP 201, while invitations awaiting host approval return HTTP 202. Guest email delivery and inline QR generation are handled by the service flow for both web and API requests.
 
+### Guest-completed and bulk invitations
+
+Employees can use **Visitor Management > Guest Registration Links** to create a batch with a fixed host, category, purpose, branch, schedule, and notes. A batch can create up to 100 one-time links for manual sharing, send links to a list of email addresses (one per line), or do both. Every link in a batch uses the same visit details; create separate batches when interviewees have different schedules or hosts.
+
+Mobile clients can create the same kind of batch with `POST /api/visitor/invitation-links`. It uses the visitor API bearer-session authentication and the same branch, host, date, and link-count validation as the web form. Send `recipient_emails` as an array; use `share_link_count` for additional links to share manually:
+
+```json
+{
+  "name": "Interview Day",
+  "host_employee_id": 10,
+  "branch_id": 1,
+  "visitor_category_id": 1,
+  "visitor_purpose_id": 2,
+  "visit_date": "2027-01-20",
+  "expected_arrival_time": "09:00",
+  "expected_departure_time": "10:00",
+  "share_link_count": 1,
+  "recipient_emails": ["candidate@example.com"]
+}
+```
+
+The endpoint returns HTTP 201 with the batch ID and each link URL. `delivery_status` is `sent` for emailed links, `manual` for links to share yourself, and `failed` if email delivery fails; failed recipients are also listed in `email_failures`. The batch can contain at most 100 links total and must have at least one recipient email or manual link. Validation errors return HTTP 422.
+
+**Batch list:** `GET /api/visitor/invitation-links?per_page=20&page=1` returns a Laravel paginated response containing only batches created by the authenticated user. Each item includes its event details and link/submission/revocation counts.
+
+**Batch detail:** `GET /api/visitor/invitation-links/{batch_id}` returns the batch and its links. Active links include their share URL; submitted links include the visit code and visitor details. Links are only visible to the user who created the batch; another user's batch returns 404. Link `status` is `waiting_for_guest`, `submitted`, `revoked`, or `expired`.
+
+The public recipient page is `GET /visitor/register/{token}` and submission is `POST /visitor/register/{token}` with `full_name`, at least one of `phone` or `email`, and optional `company`. The email uses the existing branded visitor invitation template and links the guest to the registration form. Tokens are hashed for lookup and stored encrypted so only the batch owner can retrieve active sharing links. Each link is single-use and expires at the batch expiry (defaults to the visit date). The recipient cannot change the invitation details. Successful submission creates the actual visit through `VisitorManagementService`, so existing category/purpose approval rules, host notifications, and visitor email/QR delivery continue to apply. Batch owners can inspect link status and revoke unused links from the batch page.
+
 ### Mobile Visitor API
 
 All endpoints require the existing `Authorization: bearer <token>` session header and an active employee profile. Send `Accept: application/json`. The server identifies the creator or host from the session; clients must not send a user or employee ID to select whose visits to access. The host list contains visits assigned to the logged-in employee; monitoring contains visits registered by the logged-in user for a different host. If the logged-in user created the visit for themselves as host, it appears only in the host list. Either the host or creator can view details, but only the creator can cancel. An inaccessible or nonexistent visit returns 404.

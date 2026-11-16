@@ -34,31 +34,51 @@ $(document).ready(function () {
         $(this).datepicker(options);
     });
     var syncingVisitDate = false;
+    function parseVisitDate(value) {
+        if (value instanceof Date && !isNaN(value.getTime())) {
+            return value;
+        }
+        if (typeof value !== "string") {
+            return null;
+        }
+        var match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!match) {
+            return null;
+        }
+        return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
     function formatVisitDate(date) {
         var month = String(date.getMonth() + 1).padStart(2, "0");
         var day = String(date.getDate()).padStart(2, "0");
         return date.getFullYear() + "-" + month + "-" + day;
     }
-    function syncVisitDate(date) {
-        if (!date || syncingVisitDate) {
+    function syncVisitDate(value) {
+        if (syncingVisitDate) {
+            return;
+        }
+        var date = parseVisitDate(value);
+        if (!date) {
+            date = parseVisitDate($("#visit-date-picker").datepicker("getFormattedDate", "yyyy-mm-dd"));
+        }
+        if (!date) {
             return;
         }
         syncingVisitDate = true;
         var visitDate = formatVisitDate(date);
         $("#visit-date-value").val(visitDate);
         var $departureDate = $("#departure-date-picker");
-        var departureDate = $departureDate.datepicker("getDate");
+        var departureDate = parseVisitDate($departureDate.datepicker("getFormattedDate", "yyyy-mm-dd"));
         $departureDate.datepicker("setStartDate", date);
         if (departureDate && formatVisitDate(departureDate) < visitDate) {
             $departureDate.datepicker("clearDates");
         }
         syncingVisitDate = false;
     }
-    var initialVisitDate = $("#visit-date-picker").datepicker("getDate");
-    if (initialVisitDate) {
-        syncVisitDate(initialVisitDate);
+    var $visitDatePicker = $("#visit-date-picker");
+    if ($visitDatePicker.length) {
+        syncVisitDate($("#visit-date-value").val());
     }
-    $("#visit-date-picker").on("changeDate", function (event) {
+    $visitDatePicker.on("changeDate", function (event) {
         syncVisitDate(event.date);
     }).on("clearDate", function () {
         $("#visit-date-value").val("");

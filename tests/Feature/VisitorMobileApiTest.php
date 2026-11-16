@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\VisitorVisit;
 use App\Notifications\VisitorInvitationForGuest;
+use App\Notifications\VisitorRegistrationLinkNotification;
 use App\Notifications\VisitorVisitNotification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Database\Schema\Blueprint;
@@ -82,6 +83,7 @@ class VisitorMobileApiTest extends TestCase
             '2026_11_06_000003_create_visitor_visits_table.php',
             '2026_11_06_000004_create_visitor_approvals_and_logs_tables.php',
             '2026_11_13_000001_merge_visitor_notes_into_notes.php',
+            '2026_11_16_000001_create_visitor_invitation_links_tables.php',
         ] as $migration) {
             (require database_path('migrations' . DIRECTORY_SEPARATOR . $migration))->up();
         }
@@ -165,6 +167,201 @@ class VisitorMobileApiTest extends TestCase
             ->assertNotFound();
         $this->postJson('/api/visitor/invitations/' . $id . '/cancel', ['reason' => 'Changed'], $this->headers('other'))
             ->assertNotFound();
+    }
+
+    public function test_guest_registration_links_support_manual_sharing_and_email_delivery(): void
+    {
+        $visitDate = now()->addDays(2);
+        $response = $this->actingAs(\App\Models\User::findOrFail(1))
+            ->post(route('visitor.invitation-links.store'), [
+                'name' => 'Interview Day',
+                'host_employee_id' => 2,
+                'branch_id' => 1,
+                'visitor_category_id' => 1,
+                'visitor_purpose_id' => 1,
+                'visit_date' => $visitDate->toDateString(),
+                'expected_arrival_time' => '09:00',
+                'expected_departure_time' => '09:30',
+                'notes' => 'Please report to reception.',
+                'share_link_count' => 1,
+                'recipient_emails_input' => "candidate@example.test\n",
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('visitor_invitation_batches', ['name' => 'Interview Day', 'created_by' => 1]);
+        $this->assertDatabaseCount('visitor_invitation_links', 2);
+        $batchId = DB::table('visitor_invitation_batches')->where('name', 'Interview Day')->value('id');
+        Notification::assertSentOnDemand(VisitorRegistrationLinkNotification::class);
+        $links = DB::table('visitor_invitation_links')->orderBy('id')->get()->map(fn ($link) => [
+            'url' => route('visitor.public-registration.show', [
+                'token' => \Illuminate\Support\Facades\Crypt::decryptString($link->token_encrypted),
+            ]),
+            'recipient_email' => $link->recipient_email,
+        ])->all();
+        $this->assertCount(2, $links);
+        $this->assertSame('candidate@example.test', $links[0]['recipient_email']);
+        $firstStoredLink = DB::table('visitor_invitation_links')->orderBy('id')->first();
+        $token = basename(parse_url($links[0]['url'], PHP_URL_PATH));
+        $this->assertSame(hash('sha256', $token), $firstStoredLink->token_hash);
+        $this->assertNotSame($token, $firstStoredLink->token_encrypted);
+        $this->actingAs(\App\Models\User::findOrFail(3))
+            ->get(route('visitor.invitation-links.show', $batchId))
+            ->assertNotFound();
+        $this->get(route('visitor.public-registration.show', ['token' => $token]))
+            ->assertOk()
+            ->assertSee('Complete Visitor Registration')
+            ->assertSee('images/logo mh menyamping putih-01-01.png')
+            ->assertSee('name="full_name"', false)
+            ->assertDontSee('Please report to reception.');
+
+        $this->post(route('visitor.public-registration.submit', ['token' => $token]), [
+            'full_name' => 'Interview Candidate',
+            'phone' => '08123456789',
+            'email' => 'candidate@example.test',
+            'company' => 'Example Company',
+        ])->assertOk()
+            ->assertSee('Registration complete')
+            ->assertSee('images/logo mh menyamping putih-01-01.png');
+        $this->get(route('visitor.public-registration.show', ['token' => $token]))
+            ->assertStatus(410)
+            ->assertSee('This link is no longer available')
+            ->assertSee('images/logo mh menyamping putih-01-01.png');
+
+        $linkId = DB::table('visitor_invitation_links')->where('token_hash', hash('sha256', $token))->value('id');
+        $this->assertNotNull(DB::table('visitor_invitation_links')->where('id', $linkId)->value('submitted_at'));
+        $this->assertDatabaseHas('visitor_visits', [
+            'registered_by' => 1,
+            'host_employee_id' => 2,
+            'registration_method' => 'shared_invitation',
+        ]);
+        $submittedLink = \App\Models\VisitorInvitationLink::with('visit.visitor')->findOrFail($linkId);
+        $this->assertSame('Interview Candidate', $submittedLink->visit->visitor->full_name);
+        $this->assertSame('08123456789', $submittedLink->visit->visitor->phone);
+        $this->assertSame('candidate@example.test', $submittedLink->visit->visitor->email);
+        $this->assertSame('Example Company', $submittedLink->visit->visitor->company);
+        $this->post(route('visitor.public-registration.submit', ['token' => $token]), [
+            'full_name' => 'Second Submission',
+            'phone' => '08999999999',
+        ])->assertStatus(410)->assertSee('This link is no longer available');
+
+        $manualToken = basename(parse_url($links[1]['url'], PHP_URL_PATH));
+        $manualLinkId = DB::table('visitor_invitation_links')->where('token_hash', hash('sha256', $manualToken))->value('id');
+        $this->actingAs(\App\Models\User::findOrFail(1))
+            ->post(route('visitor.invitation-links.recipient-email', $manualLinkId), [
+                'recipient_email' => 'manual-candidate@example.test',
+            ])
+            ->assertRedirect();
+        $this->assertDatabaseHas('visitor_invitation_links', [
+            'id' => $manualLinkId,
+            'recipient_email' => 'manual-candidate@example.test',
+        ]);
+        $this->actingAs(\App\Models\User::findOrFail(3))
+            ->post(route('visitor.invitation-links.recipient-email', $manualLinkId), [
+                'recipient_email' => 'unauthorized@example.test',
+            ])
+            ->assertNotFound();
+        $this->actingAs(\App\Models\User::findOrFail(1))
+            ->post(route('visitor.invitation-links.revoke', $manualLinkId))
+            ->assertRedirect();
+        $this->get(route('visitor.public-registration.show', ['token' => $manualToken]))
+            ->assertStatus(410)
+            ->assertSee('This link is no longer available');
+    }
+
+    public function test_mobile_api_creates_guest_registration_links_and_returns_share_urls(): void
+    {
+        $visitDate = now()->addDays(3);
+
+        $response = $this->postJson('/api/visitor/invitation-links', [
+            'name' => 'Mobile Interview Day',
+            'host_employee_id' => 2,
+            'branch_id' => 1,
+            'visitor_category_id' => 1,
+            'visitor_purpose_id' => 1,
+            'visit_date' => $visitDate->toDateString(),
+            'expected_arrival_time' => '09:00',
+            'expected_departure_time' => '10:00',
+            'share_link_count' => 1,
+            'recipient_emails' => ['candidate@example.test'],
+        ], $this->headers())
+            ->assertCreated()
+            ->assertJsonPath('message', 'Guest registration links created.')
+            ->assertJsonPath('data.name', 'Mobile Interview Day')
+            ->assertJsonPath('data.links.0.recipient_email', 'candidate@example.test')
+            ->assertJsonPath('data.links.0.delivery_status', 'sent')
+            ->assertJsonPath('data.links.1.recipient_email', null)
+            ->assertJsonPath('data.links.1.delivery_status', 'manual')
+            ->assertJsonPath('email_failures', [])
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'visit_date',
+                    'expires_at',
+                    'links' => [
+                        ['id', 'recipient_email', 'delivery_status', 'url'],
+                    ],
+                ],
+            ]);
+
+        $batchId = $response->json('data.id');
+        $this->getJson('/api/visitor/invitation-links', $this->headers())
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $batchId)
+            ->assertJsonPath('data.0.name', 'Mobile Interview Day')
+            ->assertJsonPath('data.0.links_count', 2)
+            ->assertJsonPath('data.0.submitted_links_count', 0);
+        $this->getJson('/api/visitor/invitation-links/' . $batchId, $this->headers())
+            ->assertOk()
+            ->assertJsonPath('data.id', $batchId)
+            ->assertJsonPath('data.links.0.status', 'waiting_for_guest')
+            ->assertJsonPath('data.links.0.recipient_email', 'candidate@example.test')
+            ->assertJsonPath('data.links.1.status', 'waiting_for_guest')
+            ->assertJsonPath('data.links.1.recipient_email', null)
+            ->assertJsonPath('data.links.1.visitor', null)
+            ->assertJsonStructure([
+                'data' => [
+                    'branch' => ['id', 'name'],
+                    'host' => ['employee_id', 'name'],
+                    'links' => [
+                        ['id', 'recipient_email', 'status', 'submitted_at', 'url', 'visit_code', 'visitor'],
+                    ],
+                ],
+            ]);
+        $this->getJson('/api/visitor/invitation-links/' . $batchId, $this->headers('other'))
+            ->assertNotFound();
+
+        $this->assertDatabaseCount('visitor_invitation_batches', 1);
+        $this->assertDatabaseCount('visitor_invitation_links', 2);
+        Notification::assertSentOnDemand(VisitorRegistrationLinkNotification::class);
+    }
+
+    public function test_guest_registration_email_uses_the_visitor_invitation_template(): void
+    {
+        $batch = \App\Models\VisitorInvitationBatch::create([
+            'created_by' => 1,
+            'name' => 'Open House',
+            'branch_id' => 1,
+            'host_employee_id' => 2,
+            'visitor_category_id' => 1,
+            'visitor_purpose_id' => 1,
+            'visit_date' => now()->addDay()->toDateString(),
+            'expected_arrival_at' => now()->addDay()->setTime(9, 0),
+            'expected_departure_at' => now()->addDay()->setTime(10, 0),
+            'expires_at' => now()->addDay()->endOfDay(),
+        ]);
+        $notification = new VisitorRegistrationLinkNotification(
+            $batch->load(['branch', 'host.user', 'purpose']),
+            'https://example.test/visitor/register/sample-token'
+        );
+        $mail = $notification->toMail(new \stdClass());
+
+        $this->assertSame('email-template.visitor-notification', $mail->view['html']);
+        $html = $this->renderVisitorMail($mail);
+        $this->assertStringContainsString('Complete Your Visitor Registration', $html);
+        $this->assertStringContainsString('Open House', $html);
+        $this->assertStringContainsString('Complete Visitor Information', $html);
+        $this->assertStringContainsString('https://example.test/visitor/register/sample-token', $html);
+        $this->assertStringContainsString('This link can only be used once', $html);
     }
 
     public function test_legacy_visitor_notes_are_merged_into_notes_before_column_removal(): void

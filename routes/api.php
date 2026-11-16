@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\PushNotificationApiController;
 use App\Http\Controllers\Api\ReligionApiController;
 use App\Http\Controllers\Api\TimeOffApiController;
 use App\Http\Controllers\Api\VisitorInvitationApiController;
+use App\Http\Controllers\VisitorInvitationLinkController;
 use App\Http\Middleware\ResolveVisitorApiUser;
 use Illuminate\Support\Facades\Route;
 
@@ -66,8 +67,15 @@ Route::name('api.')->group(function () {
             Route::get('hosts', [VisitorInvitationApiController::class, 'hosts']);
             Route::get('invitations', [VisitorInvitationApiController::class, 'index']);
             Route::get('monitoring', [VisitorInvitationApiController::class, 'monitoring']);
+            Route::get('invitation-links', [VisitorInvitationLinkController::class, 'indexApi'])
+                ->name('visitor.invitation-links.index');
+            Route::get('invitation-links/{batch}', [VisitorInvitationLinkController::class, 'showApi'])
+                ->whereNumber('batch')
+                ->name('visitor.invitation-links.show');
             Route::post('invitations', [VisitorInvitationApiController::class, 'store'])
                 ->name('visitor.invitations.store');
+            Route::post('invitation-links', [VisitorInvitationLinkController::class, 'storeApi'])
+                ->name('visitor.invitation-links.store');
             Route::get('invitations/{visit}', [VisitorInvitationApiController::class, 'show'])->whereNumber('visit');
             Route::post('invitations/{visit}/cancel', [VisitorInvitationApiController::class, 'cancel'])->whereNumber('visit');
         });

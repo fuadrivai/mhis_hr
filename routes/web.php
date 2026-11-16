@@ -26,6 +26,7 @@ use App\Http\Controllers\SignatureController;
 use App\Http\Controllers\SopController;
 use App\Http\Controllers\TimeOffController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VisitorInvitationLinkController;
 use App\Http\Controllers\KpiTemplateController;
 use App\Http\Controllers\EmployeeKpiController;
 use App\Http\Controllers\AcademicYearController;
@@ -85,6 +86,12 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::post('careers/candidate-registration', [CandidateRegistrationController::class, 'selfRegister'])
         ->middleware('throttle:5,1')
         ->name('recruitment.self-registration.store');
+    Route::get('visitor/register/{token}', [VisitorInvitationLinkController::class, 'registrationForm'])
+        ->middleware('throttle:30,1')
+        ->name('visitor.public-registration.show');
+    Route::post('visitor/register/{token}', [VisitorInvitationLinkController::class, 'submitRegistration'])
+        ->middleware('throttle:10,1')
+        ->name('visitor.public-registration.submit');
 
 
     Route::group(['middleware' => 'auth'], function () {
@@ -96,6 +103,12 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('list', [VisitorManagementController::class, 'index'])->name('index');
             Route::get('invitations/create', [VisitorManagementController::class, 'create'])->name('create');
             Route::post('invitations', [VisitorManagementController::class, 'store'])->name('store');
+            Route::get('invitation-links', [VisitorInvitationLinkController::class, 'index'])->name('invitation-links.index');
+            Route::get('invitation-links/create', [VisitorInvitationLinkController::class, 'create'])->name('invitation-links.create');
+            Route::post('invitation-links', [VisitorInvitationLinkController::class, 'store'])->name('invitation-links.store');
+            Route::get('invitation-links/{batch}', [VisitorInvitationLinkController::class, 'show'])->whereNumber('batch')->name('invitation-links.show');
+            Route::post('invitation-links/{link}/recipient-email', [VisitorInvitationLinkController::class, 'setRecipientEmail'])->whereNumber('link')->name('invitation-links.recipient-email');
+            Route::post('invitation-links/{link}/revoke', [VisitorInvitationLinkController::class, 'revoke'])->whereNumber('link')->name('invitation-links.revoke');
             Route::get('approvals', [VisitorManagementController::class, 'approvals'])->name('approvals');
             Route::post('{visit}/approval', [VisitorManagementController::class, 'processApproval'])->whereNumber('visit')->name('approval.process');
             Route::get('security-desk', [VisitorManagementController::class, 'securityDesk'])->name('security-desk');

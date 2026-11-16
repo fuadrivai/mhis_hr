@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#800000">
+    <title>Registration Link Unavailable | MHIS HUB</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --maroon: #800000;
+            --gold: #d4af37;
+            --ink: #292524;
+            --muted: #716b67;
+            --line: #eee8e2;
+            --page: #f7f4f0;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--page);
+            color: var(--ink);
+            font-family: Arial, "Helvetica Neue", sans-serif;
+            line-height: 1.55;
+        }
+
+        .top-accent { height: 6px; background: linear-gradient(90deg, var(--maroon), var(--gold), var(--maroon)); }
+        .page-shell { width: min(100% - 32px, 680px); margin: 44px auto; }
+        .brand { display: flex; justify-content: center; margin: 0 0 22px; padding: 10px 20px; border-radius: 12px; background: var(--maroon); }
+        .brand-logo { display: block; width: min(100%, 320px); height: auto; object-fit: contain; }
+        .card { overflow: hidden; border: 1px solid #e8e1da; border-radius: 16px; background: #fff; box-shadow: 0 18px 50px rgba(55, 37, 24, .08); }
+        .card-body { padding: 44px 40px 40px; text-align: center; }
+        .status-icon {
+            display: grid;
+            width: 68px;
+            height: 68px;
+            margin: 0 auto 20px;
+            place-items: center;
+            border: 1px solid #eee1c8;
+            border-radius: 50%;
+            background: #fcf8ee;
+            color: #947a36;
+        }
+        .status-icon svg { width: 30px; height: 30px; }
+        .eyebrow { margin: 0 0 7px; color: #947a36; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+        h1 { margin: 0; color: var(--maroon); font-size: clamp(25px, 5vw, 32px); line-height: 1.2; }
+        .message { max-width: 470px; margin: 12px auto 0; color: var(--muted); }
+        .help-note { max-width: 470px; margin: 18px auto 0; padding: 13px 16px; border: 1px solid var(--line); border-radius: 9px; background: #fcfaf8; color: #655b4c; font-size: 14px; }
+        .footer { margin: 22px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+
+        @media (max-width: 560px) {
+            .page-shell { width: min(100% - 20px, 680px); margin: 24px auto; }
+            .card-body { padding: 34px 20px 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-accent"></div>
+    <main class="page-shell">
+        <div class="brand">
+            <img class="brand-logo" src="{{ asset('images/logo mh menyamping putih-01-01.png') }}" alt="Mutiara Harapan Islamic School">
+        </div>
+
+        <section class="card" aria-labelledby="registration-unavailable-title">
+            <div class="card-body">
+                <div class="status-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 8v5m0 3h.01M10.3 3.9 1.9 18.4A1.8 1.8 0 0 0 3.5 21h17a1.8 1.8 0 0 0 1.6-2.6L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <p class="eyebrow">Visitor Management</p>
+                <h1 id="registration-unavailable-title">This link is no longer available</h1>
+                <p class="message">This registration link may have expired, already been used, or been withdrawn by the host.</p>
+                <p class="help-note">Please contact the person who shared this link and ask them for a new registration link.</p>
+            </div>
+        </section>
+        <p class="footer">Mutiara Harapan Islamic School · Secure visitor registration</p>
+    </main>
+</body>
+</html>

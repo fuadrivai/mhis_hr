@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
+use function App\Helpers\sendMessage;
+
 class VisitorManagementImplement implements VisitorManagementService
 {
     public function createVisit(User $user, array $data, string $method): array
@@ -106,7 +108,7 @@ class VisitorManagementImplement implements VisitorManagementService
                 if ($hostUser) {
                     $hostUser->notify(new VisitorVisitNotification($visit, $requiresApproval ? 'approval' : 'invitation'));
 
-                    if ($method === 'employee_invitation') {
+                    if (in_array($method, ['employee_invitation', 'shared_invitation'], true)) {
                         $this->sendHostPushNotification($hostUser->id, $visit, $requiresApproval);
                     }
                 }
@@ -119,7 +121,9 @@ class VisitorManagementImplement implements VisitorManagementService
         });
 
         if ($created['visit']->status === 'expected') {
-            $this->sendGuestInvitation($created['visit'], $created['qr_token']);
+            DB::afterCommit(function () use ($created) {
+                $this->sendGuestInvitation($created['visit'], $created['qr_token']);
+            });
         }
 
         return $created;

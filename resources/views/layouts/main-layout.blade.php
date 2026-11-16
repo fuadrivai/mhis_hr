@@ -87,6 +87,9 @@
                                             <li class="{{ request()->routeIs('visitor.create') ? 'current-page' : '' }}">
                                                 <a href="{{ route('visitor.create') }}">New Invitation</a>
                                             </li>
+                                            <li class="{{ request()->routeIs('visitor.invitation-links.*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('visitor.invitation-links.index') }}">Guest Registration Links</a>
+                                            </li>
                                         @endif
                                         <li class="{{ request()->routeIs('visitor.approvals') ? 'current-page' : '' }}">
                                             <a href="{{ route('visitor.approvals') }}">Approvals</a>
@@ -458,7 +461,7 @@
     <script src="/plugins/select2/dist/js/select2.full.min.js"></script>
     <script src="/plugins/bootstrap-notify/bootstrap-notify.min.js"></script>
     <script src="/plugins/jquery.blockUI/jquery.blockUI.js"></script>
-    <script src="/js/script.js?v=1.1.8"></script>
+    <script src="/js/script.js?v=1.1.9"></script>
 
     <div class="modal fade" id="profileImagePreviewModal" tabindex="-1" role="dialog"
         aria-labelledby="profileImagePreviewLabel" aria-hidden="true">
