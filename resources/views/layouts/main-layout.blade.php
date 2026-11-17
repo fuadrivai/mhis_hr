@@ -80,6 +80,9 @@
                                         <li class="{{ request()->routeIs('visitor.dashboard') ? 'current-page' : '' }}">
                                             <a href="{{ route('visitor.dashboard') }}">Dashboard</a>
                                         </li>
+                                        <li class="{{ request()->routeIs('visitor.documentation') ? 'current-page' : '' }}">
+                                            <a href="{{ route('visitor.documentation') }}">User Guide</a>
+                                        </li>
                                         <li class="{{ request()->routeIs('visitor.index') || request()->routeIs('visitor.history') ? 'current-page' : '' }}">
                                             <a href="{{ route('visitor.index') }}">My Invitations / Visits</a>
                                         </li>

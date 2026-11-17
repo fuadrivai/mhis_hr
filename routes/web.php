@@ -105,6 +105,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('/', [HomeController::class, 'index']);
         Route::prefix('visitor')->name('visitor.')->group(function () {
             Route::get('dashboard', [VisitorManagementController::class, 'dashboard'])->name('dashboard');
+            Route::get('documentation', [VisitorManagementController::class, 'documentation'])->name('documentation');
             Route::post('list/search', [VisitorManagementController::class, 'searchList'])->name('search-list');
             Route::get('list', [VisitorManagementController::class, 'index'])->name('index');
             Route::get('invitations/create', [VisitorManagementController::class, 'create'])->name('create');

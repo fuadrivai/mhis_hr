@@ -140,6 +140,17 @@ class VisitorManagementController extends Controller
         ]);
     }
 
+    public function documentation()
+    {
+        return view('visitor.documentation', [
+            'title' => 'Visitor Management Guide',
+            'hasEmployeeProfile' => (bool) $this->user()->employee,
+            'canUseDesk' => $this->canUseDesk(),
+            'canManageVisits' => $this->canManageVisits(),
+            'isAdministrator' => $this->isAdministrator(),
+        ]);
+    }
+
     public function index(Request $request)
     {
         if ($request->boolean('clear_search')) {
