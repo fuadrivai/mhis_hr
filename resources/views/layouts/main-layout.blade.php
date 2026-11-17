@@ -98,6 +98,9 @@
                                             <li class="{{ request()->routeIs('visitor.security-desk*') ? 'current-page' : '' }}">
                                                 <a href="{{ route('visitor.security-desk') }}">Unified Visitor Desk</a>
                                             </li>
+                                            <li>
+                                                <a href="{{ route('visitor.public-walk-in') }}" target="_blank" rel="noopener">Public Walk-in Registration</a>
+                                            </li>
                                         @endif
                                         @if ($canManageVisitors)
                                             <li class="{{ request()->routeIs('visitor.reports*') ? 'current-page' : '' }}">

@@ -92,6 +92,12 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::post('visitor/register/{token}', [VisitorInvitationLinkController::class, 'submitRegistration'])
         ->middleware('throttle:10,1')
         ->name('visitor.public-registration.submit');
+    Route::get('visitor/public-walk-in', [VisitorManagementController::class, 'publicWalkInForm'])
+        ->middleware('throttle:30,1')
+        ->name('visitor.public-walk-in');
+    Route::post('visitor/public-walk-in', [VisitorManagementController::class, 'storePublicWalkIn'])
+        ->middleware('throttle:5,1')
+        ->name('visitor.public-walk-in.store');
 
 
     Route::group(['middleware' => 'auth'], function () {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VisitorVisit extends Model
@@ -34,6 +35,11 @@ class VisitorVisit extends Model
         return $this->belongsTo(Employee::class, 'host_employee_id');
     }
 
+    public function invitationLink(): BelongsTo
+    {
+        return $this->belongsTo(VisitorInvitationLink::class, 'visitor_invitation_link_id');
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(VisitorCategory::class, 'visitor_category_id');
@@ -42,6 +48,12 @@ class VisitorVisit extends Model
     public function purpose(): BelongsTo
     {
         return $this->belongsTo(VisitorPurpose::class, 'visitor_purpose_id');
+    }
+
+    public function monitorEmployees(): BelongsToMany
+    {
+        return $this->belongsToMany(Employee::class, 'visitor_visit_monitors', 'visitor_visit_id', 'employee_id')
+            ->withTimestamps();
     }
 
     public function approvals(): HasMany

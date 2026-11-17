@@ -44,7 +44,7 @@ class VisitorInvitationForGuest extends Notification
                     . ' - ' . ($visit->expected_departure_at?->format('H:i') ?? '—'),
                 'Meeting location' => $visit->branch->name,
                 'Host' => $visit->host->user?->name ?? 'School contact',
-                'Purpose' => $visit->purpose->name,
+                'Purpose' => $visit->purpose?->name ?? '—',
                 'Visit code' => $visit->visit_code,
             ],
         ];

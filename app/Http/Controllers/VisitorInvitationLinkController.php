@@ -10,6 +10,7 @@ use App\Models\VisitorCategory;
 use App\Models\VisitorInvitationBatch;
 use App\Models\VisitorInvitationLink;
 use App\Models\VisitorPurpose;
+use App\Models\VisitorVisit;
 use App\Services\VisitorManagementService;
 use App\Notifications\VisitorRegistrationLinkNotification;
 use Carbon\Carbon;
@@ -126,7 +127,7 @@ class VisitorInvitationLinkController extends Controller
     {
         $batch = VisitorInvitationBatch::query()
             ->where('created_by', $request->user()->id)
-            ->with(['branch', 'host.user', 'category', 'purpose', 'links.visit.visitor'])
+            ->with(['branch', 'host.user', 'category', 'purpose', 'links.visit.visitor', 'links.visits.visitor'])
             ->withCount('links')
             ->withCount([
                 'links as submitted_links_count' => fn (Builder $query) => $query->whereNotNull('submitted_at'),
@@ -161,6 +162,15 @@ class VisitorInvitationLinkController extends Controller
                     'email' => $link->visit->visitor->email,
                     'company' => $link->visit->visitor->company,
                 ] : null,
+                'attendees' => $link->visits->map(fn (VisitorVisit $visit) => [
+                    'visit_id' => $visit->id,
+                    'visit_code' => $visit->visit_code,
+                    'status' => $visit->status,
+                    'full_name' => $visit->visitor?->full_name,
+                    'phone' => $visit->visitor?->phone,
+                    'email' => $visit->visitor?->email,
+                    'company' => $visit->visitor?->company,
+                ])->values(),
             ];
         })->values()->all();
 
@@ -289,7 +299,7 @@ class VisitorInvitationLinkController extends Controller
     public function show(Request $request, int $batch)
     {
         $batch = VisitorInvitationBatch::where('created_by', $request->user()->id)
-            ->with(['branch', 'host.user', 'category', 'purpose', 'links.visit.visitor'])
+            ->with(['branch', 'host.user', 'category', 'purpose', 'links.visit.visitor', 'links.visits.visitor'])
             ->findOrFail($batch);
 
         return view('visitor.invitation-links.show', [
@@ -361,9 +371,16 @@ class VisitorInvitationLinkController extends Controller
             'phone' => ['nullable', 'string', 'max:40', 'required_without:email'],
             'email' => ['nullable', 'email', 'max:255', 'required_without:phone'],
             'company' => ['nullable', 'string', 'max:255'],
+            'bring_group' => ['nullable', 'boolean'],
+            'group_members' => ['required_if:bring_group,1', 'array', 'min:1', 'max:20'],
+            'group_members.*.full_name' => ['required', 'string', 'max:255'],
+            'group_members.*.phone' => ['nullable', 'string', 'max:40'],
+            'group_members.*.email' => ['nullable', 'email', 'max:255'],
         ]);
+        $groupMembers = ($data['bring_group'] ?? false) ? ($data['group_members'] ?? []) : [];
+        unset($data['bring_group'], $data['group_members']);
 
-        $visit = DB::transaction(function () use ($token, $data) {
+        $visit = DB::transaction(function () use ($token, $data, $groupMembers) {
             $link = VisitorInvitationLink::where('token_hash', hash('sha256', $token))
                 ->lockForUpdate()->firstOrFail();
             $link->load('batch');
@@ -373,7 +390,7 @@ class VisitorInvitationLinkController extends Controller
 
             $batch = $link->batch;
             $creator = User::findOrFail($batch->created_by);
-            $created = $this->visitorService->createVisit($creator, array_merge($data, [
+            $visitDetails = [
                 'visitor_category_id' => $batch->visitor_category_id,
                 'visitor_purpose_id' => $batch->visitor_purpose_id,
                 'branch_id' => $batch->branch_id,
@@ -384,14 +401,28 @@ class VisitorInvitationLinkController extends Controller
                 'expected_departure_date' => $batch->expected_departure_at->format('d F Y'),
                 'expected_departure_time' => $batch->expected_departure_at->format('H:i'),
                 'notes' => $batch->notes,
-            ]), 'shared_invitation');
+                'visitor_invitation_link_id' => $link->id,
+            ];
+            $created = $this->visitorService->createVisit(
+                $creator,
+                array_merge($data, $visitDetails),
+                'shared_invitation'
+            );
+            $primaryVisit = $created['visit'];
+            foreach ($groupMembers as $groupMember) {
+                $this->visitorService->createVisit(
+                    $creator,
+                    array_merge($data, ['phone' => null, 'email' => null], $groupMember, $visitDetails),
+                    'shared_invitation'
+                );
+            }
 
             $link->update([
-                'visitor_visit_id' => $created['visit']->id,
+                'visitor_visit_id' => $primaryVisit->id,
                 'submitted_at' => now(),
             ]);
 
-            return $created['visit'];
+            return $primaryVisit;
         });
 
         if (!$visit) {

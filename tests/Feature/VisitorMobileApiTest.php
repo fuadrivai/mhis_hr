@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\VisitorVisit;
+use App\Models\User;
 use App\Notifications\VisitorInvitationForGuest;
 use App\Notifications\VisitorRegistrationLinkNotification;
 use App\Notifications\VisitorVisitNotification;
@@ -11,6 +12,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class VisitorMobileApiTest extends TestCase
@@ -84,6 +87,10 @@ class VisitorMobileApiTest extends TestCase
             '2026_11_06_000004_create_visitor_approvals_and_logs_tables.php',
             '2026_11_13_000001_merge_visitor_notes_into_notes.php',
             '2026_11_16_000001_create_visitor_invitation_links_tables.php',
+            '2026_11_17_000001_add_visitor_invitation_monitors_and_optional_fields.php',
+            '2026_11_17_000002_add_invitation_link_to_visitor_visits.php',
+            '2026_11_17_000003_make_visitor_registered_by_nullable.php',
+            '2026_11_17_000004_add_visitor_walk_in_group_id.php',
         ] as $migration) {
             (require database_path('migrations' . DIRECTORY_SEPARATOR . $migration))->up();
         }
@@ -169,6 +176,105 @@ class VisitorMobileApiTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_invitation_can_be_monitored_by_selected_employees_without_optional_details(): void
+    {
+        Storage::fake('local');
+        DB::table('employments')->insert([
+            'id' => 2,
+            'branch_id' => 2,
+            'organization_id' => 1,
+            'job_level_id' => 1,
+            'job_position_id' => 1,
+        ]);
+        DB::table('employees')->where('id', 3)->update(['employment_id' => 2]);
+        $visitDate = now()->addDay()->toDateString();
+        $response = $this->post('/api/visitor/invitations', [
+            'full_name' => 'Monitored Visitor',
+            'phone' => '08123456789',
+            'branch_id' => 1,
+            'host_employee_id' => 2,
+            'visit_date' => $visitDate,
+            'expected_arrival_time' => '09:00',
+            'monitor_employee_ids' => [1, 3],
+            'attachment' => UploadedFile::fake()->create('visitor-document.pdf', 25, 'application/pdf'),
+        ], $this->headers())->assertCreated();
+
+        $visitId = $response->json('data.id');
+        $this->assertDatabaseHas('visitor_visits', [
+            'id' => $visitId,
+            'visitor_category_id' => null,
+            'visitor_purpose_id' => null,
+            'expected_departure_at' => null,
+        ]);
+        $this->assertDatabaseHas('visitors', [
+            'full_name' => 'Monitored Visitor',
+        ]);
+        $visitor = DB::table('visitors')->where('full_name', 'Monitored Visitor')->first();
+        $this->assertStringEndsWith('.pdf', $visitor->photo_path);
+        $this->assertDatabaseHas('visitor_visit_monitors', [
+            'visitor_visit_id' => $visitId,
+            'employee_id' => 1,
+        ]);
+        $this->assertDatabaseHas('visitor_visit_monitors', [
+            'visitor_visit_id' => $visitId,
+            'employee_id' => 3,
+        ]);
+
+        $this->getJson('/api/visitor/monitoring', $this->headers('creator'))
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $visitId)
+            ->assertJsonPath('data.0.visitor.full_name', 'Monitored Visitor');
+        $this->getJson('/api/visitor/monitoring', $this->headers('other'))
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $visitId);
+        $this->getJson('/api/visitor/invitations/' . $visitId, $this->headers('other'))
+            ->assertOk()
+            ->assertJsonPath('data.category', null)
+            ->assertJsonPath('data.purpose', null)
+            ->assertJsonPath('data.expected_departure_at', null);
+    }
+
+    public function test_monitor_defaults_follow_host_selection_and_are_optional(): void
+    {
+        $visit = $this->invitation(['host_employee_id' => 2]);
+        $defaultMonitorVisitId = $this->postJson('/api/visitor/invitations', $visit, $this->headers())
+            ->assertCreated()->json('data.id');
+        $this->assertDatabaseHas('visitor_visit_monitors', [
+            'visitor_visit_id' => $defaultMonitorVisitId,
+            'employee_id' => 1,
+        ]);
+
+        $visit = $this->invitation([
+            'full_name' => 'No Monitor Visitor',
+            'host_employee_id' => 2,
+            'monitor_employee_ids' => [],
+        ]);
+        $noMonitorVisitId = $this->postJson('/api/visitor/invitations', $visit, $this->headers())
+            ->assertCreated()->json('data.id');
+        $this->assertDatabaseMissing('visitor_visit_monitors', [
+            'visitor_visit_id' => $noMonitorVisitId,
+        ]);
+
+        $visit = $this->invitation([
+            'host_employee_id' => 1,
+            'monitor_employee_ids' => [1],
+        ]);
+        $this->postJson('/api/visitor/invitations', $visit, $this->headers())
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('monitor_employee_ids');
+    }
+
+    public function test_invitation_request_rejects_departure_date_without_time(): void
+    {
+        $visit = $this->invitation([
+            'expected_departure_date' => now()->addDay()->toDateString(),
+            'expected_departure_time' => null,
+        ]);
+        $this->postJson('/api/visitor/invitations', $visit, $this->headers())
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('expected_departure_time');
+    }
+
     public function test_guest_registration_links_support_manual_sharing_and_email_delivery(): void
     {
         $visitDate = now()->addDays(2);
@@ -212,22 +318,49 @@ class VisitorMobileApiTest extends TestCase
             ->assertSee('Complete Visitor Registration')
             ->assertSee('images/logo mh menyamping putih-01-01.png')
             ->assertSee('name="full_name"', false)
+            ->assertSee('I am bringing friends or colleagues')
+            ->assertSee('Confirm and submit')
             ->assertDontSee('Please report to reception.');
 
-        $this->post(route('visitor.public-registration.submit', ['token' => $token]), [
+        $registrationUrl = route('visitor.public-registration.submit', ['token' => $token]);
+        $this->from(route('visitor.public-registration.show', ['token' => $token]))
+            ->post($registrationUrl, [
+                'full_name' => 'Interview Candidate',
+                'phone' => '08123456789',
+                'email' => 'candidate@example.test',
+                'company' => 'Example Company',
+                'bring_group' => '1',
+                'group_members' => [],
+            ])
+            ->assertRedirect(route('visitor.public-registration.show', ['token' => $token]))
+            ->assertSessionHasErrors('group_members');
+
+        $registrationResponse = $this->post($registrationUrl, [
             'full_name' => 'Interview Candidate',
             'phone' => '08123456789',
             'email' => 'candidate@example.test',
             'company' => 'Example Company',
-        ])->assertOk()
+            'bring_group' => '1',
+            'group_members' => [
+                ['full_name' => 'Candidate Colleague One', 'phone' => '08111111111'],
+                ['full_name' => 'Candidate Colleague Two', 'email' => 'colleague@example.test'],
+            ],
+        ]);
+        $registrationResponse->assertOk()
             ->assertSee('Registration complete')
             ->assertSee('images/logo mh menyamping putih-01-01.png');
+        $linkId = DB::table('visitor_invitation_links')->where('token_hash', hash('sha256', $token))->value('id');
+        $primaryVisitId = DB::table('visitor_invitation_links')->where('id', $linkId)->value('visitor_visit_id');
+        $primaryVisitCode = DB::table('visitor_visits')->where('id', $primaryVisitId)->value('visit_code');
+        $registrationResponse->assertSee($primaryVisitCode);
+        foreach (DB::table('visitor_visits')->where('visitor_invitation_link_id', $linkId)->where('id', '<>', $primaryVisitId)->get() as $groupVisit) {
+            $registrationResponse->assertDontSee($groupVisit->visit_code);
+        }
         $this->get(route('visitor.public-registration.show', ['token' => $token]))
             ->assertStatus(410)
             ->assertSee('This link is no longer available')
             ->assertSee('images/logo mh menyamping putih-01-01.png');
 
-        $linkId = DB::table('visitor_invitation_links')->where('token_hash', hash('sha256', $token))->value('id');
         $this->assertNotNull(DB::table('visitor_invitation_links')->where('id', $linkId)->value('submitted_at'));
         $this->assertDatabaseHas('visitor_visits', [
             'registered_by' => 1,
@@ -239,6 +372,25 @@ class VisitorMobileApiTest extends TestCase
         $this->assertSame('08123456789', $submittedLink->visit->visitor->phone);
         $this->assertSame('candidate@example.test', $submittedLink->visit->visitor->email);
         $this->assertSame('Example Company', $submittedLink->visit->visitor->company);
+        $this->assertCount(3, $submittedLink->visits);
+        $this->assertSame(
+            3,
+            DB::table('visitor_visits')->where('visitor_invitation_link_id', $linkId)->count()
+        );
+        $this->assertDatabaseCount('visitor_visits', 3);
+        $this->assertDatabaseHas('visitors', [
+            'full_name' => 'Candidate Colleague One',
+            'phone' => '08111111111',
+        ]);
+        $this->assertDatabaseHas('visitors', [
+            'full_name' => 'Candidate Colleague Two',
+            'email' => 'colleague@example.test',
+        ]);
+        $this->getJson('/api/visitor/invitation-links/' . $batchId, $this->headers())
+            ->assertOk()
+            ->assertJsonFragment(['full_name' => 'Interview Candidate'])
+            ->assertJsonFragment(['full_name' => 'Candidate Colleague One'])
+            ->assertJsonFragment(['full_name' => 'Candidate Colleague Two']);
         $this->post(route('visitor.public-registration.submit', ['token' => $token]), [
             'full_name' => 'Second Submission',
             'phone' => '08999999999',
@@ -599,6 +751,170 @@ class VisitorMobileApiTest extends TestCase
         $this->assertDatabaseHas('visitor_approvals', ['visitor_visit_id' => $id, 'status' => 'cancelled']);
     }
 
+    public function test_only_assigned_host_can_approve_api_invitation(): void
+    {
+        DB::table('visitor_categories')->where('id', 1)->update(['requires_approval' => true]);
+        $id = $this->postJson('/api/visitor/invitations', $this->invitation([
+            'email' => 'guest@example.test',
+        ]), $this->headers())
+            ->assertStatus(202)
+            ->assertJsonPath('data.status', 'pending_confirmation')
+            ->json('data.id');
+
+        $this->postJson('/api/visitor/invitations/' . $id . '/approval', [
+            'decision' => 'approve',
+        ], $this->headers())
+            ->assertNotFound();
+
+        $this->postJson('/api/visitor/invitations/' . $id . '/approval', [
+            'decision' => 'approve',
+            'notes' => 'Confirmed with the visitor.',
+        ], $this->headers('host'))
+            ->assertOk()
+            ->assertJsonPath('message', 'Visit approved.')
+            ->assertJsonPath('data.status', 'expected');
+
+        $this->assertDatabaseHas('visitor_approvals', [
+            'visitor_visit_id' => $id,
+            'approver_employee_id' => 2,
+            'status' => 'approved',
+            'notes' => 'Confirmed with the visitor.',
+        ]);
+    }
+
+    public function test_web_invitation_skips_approval_even_when_category_requires_it(): void
+    {
+        DB::table('visitor_categories')->where('id', 1)->update(['requires_approval' => true]);
+        DB::table('visitor_purposes')->where('id', 1)->update(['requires_approval' => true]);
+
+        $this->actingAs(User::findOrFail(1))
+            ->post(route('visitor.store'), $this->invitation(['email' => 'visitor@example.test']))
+            ->assertRedirect(route('visitor.index'));
+
+        $visit = DB::table('visitor_visits')->where('registered_by', 1)->first();
+        $this->assertNotNull($visit);
+        $this->assertSame('expected', $visit->status);
+        $this->assertDatabaseMissing('visitor_approvals', ['visitor_visit_id' => $visit->id]);
+    }
+
+    public function test_web_invitation_requires_email_but_allows_missing_phone(): void
+    {
+        $this->from(route('visitor.create'))
+            ->actingAs(User::findOrFail(1))
+            ->post(route('visitor.store'), $this->invitation())
+            ->assertRedirect(route('visitor.create'))
+            ->assertSessionHasErrors('email');
+
+        $this->actingAs(User::findOrFail(1))
+            ->post(route('visitor.store'), $this->invitation([
+                'phone' => null,
+                'email' => 'visitor@example.test',
+            ]))
+            ->assertRedirect(route('visitor.index'));
+
+        $this->assertDatabaseHas('visitors', [
+            'email' => 'visitor@example.test',
+            'phone' => null,
+        ]);
+    }
+
+    public function test_walk_in_registration_allows_optional_details_and_always_requires_host_approval(): void
+    {
+        DB::table('roles')->insert(['id' => 1, 'name' => 'admin']);
+        DB::table('role_user')->insert(['role_id' => 1, 'user_id' => 1]);
+
+        $this->actingAs(User::findOrFail(1))
+            ->post(route('visitor.security-desk.walk-in'), [
+                'full_name' => 'Walk-in Visitor',
+                'email' => 'walkin@example.test',
+                'branch_id' => 1,
+                'host_employee_id' => 2,
+                'bring_group' => '1',
+                'group_members' => [
+                    ['full_name' => 'Desk Guest One'],
+                    ['full_name' => 'Desk Guest Two', 'email' => 'desk-guest@example.test'],
+                ],
+            ])
+            ->assertRedirect(route('visitor.security-desk'))
+            ->assertSessionHas('success', 'Walk-in registered and is waiting for host approval.');
+
+        $visits = DB::table('visitor_visits')->where('registration_method', 'walk_in')->orderBy('id')->get();
+        $visit = $visits->first();
+        $this->assertNotNull($visit);
+        $this->assertCount(3, $visits);
+        $this->assertSame('pending_confirmation', $visit->status);
+        $this->assertNull($visit->visitor_category_id);
+        $this->assertNull($visit->visitor_purpose_id);
+        $this->assertNull($visit->expected_departure_at);
+        $this->assertNotNull($visit->visitor_visit_group_id);
+        $this->assertSame(1, $visits->pluck('visitor_visit_group_id')->unique()->count());
+        $this->assertDatabaseCount('visitor_approvals', 3);
+        $this->assertDatabaseHas('visitors', ['full_name' => 'Desk Guest One']);
+        $this->assertDatabaseHas('visitors', ['full_name' => 'Desk Guest Two']);
+        $this->assertDatabaseHas('visitor_approvals', [
+            'visitor_visit_id' => $visit->id,
+            'approver_employee_id' => 2,
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_public_walk_in_registration_requires_host_approval_and_email_and_phone(): void
+    {
+        $this->get(route('visitor.public-walk-in'))
+            ->assertOk()
+            ->assertSee('Walk-in visitor registration')
+            ->assertSee('name="email"', false)
+            ->assertSee('name="phone"', false);
+
+        $this->from(route('visitor.public-walk-in'))
+            ->post(route('visitor.public-walk-in.store'), [
+                'full_name' => 'Public Walk-in Visitor',
+                'phone' => '08123456789',
+                'email' => 'public-walkin@example.test',
+                'branch_id' => 1,
+                'host_employee_id' => 2,
+                'bring_group' => '1',
+                'group_members' => [
+                    ['full_name' => 'Public Guest One', 'email' => 'public-walkin@example.test'],
+                    ['full_name' => 'Public Guest Two', 'phone' => '08999999999'],
+                ],
+            ])
+            ->assertOk()
+            ->assertSee('Registration received')
+            ->assertSee('2 companion registrations')
+            ->assertSee('sent to the host for approval');
+
+        $visits = DB::table('visitor_visits')->where('registration_method', 'public_walk_in')->orderBy('id')->get();
+        $visit = $visits->first();
+        $this->assertNotNull($visit);
+        $this->assertCount(3, $visits);
+        $this->assertNull($visit->registered_by);
+        $this->assertSame('pending_confirmation', $visit->status);
+        $this->assertNull($visit->visitor_category_id);
+        $this->assertNull($visit->visitor_purpose_id);
+        $this->assertNull($visit->expected_departure_at);
+        $this->assertNotNull($visit->visitor_visit_group_id);
+        $this->assertSame(1, $visits->pluck('visitor_visit_group_id')->unique()->count());
+        $this->assertDatabaseHas('visitor_approvals', [
+            'visitor_visit_id' => $visit->id,
+            'approver_employee_id' => 2,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseCount('visitor_approvals', 3);
+        $this->assertDatabaseHas('visitors', [
+            'full_name' => 'Public Walk-in Visitor',
+            'email' => 'public-walkin@example.test',
+        ]);
+        $this->assertDatabaseHas('visitors', [
+            'full_name' => 'Public Guest One',
+            'email' => 'public-walkin@example.test',
+        ]);
+        Notification::assertSentTo(
+            User::findOrFail(2),
+            VisitorVisitNotification::class
+        );
+    }
+
     public function test_pagination_links_preserve_filters(): void
     {
         $this->postJson('/api/visitor/invitations', $this->invitation(), $this->headers())->assertCreated();
@@ -645,6 +961,15 @@ class VisitorMobileApiTest extends TestCase
         $this->assertSame('email-template.visitor-notification', $hostMail->view['html']);
         $hostHtml = $this->renderVisitorMail($hostMail);
         $this->assertStringContainsString('Visitor Invitation Created', $hostHtml);
+        $this->assertStringContainsString(
+            $visit->expected_arrival_at->format('d M Y H:i'),
+            $hostHtml
+        );
+        $this->assertStringContainsString('Expected departure', $hostHtml);
+        $this->assertStringContainsString(
+            $visit->expected_departure_at->format('d M Y H:i'),
+            $hostHtml
+        );
         $this->assertStringContainsString('Open Visitor Dashboard', $hostHtml);
         $this->assertStringNotContainsString('Laravel Logo', $hostHtml);
     }

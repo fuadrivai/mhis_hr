@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VisitorInvitationLink extends Model
 {
@@ -22,6 +23,11 @@ class VisitorInvitationLink extends Model
     public function visit(): BelongsTo
     {
         return $this->belongsTo(VisitorVisit::class, 'visitor_visit_id');
+    }
+
+    public function visits(): HasMany
+    {
+        return $this->hasMany(VisitorVisit::class, 'visitor_invitation_link_id');
     }
 
     public function isAvailable(): bool

@@ -98,7 +98,12 @@ class VisitorInvitationApiController extends Controller
 
         return $this->listVisits(
             $request,
-            $this->ownedVisits($request)->where('host_employee_id', '<>', $employee->id)
+            VisitorVisit::query()->where(function (Builder $query) use ($request, $employee) {
+                $query->where(function (Builder $createdQuery) use ($request, $employee) {
+                    $createdQuery->where('registered_by', $request->user()->id)
+                        ->where('host_employee_id', '<>', $employee->id);
+                })->orWhereHas('monitorEmployees', fn (Builder $monitorQuery) => $monitorQuery->whereKey($employee->id));
+            })
         );
     }
 
@@ -174,8 +179,8 @@ class VisitorInvitationApiController extends Controller
     public function store(StoreVisitorVisitRequest $request): JsonResponse
     {
         $data = $request->validated();
-        if ($request->hasFile('photo')) {
-            $data['photo_path'] = $request->file('photo')->store('visitor-photos');
+        if ($request->hasFile('attachment')) {
+            $data['photo_path'] = $request->file('attachment')->store('visitor-attachments');
         }
 
         $created = $this->visitorService->createVisit($request->user(), $data, 'employee_invitation');
@@ -204,7 +209,8 @@ class VisitorInvitationApiController extends Controller
         $visit = VisitorVisit::query()
             ->where(function (Builder $query) use ($request, $employee) {
                 $query->where('registered_by', $request->user()->id)
-                    ->orWhere('host_employee_id', $employee->id);
+                    ->orWhere('host_employee_id', $employee->id)
+                    ->orWhereHas('monitorEmployees', fn (Builder $monitorQuery) => $monitorQuery->whereKey($employee->id));
             })
             ->with(['visitor', 'branch', 'host.user', 'category', 'purpose'])
             ->findOrFail($visit);
@@ -221,6 +227,35 @@ class VisitorInvitationApiController extends Controller
         $visit->loadMissing('host.user');
 
         return response()->json(['message' => 'Visit cancelled.', 'data' => $this->visitData($visit, $request->user()->id)]);
+    }
+
+    public function processApproval(Request $request, int $visit): JsonResponse
+    {
+        $employee = $this->employee($request);
+        $validated = $request->validate([
+            'decision' => ['required', Rule::in(['approve', 'reject'])],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $visit = VisitorVisit::query()
+            ->where('host_employee_id', $employee->id)
+            ->where('registered_by', '<>', $request->user()->id)
+            ->whereHas('approvals', fn (Builder $query) => $query
+                ->where('approver_employee_id', $employee->id)
+                ->where('status', 'pending'))
+            ->with(['visitor', 'branch', 'host.user', 'category', 'purpose'])
+            ->findOrFail($visit);
+
+        $visit = $this->visitorService->processApproval(
+            $request->user(),
+            $visit,
+            $validated['decision'],
+            $validated['notes'] ?? null
+        );
+
+        return response()->json([
+            'message' => $validated['decision'] === 'approve' ? 'Visit approved.' : 'Visit rejected.',
+            'data' => $this->visitData($visit, $request->user()->id),
+        ]);
     }
 
     private function employee(Request $request): Employee

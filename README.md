@@ -111,6 +111,7 @@ Non-admin users can register visits only in their assigned branch. `GET /api/vis
   "visitor_purpose_id": 1,
   "branch_id": 1,
   "host_employee_id": 10,
+  "monitor_employee_ids": [11, 12],
   "visit_date": "2027-01-20",
   "expected_arrival_time": "09:00",
   "expected_departure_time": "10:00",
@@ -118,7 +119,7 @@ Non-admin users can register visits only in their assigned branch. `GET /api/vis
 }
 ```
 
-Provide at least one of `phone` or `email`. `company` and `notes` are optional; categories configured to require additional information require `notes`. An optional `photo` must be uploaded as multipart (`jpg`, `jpeg`, `png`, or `webp`, max 5 MB). Arrival is on `visit_date`. If departure is on a different date, include `expected_departure_date` in `YYYY-MM-DD` format; otherwise it defaults to `visit_date`. Departure cannot be before `visit_date` and its date-time must be later than arrival. The response is HTTP 201 (`expected`) or HTTP 202 (`pending_confirmation`):
+Provide at least one of `phone` or `email`. `visitor_category_id`, `visitor_purpose_id`, `company`, `notes`, `expected_departure_date`, and `expected_departure_time` are optional. If a category requires additional information, `notes` is required. Without departure time, the visit has no expected departure time; if departure time is provided without a date, the date defaults to `visit_date`. An expected departure date without a time is invalid. The optional `attachment` file (legacy field `photo` is also accepted) may be PDF, JPG, JPEG, or PNG, up to 5 MB. `monitor_employee_ids` is optional and accepts active employees from any branch. For web invitations where the host is another employee, the creator is preselected as a monitor and may be removed; when the creator is the host, the creator cannot be selected as a monitor. Additional employees can be selected in either case. Assigned monitors can see the visit in `GET /api/visitor/monitoring` and the web visitor list. Arrival is on `visit_date`. If departure is on a different date, include `expected_departure_date` in `YYYY-MM-DD` format; otherwise it defaults to `visit_date`. Departure cannot be before `visit_date` and its date-time must be later than arrival. The response is HTTP 201 (`expected`) or HTTP 202 (`pending_confirmation`):
 
 For example, an overnight installation arriving on January 20 at 21:00 and departing January 21 at 03:00 sends `visit_date: "2027-01-20"`, `expected_arrival_time: "21:00"`, `expected_departure_date: "2027-01-21"`, and `expected_departure_time: "03:00"`. The web form may continue sending its separate arrival and departure date fields.
 
