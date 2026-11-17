@@ -21,14 +21,18 @@ use Tests\TestCase;
 
 class EmployeeExportTest extends TestCase
 {
-    public function test_export_headings_match_employee_import_template(): void
+    public function test_export_headings_include_calculated_columns_without_changing_import_template(): void
     {
         $export = new EmployeeExport(new Collection());
 
-        $this->assertSame(EmployeeImport::templateHeadings(), $export->headings());
+        $headings = EmployeeImport::templateHeadings();
+        array_splice($headings, 11, 0, ['Lama Bekerja']);
+        array_splice($headings, 15, 0, ['Usia']);
+
+        $this->assertSame($headings, $export->headings());
     }
 
-    public function test_export_rows_follow_the_import_template_column_order(): void
+    public function test_export_rows_follow_the_export_column_order(): void
     {
         $personal = (new Personal())->forceFill([
             'fullname' => 'Example Employee',
@@ -66,35 +70,43 @@ class EmployeeExportTest extends TestCase
         $employee->setRelation('personal', $personal);
         $employee->setRelation('employment', $employment);
 
-        $export = new EmployeeExport(new Collection([$employee]));
+        \Illuminate\Support\Carbon::setTestNow('2026-11-17');
 
-        $this->assertSame([
-            'EMP-001',
-            'Example Employee',
-            'B-001',
-            'HR',
-            'Manager',
-            'L3',
-            '2020-01-02',
-            null,
-            'permanent',
-            null,
-            '2020-01-01',
-            'employee@example.com',
-            '1990-02-03',
-            'Jakarta',
-            'Home address',
-            'Current address',
-            '001234',
-            '08123456789',
-            '021123456',
-            'Bintaro',
-            'Islam',
-            'Female',
-            'Widower',
-            'AB',
-            'ID',
-        ], $export->map($employee));
+        try {
+            $export = new EmployeeExport(new Collection([$employee]));
+
+            $this->assertSame([
+                'EMP-001',
+                'Example Employee',
+                'B-001',
+                'HR',
+                'Manager',
+                'L3',
+                '2020-01-02',
+                null,
+                'permanent',
+                null,
+                '2020-01-01',
+                '6 years 10 months',
+                'employee@example.com',
+                '1990-02-03',
+                'Jakarta',
+                '36 years 9 months',
+                'Home address',
+                'Current address',
+                '001234',
+                '08123456789',
+                '021123456',
+                'Bintaro',
+                'Islam',
+                'Female',
+                'Widower',
+                'AB',
+                'ID',
+            ], $export->map($employee));
+        } finally {
+            \Illuminate\Support\Carbon::setTestNow();
+        }
     }
 
     public function test_export_preserves_full_identity_number_as_text(): void
@@ -124,10 +136,13 @@ class EmployeeExportTest extends TestCase
         try {
             file_put_contents($tempFile, $contents);
             $spreadsheet = IOFactory::load($tempFile);
-            $cell = $spreadsheet->getActiveSheet()->getCell('Q2');
+            $sheet = $spreadsheet->getActiveSheet();
+            $cell = $sheet->getCell('S2');
 
             $this->assertSame($identityNumber, $cell->getValue());
             $this->assertSame(DataType::TYPE_STRING, $cell->getDataType());
+            $this->assertNull($sheet->getCell('L2')->getValue());
+            $this->assertNull($sheet->getCell('P2')->getValue());
         } finally {
             if (is_file($tempFile)) {
                 unlink($tempFile);

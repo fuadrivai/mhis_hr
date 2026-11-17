@@ -38,14 +38,14 @@
             </div>
             <div class="x_content collapse show employee-filter-body" id="filterFormCollapse">
                 <div class="row employee-filter-grid">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group employee-field">
                             <label class="employee-field-label" for="">Insert Name or Email</label>
                             <input type="text" name="search" id="search" class="form-control"
                                 placeholder="Full name or email">
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group employee-field">
                             <label class="employee-field-label" for="">Branch</label>
                             <select name="branch" id="branch" class="select2 form-control">
@@ -56,7 +56,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group employee-field">
                             <label class="employee-field-label" for="">Organization</label>
                             <select name="organization" id="organization" class="select2 form-control">
@@ -107,6 +107,20 @@
                                 <option value="all">All</option>
                                 <option value="1" selected>Active</option>
                                 <option value="0">Not Active</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group employee-field">
+                            <label class="employee-field-label" for="length_of_service">Length of Service</label>
+                            <select name="length_of_service" id="length_of_service" class="select2 form-control">
+                                <option value="all">All</option>
+                                <option value="0_to_5">0-5 yr</option>
+                                <option value="less_than_1">&lt; 1 yr</option>
+                                <option value="1_to_3">1-3 yr</option>
+                                <option value="3_to_5">3-5 yr</option>
+                                <option value="5_to_10">5-10 yr</option>
+                                <option value="more_than_10">&gt; 10 yr</option>
                             </select>
                         </div>
                     </div>
@@ -185,15 +199,20 @@
 
                         {{ csrf_field() }}
 
-                        <p>Download the template and keep its column headers unchanged. Required fields: Employee ID, Full Name, Organization, Job Position, Job Level, Employment Status, Email, Branch, Religion, and Gender.</p>
-                        <p>Use dates in <code>YYYY-MM-DD</code> format. Employment Status: permanent, contract, probation, or freelance. Gender: Male or Female. Marital Status: Single, Married, Widow, or Widower. Blood Type: A, B, AB, or O. Keep ID, barcode, and phone values as text to preserve leading zeroes.</p>
+                        <p>Download the template and keep its column headers unchanged. Required fields: Employee ID, Full
+                            Name, Organization, Job Position, Job Level, Employment Status, Email, Branch, Religion, and
+                            Gender.</p>
+                        <p>Use dates in <code>YYYY-MM-DD</code> format. Employment Status: permanent, contract, probation,
+                            or freelance. Gender: Male or Female. Marital Status: Single, Married, Widow, or Widower. Blood
+                            Type: A, B, AB, or O. Keep ID, barcode, and phone values as text to preserve leading zeroes.</p>
                         <a href="{{ route('employee.import-template') }}" class="btn btn-default btn-sm">
                             <i class="fa fa-download"></i> Download CSV Template
                         </a>
 
                         <label for="employee-import-file" class="mt-3">Choose CSV or Excel file</label>
                         <div class="form-group">
-                            <input id="employee-import-file" type="file" name="file" accept=".csv,.xls,.xlsx" required>
+                            <input id="employee-import-file" type="file" name="file" accept=".csv,.xls,.xlsx"
+                                required>
                         </div>
 
                     </div>
@@ -274,6 +293,20 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="export-length-of-service">Length of Service</label>
+                                    <select id="export-length-of-service" name="length_of_service" class="form-control">
+                                        <option value="all">All</option>
+                                        <option value="0_to_5">0-5 yr</option>
+                                        <option value="less_than_1">&lt; 1 yr</option>
+                                        <option value="1_to_3">1-3 yr</option>
+                                        <option value="3_to_5">3-5 yr</option>
+                                        <option value="5_to_10">5-10 yr</option>
+                                        <option value="more_than_10">&gt; 10 yr</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -317,7 +350,8 @@
                 }, 400);
             });
 
-            $('.perpage, #level, #branch, #status, #is_active, #organization, #position').on('change keyup',
+            $('.perpage, #level, #branch, #status, #is_active, #organization, #position, #length_of_service').on(
+                'change keyup',
                 function() {
                     loadEmployee();
                 });
@@ -427,6 +461,7 @@
                 status: $('#status').val(),
                 is_active: $('#is_active').val(),
                 branch: $('#branch').val(),
+                length_of_service: $('#length_of_service').val(),
                 perpage: $('.perpage').val(),
             };
 

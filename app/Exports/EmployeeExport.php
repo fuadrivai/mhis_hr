@@ -13,7 +13,7 @@ use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
 
 class EmployeeExport extends DefaultValueBinder implements FromCollection, WithHeadings, WithMapping, WithCustomValueBinder
 {
-    private const IDENTITY_NUMBER_COLUMN = 'Q';
+    private const IDENTITY_NUMBER_COLUMN = 'S';
 
     private Collection $employees;
 
@@ -29,7 +29,15 @@ class EmployeeExport extends DefaultValueBinder implements FromCollection, WithH
 
     public function headings(): array
     {
-        return \App\Imports\EmployeeImport::templateHeadings();
+        $headings = \App\Imports\EmployeeImport::templateHeadings();
+
+        return array_merge(
+            array_slice($headings, 0, 11),
+            ['Lama Bekerja'],
+            array_slice($headings, 11, 3),
+            ['Usia'],
+            array_slice($headings, 14)
+        );
     }
 
     public function map($employee): array
@@ -50,9 +58,11 @@ class EmployeeExport extends DefaultValueBinder implements FromCollection, WithH
             optional($employment)->employment_status,
             $this->formatDate(optional($employment)->end_date),
             $this->formatDate(optional($employment)->sign_date),
+            $employment && $employment->join_date ? $employment->age() : null,
             optional($personal)->email,
             $this->formatDate(optional($personal)->birth_date),
             optional($personal)->birth_place,
+            $personal && $personal->birth_date ? $personal->age() : null,
             optional($personal)->address,
             optional($personal)->current_address,
             $identityNumber === null ? null : (string) $identityNumber,
