@@ -31,7 +31,7 @@
                                 <tr><td style="padding:5px 0;font-weight:700;color:#800000;">Visit time</td><td style="padding:5px 0;">{{ $visit->expected_arrival_at?->format('H:i') ?? '—' }} &ndash; {{ $visit->expected_departure_at?->format('H:i') ?? '—' }}</td></tr>
                                 <tr><td style="padding:5px 0;font-weight:700;color:#800000;">Meeting location</td><td style="padding:5px 0;">{{ $visit->branch->name }}</td></tr>
                                 <tr><td style="padding:5px 0;font-weight:700;color:#800000;">Host</td><td style="padding:5px 0;">{{ $visit->host->user?->name ?? 'School contact' }}</td></tr>
-                                <tr><td style="padding:5px 0;font-weight:700;color:#800000;">Purpose</td><td style="padding:5px 0;">{{ $visit->purpose->name }}</td></tr>
+                                <tr><td style="padding:5px 0;font-weight:700;color:#800000;">Purpose</td><td style="padding:5px 0;">{{ $visit->purpose?->name ?? '—' }}</td></tr>
                                 <tr><td style="padding:5px 0;font-weight:700;color:#800000;">Visit code</td><td style="padding:5px 0;"><strong>{{ $visit->visit_code }}</strong></td></tr>
                             </table>
                             <p style="margin:24px 0 12px;font-size:15px;color:#444444;line-height:1.6;">Please show this QR code or your visit code at the security desk.</p>

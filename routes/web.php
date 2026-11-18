@@ -93,6 +93,15 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::post('visitor/register/{token}', [VisitorInvitationLinkController::class, 'submitRegistration'])
         ->middleware('throttle:10,1')
         ->name('visitor.public-registration.submit');
+    Route::get('visitor/public-walk-in', [VisitorManagementController::class, 'publicWalkInForm'])
+        ->middleware('throttle:30,1')
+        ->name('visitor.public-walk-in');
+    Route::post('visitor/public-walk-in', [VisitorManagementController::class, 'storePublicWalkIn'])
+        ->middleware('throttle:5,1')
+        ->name('visitor.public-walk-in.store');
+    Route::get('visitor/qr/{token}', [VisitorManagementController::class, 'publicQrCode'])
+        ->middleware('throttle:30,1')
+        ->name('visitor.public-qr');
 
 
     Route::group(['middleware' => 'auth'], function () {
@@ -100,6 +109,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         Route::get('/', [HomeController::class, 'index']);
         Route::prefix('visitor')->name('visitor.')->group(function () {
             Route::get('dashboard', [VisitorManagementController::class, 'dashboard'])->name('dashboard');
+            Route::get('documentation', [VisitorManagementController::class, 'documentation'])->name('documentation');
             Route::post('list/search', [VisitorManagementController::class, 'searchList'])->name('search-list');
             Route::get('list', [VisitorManagementController::class, 'index'])->name('index');
             Route::get('invitations/create', [VisitorManagementController::class, 'create'])->name('create');

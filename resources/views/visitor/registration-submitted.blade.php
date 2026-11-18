@@ -88,14 +88,18 @@
                 </h1>
                 <p class="message">
                     @if ($visit->status === 'pending_confirmation')
-                        Your information has been sent to the host for approval. You can use the visit code below for reference.
+                        @if (!empty($groupMemberCount))
+                            Your registration and {{ $groupMemberCount }} companion registration{{ $groupMemberCount === 1 ? '' : 's' }} have been sent to the host for approval. The code below is for your registration.
+                        @else
+                            Your information has been sent to the host for approval. You can use the visit code below for reference.
+                        @endif
                     @else
                         Your visitor registration is complete. Please keep the visit code below for reference.
                     @endif
                 </p>
 
                 <div class="visit-code" role="status" aria-label="Your visit code">
-                    <span class="visit-code-label">Visit code</span>
+                    <span class="visit-code-label">{{ $visit->visitor->full_name }} · Visit code</span>
                     <strong class="visit-code-value">{{ $visit->visit_code }}</strong>
                 </div>
                 <p class="code-note">Please show or mention this code when you arrive.</p>

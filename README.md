@@ -111,6 +111,7 @@ Non-admin users can register visits only in their assigned branch. `GET /api/vis
   "visitor_purpose_id": 1,
   "branch_id": 1,
   "host_employee_id": 10,
+  "monitor_employee_ids": [11, 12],
   "visit_date": "2027-01-20",
   "expected_arrival_time": "09:00",
   "expected_departure_time": "10:00",
@@ -118,7 +119,7 @@ Non-admin users can register visits only in their assigned branch. `GET /api/vis
 }
 ```
 
-Provide at least one of `phone` or `email`. `company` and `notes` are optional; categories configured to require additional information require `notes`. An optional `photo` must be uploaded as multipart (`jpg`, `jpeg`, `png`, or `webp`, max 5 MB). Arrival is on `visit_date`. If departure is on a different date, include `expected_departure_date` in `YYYY-MM-DD` format; otherwise it defaults to `visit_date`. Departure cannot be before `visit_date` and its date-time must be later than arrival. The response is HTTP 201 (`expected`) or HTTP 202 (`pending_confirmation`):
+Provide at least one of `phone` or `email`. `visitor_category_id`, `visitor_purpose_id`, `company`, `notes`, `expected_departure_date`, and `expected_departure_time` are optional. If a category requires additional information, `notes` is required. Without departure time, the visit has no expected departure time; if departure time is provided without a date, the date defaults to `visit_date`. An expected departure date without a time is invalid. The optional `attachment` file (legacy field `photo` is also accepted) may be PDF, JPG, JPEG, or PNG, up to 5 MB. `monitor_employee_ids` is optional and accepts active employees from any branch. For web invitations where the host is another employee, the creator is preselected as a monitor and may be removed; when the creator is the host, the creator cannot be selected as a monitor. Additional employees can be selected in either case. Assigned monitors can see the visit in `GET /api/visitor/monitoring` and the web visitor list. Arrival is on `visit_date`. If departure is on a different date, include `expected_departure_date` in `YYYY-MM-DD` format; otherwise it defaults to `visit_date`. Departure cannot be before `visit_date` and its date-time must be later than arrival. The response is HTTP 201 (`expected`) or HTTP 202 (`pending_confirmation`):
 
 For example, an overnight installation arriving on January 20 at 21:00 and departing January 21 at 03:00 sends `visit_date: "2027-01-20"`, `expected_arrival_time: "21:00"`, `expected_departure_date: "2027-01-21"`, and `expected_departure_time: "03:00"`. The web form may continue sending its separate arrival and departure date fields.
 
@@ -142,15 +143,26 @@ Keep `data.id` for the detail and cancellation endpoints. Approval remains avail
 
 **Lists:** `GET /api/visitor/invitations` lists visits for the authenticated host. `GET /api/visitor/monitoring` lists visits created by the authenticated user for another host. An invitation created by the user for themselves as host appears only in `invitations`. Both return a Laravel paginated object, with visits in `data` and pagination fields such as `current_page`, `last_page`, `per_page`, and `total`. Query parameters are optional:
 
-- `view=all|today|upcoming|history` (default `all`): today uses the application's timezone; upcoming contains future `expected` or `pending_confirmation` visits; history contains `completed`, `rejected`, `cancelled`, and `no_show`.
+- `view=all|today|upcoming|history` (default `all`): `today` returns visits active at the current time in the application's timezone; future arrivals are omitted, visits with a departure at or before now are omitted, and visits without a departure remain active until a later visit for the same host and date starts. `upcoming` contains future `expected` or `pending_confirmation` visits; `history` contains `completed`, `rejected`, `cancelled`, and `no_show`.
 - `status=pending_confirmation|expected|rejected|checked_in|completed|cancelled|no_show`.
 - `query` searches visitor name, email, or phone using a partial match. It can be a single name, email address, or phone number.
 - `visit_date=YYYY-MM-DD` filters an exact visit date; `from=YYYY-MM-DD` and `to=YYYY-MM-DD` filter an inclusive date range.
-- `departure_after` accepts a date-time (ISO 8601 recommended), excludes visits whose `expected_departure_at` is at or before that time, and orders the remaining visits by expected arrival ascending. Combine it with `visit_date` to show today's visits that have not yet departed, and refresh the filter as the current time changes.
+- `departure_after` accepts a date-time (ISO 8601 recommended) and applies the same active-visit time-window rules as `view=today` at the supplied time. Combine it with `visit_date` to query an active window on another date. The same behavior applies to `GET /api/visitor/monitoring`.
 - `search` is retained as a backward-compatible alias for `query` and also matches an exact visit code.
 - `per_page` (1–100; default 20) and `page`.
 
 Filters may be combined. By default, results are ordered by visit date descending, then ID descending; when `departure_after` is supplied, results are ordered by expected arrival ascending, then ID ascending.
+
+**Mobile home summary:** `GET /api/visitor/home` returns at most one currently active visit for the authenticated employee as host and one visit they created for another host or monitor. The response is not paginated; either item is `null` when no visit is active:
+
+```json
+{
+  "invitation": null,
+  "monitoring": null
+}
+```
+
+Each non-null value uses the same visit object shape as the list and detail endpoints. The endpoint uses the application's current time and selects the most recently arrived active visit for each section.
 
 **Detail:** `GET /api/visitor/invitations/{id}` is accessible to the host and creator and returns `{"data": ...}`. Each list item and detail uses the same shape. `can_cancel` is false for a host who is not also the creator:
 

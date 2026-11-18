@@ -7,7 +7,13 @@ use App\Models\VisitorVisit;
 
 interface VisitorManagementService
 {
-    public function createVisit(User $user, array $data, string $method): array;
+    public function createVisit(
+        ?User $user,
+        array $data,
+        string $method,
+        bool $checkApproval = true,
+        bool $forceApproval = false
+    ): array;
 
     public function processApproval(User $user, VisitorVisit $visit, string $decision, ?string $notes): VisitorVisit;
 

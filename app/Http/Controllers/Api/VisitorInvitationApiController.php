@@ -96,10 +96,28 @@ class VisitorInvitationApiController extends Controller
     {
         $employee = $this->employee($request);
 
-        return $this->listVisits(
-            $request,
-            $this->ownedVisits($request)->where('host_employee_id', '<>', $employee->id)
-        );
+        return $this->listVisits($request, $this->monitoringVisits($request, $employee));
+    }
+
+    public function home(Request $request): JsonResponse
+    {
+        $employee = $this->employee($request);
+        $now = now()->format('Y-m-d H:i:s');
+
+        $invitation = $this->filterActiveAt(
+            VisitorVisit::query()->where('host_employee_id', $employee->id),
+            $now
+        )->with(['visitor', 'branch', 'host.user', 'category', 'purpose'])
+            ->orderByDesc('expected_arrival_at')->orderByDesc('id')->first();
+
+        $monitoring = $this->filterActiveAt($this->monitoringVisits($request, $employee), $now)
+            ->with(['visitor', 'branch', 'host.user', 'category', 'purpose'])
+            ->orderByDesc('expected_arrival_at')->orderByDesc('id')->first();
+
+        return response()->json([
+            'invitation' => $invitation ? $this->visitData($invitation, $request->user()->id) : null,
+            'monitoring' => $monitoring ? $this->visitData($monitoring, $request->user()->id) : null,
+        ]);
     }
 
     private function listVisits(Request $request, Builder $query): JsonResponse
@@ -117,6 +135,18 @@ class VisitorInvitationApiController extends Controller
         ]);
         $query->with(['visitor', 'branch', 'host.user', 'category', 'purpose']);
 
+        $departureAfter = null;
+        if (!empty($filters['departure_after'])) {
+            $departureAfter = \Carbon\Carbon::parse($filters['departure_after'])
+                ->setTimezone(config('app.timezone'))
+                ->format('Y-m-d H:i:s');
+        } elseif (($filters['view'] ?? 'all') === 'today') {
+            $departureAfter = now()->format('Y-m-d H:i:s');
+        }
+        if ($departureAfter !== null) {
+            $this->filterActiveAt($query, $departureAfter);
+        }
+
         $term = trim((string) ($filters['query'] ?? $filters['search'] ?? ''));
         if ($term !== '') {
             $query->where(function (Builder $builder) use ($term) {
@@ -130,12 +160,6 @@ class VisitorInvitationApiController extends Controller
         }
         if (!empty($filters['visit_date'])) {
             $query->whereDate('visit_date', $filters['visit_date']);
-        }
-        if (!empty($filters['departure_after'])) {
-            $departureAfter = \Carbon\Carbon::parse($filters['departure_after'])
-                ->setTimezone(config('app.timezone'))
-                ->format('Y-m-d H:i:s');
-            $query->where('expected_departure_at', '>', $departureAfter);
         }
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
@@ -159,7 +183,7 @@ class VisitorInvitationApiController extends Controller
                 break;
         }
 
-        if (!empty($filters['departure_after'])) {
+        if ($departureAfter !== null) {
             $query->orderBy('expected_arrival_at')->orderBy('id');
         } else {
             $query->orderByDesc('visit_date')->orderByDesc('id');
@@ -171,11 +195,42 @@ class VisitorInvitationApiController extends Controller
         return response()->json($visits);
     }
 
+    private function filterActiveAt(Builder $query, string $dateTime): Builder
+    {
+        return $query->whereIn('status', ['expected', 'checked_in'])
+            ->where('expected_arrival_at', '<=', $dateTime)
+            ->where(function (Builder $departureQuery) use ($dateTime) {
+                $departureQuery->where('expected_departure_at', '>', $dateTime)
+                    ->orWhere(function (Builder $openDepartureQuery) use ($dateTime) {
+                        $openDepartureQuery->whereNull('expected_departure_at')
+                            ->whereNotExists(function ($laterVisitQuery) use ($dateTime) {
+                                $laterVisitQuery->selectRaw('1')
+                                    ->from('visitor_visits as later_visits')
+                                    ->whereColumn('later_visits.host_employee_id', 'visitor_visits.host_employee_id')
+                                    ->whereColumn('later_visits.visit_date', 'visitor_visits.visit_date')
+                                    ->whereColumn('later_visits.expected_arrival_at', '>', 'visitor_visits.expected_arrival_at')
+                                    ->whereIn('later_visits.status', ['expected', 'checked_in'])
+                                    ->where('later_visits.expected_arrival_at', '<=', $dateTime);
+                            });
+                    });
+            });
+    }
+
+    private function monitoringVisits(Request $request, Employee $employee): Builder
+    {
+        return VisitorVisit::query()->where(function (Builder $query) use ($request, $employee) {
+            $query->where(function (Builder $createdQuery) use ($request, $employee) {
+                $createdQuery->where('registered_by', $request->user()->id)
+                    ->where('host_employee_id', '<>', $employee->id);
+            })->orWhereHas('monitorEmployees', fn (Builder $monitorQuery) => $monitorQuery->whereKey($employee->id));
+        });
+    }
+
     public function store(StoreVisitorVisitRequest $request): JsonResponse
     {
         $data = $request->validated();
-        if ($request->hasFile('photo')) {
-            $data['photo_path'] = $request->file('photo')->store('visitor-photos');
+        if ($request->hasFile('attachment')) {
+            $data['photo_path'] = $request->file('attachment')->store('visitor-attachments');
         }
 
         $created = $this->visitorService->createVisit($request->user(), $data, 'employee_invitation');
@@ -204,7 +259,8 @@ class VisitorInvitationApiController extends Controller
         $visit = VisitorVisit::query()
             ->where(function (Builder $query) use ($request, $employee) {
                 $query->where('registered_by', $request->user()->id)
-                    ->orWhere('host_employee_id', $employee->id);
+                    ->orWhere('host_employee_id', $employee->id)
+                    ->orWhereHas('monitorEmployees', fn (Builder $monitorQuery) => $monitorQuery->whereKey($employee->id));
             })
             ->with(['visitor', 'branch', 'host.user', 'category', 'purpose'])
             ->findOrFail($visit);
@@ -221,6 +277,35 @@ class VisitorInvitationApiController extends Controller
         $visit->loadMissing('host.user');
 
         return response()->json(['message' => 'Visit cancelled.', 'data' => $this->visitData($visit, $request->user()->id)]);
+    }
+
+    public function processApproval(Request $request, int $visit): JsonResponse
+    {
+        $employee = $this->employee($request);
+        $validated = $request->validate([
+            'decision' => ['required', Rule::in(['approve', 'reject'])],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $visit = VisitorVisit::query()
+            ->where('host_employee_id', $employee->id)
+            ->where('registered_by', '<>', $request->user()->id)
+            ->whereHas('approvals', fn (Builder $query) => $query
+                ->where('approver_employee_id', $employee->id)
+                ->where('status', 'pending'))
+            ->with(['visitor', 'branch', 'host.user', 'category', 'purpose'])
+            ->findOrFail($visit);
+
+        $visit = $this->visitorService->processApproval(
+            $request->user(),
+            $visit,
+            $validated['decision'],
+            $validated['notes'] ?? null
+        );
+
+        return response()->json([
+            'message' => $validated['decision'] === 'approve' ? 'Visit approved.' : 'Visit rejected.',
+            'data' => $this->visitData($visit, $request->user()->id),
+        ]);
     }
 
     private function employee(Request $request): Employee

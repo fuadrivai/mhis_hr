@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Employee extends Model
 {
@@ -105,5 +106,11 @@ class Employee extends Model
     public function approvals()
     {
         return $this->hasMany(Approval::class, 'approver_employee_id');
+    }
+
+    public function monitoredVisitorVisits(): BelongsToMany
+    {
+        return $this->belongsToMany(VisitorVisit::class, 'visitor_visit_monitors', 'employee_id', 'visitor_visit_id')
+            ->withTimestamps();
     }
 }

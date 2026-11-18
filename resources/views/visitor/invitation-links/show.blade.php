@@ -61,6 +61,14 @@
                                         @else
                                             Share manually #{{ $manualLinkIndex }}
                                         @endif
+                                        @if ($link->submitted_at && $link->visits->isNotEmpty())
+                                            <div class="registered-attendees">
+                                                <strong>Registered attendees</strong>
+                                                @foreach ($link->visits as $registeredVisit)
+                                                    <div>{{ $registeredVisit->visitor->full_name }} <span>({{ $registeredVisit->visit_code }})</span></div>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     </td>
                                     <td>
                                     @if ($generatedLink)
@@ -146,6 +154,21 @@
 
 @section('content-script')
     <style>
+        .registered-attendees {
+            margin-top: 8px;
+            color: #536a7b;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .registered-attendees strong {
+            display: block;
+        }
+
+        .registered-attendees span {
+            color: #827a73;
+        }
+
         #participant-details-modal .participant-modal-dialog {
             width: 560px;
             max-width: calc(100% - 24px);

@@ -27,10 +27,11 @@ class VisitorVisitNotification extends Notification
         $visit = $this->visit->loadMissing(['visitor', 'branch', 'purpose']);
         $details = [
             'Visitor' => $visit->visitor->full_name,
-            'Visit date' => $visit->visit_date->format('d M Y'),
+            'Visit date' => $visit->expected_arrival_at?->format('d M Y H:i')
+                ?? $visit->visit_date->format('d M Y'),
             'Meeting location' => $visit->branch->name,
             'Host' => $visit->host()->with('user')->first()?->user?->name ?? 'School contact',
-            'Purpose' => $visit->purpose->name,
+            'Purpose' => $visit->purpose?->name ?? '—',
             'Visit code' => $visit->visit_code,
         ];
         $data = [

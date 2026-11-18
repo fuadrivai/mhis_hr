@@ -7,7 +7,7 @@
                     <td>{{ $visit->visit_code }}</td>
                     <td>{{ $visit->visitor->full_name }}<br><small>{{ $visit->visitor->company }}</small></td>
                     <td>{{ $visit->branch->name }}<br>{{ $visit->host->user?->name ?? '—' }}</td>
-                    <td>{{ $visit->category->name }}<br>{{ $visit->purpose->name }}</td>
+                    <td>{{ $visit->category?->name ?? '—' }}<br>{{ $visit->purpose?->name ?? '—' }}</td>
                     <td>{{ $visit->visit_date->format('d M Y') }}</td>
                     <td>{{ $visit->check_in_at?->format('d M H:i') ?? '—' }}<br>{{ $visit->check_out_at?->format('d M H:i') ?? '—' }}</td>
                     <td>{{ str_replace('_', ' ', ucfirst($visit->status)) }}</td>

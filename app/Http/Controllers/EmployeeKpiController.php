@@ -59,7 +59,10 @@ class EmployeeKpiController extends Controller
 
         $request->validate([
             'managerial_targets' => 'nullable|array',
+            'managerial_targets.*.name' => 'nullable|string|max:500',
+            'managerial_targets.*.sub_targets.*.name' => 'nullable|string|max:500',
             'tal_targets' => 'nullable|array',
+            'tal_targets.*.name' => 'nullable|string|max:500',
         ]);
 
         $activeYear = \App\Models\AcademicYear::where('is_active', true)->first();
@@ -229,7 +232,10 @@ class EmployeeKpiController extends Controller
 
         $request->validate([
             'managerial_targets' => 'nullable|array',
+            'managerial_targets.*.name' => 'nullable|string|max:500',
+            'managerial_targets.*.sub_targets.*.name' => 'nullable|string|max:500',
             'tal_targets' => 'nullable|array',
+            'tal_targets.*.name' => 'nullable|string|max:500',
         ]);
 
         $kpi = EmployeeKpi::with(['employee.personal', 'employee.employment', 'employee.reprimands.reprimandType', 'targets'])->findOrFail($kpi_id);

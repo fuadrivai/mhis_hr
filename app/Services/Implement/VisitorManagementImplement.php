@@ -23,14 +23,22 @@ use function App\Helpers\sendMessage;
 
 class VisitorManagementImplement implements VisitorManagementService
 {
-    public function createVisit(User $user, array $data, string $method): array
+    public function createVisit(
+        ?User $user,
+        array $data,
+        string $method,
+        bool $checkApproval = true,
+        bool $forceApproval = false
+    ): array
     {
         $data = $this->normalizeSchedule($data);
         $this->authorizeRegistrationBranch($user, $data);
 
-        $created = DB::transaction(function () use ($user, $data, $method) {
+        $created = DB::transaction(function () use ($user, $data, $method, $checkApproval, $forceApproval) {
             $visitorQuery = Visitor::query();
-            if (!empty($data['email']) || !empty($data['phone'])) {
+            if (!empty($data['create_distinct_visitor'])) {
+                $visitorQuery->whereRaw('1 = 0');
+            } elseif (!empty($data['email']) || !empty($data['phone'])) {
                 $visitorQuery->where(function ($query) use ($data) {
                     if (!empty($data['email'])) {
                         $query->where('email', $data['email']);
@@ -69,9 +77,16 @@ class VisitorManagementImplement implements VisitorManagementService
                 ])->save();
             }
 
-            $category = \App\Models\VisitorCategory::findOrFail($data['visitor_category_id']);
-            $purpose = \App\Models\VisitorPurpose::findOrFail($data['visitor_purpose_id']);
-            $requiresApproval = $category->requires_approval || $purpose->requires_approval;
+            $category = !empty($data['visitor_category_id'])
+                ? \App\Models\VisitorCategory::findOrFail($data['visitor_category_id'])
+                : null;
+            $purpose = !empty($data['visitor_purpose_id'])
+                ? \App\Models\VisitorPurpose::findOrFail($data['visitor_purpose_id'])
+                : null;
+            $requiresApproval = $forceApproval || ($checkApproval && (
+                ($category?->requires_approval ?? false)
+                || ($purpose?->requires_approval ?? false)
+            ));
             $qrToken = Str::random(64);
 
             $visit = VisitorVisit::create([
@@ -79,9 +94,11 @@ class VisitorManagementImplement implements VisitorManagementService
                 'visitor_id' => $visitor->id,
                 'branch_id' => $data['branch_id'],
                 'host_employee_id' => $data['host_employee_id'],
-                'visitor_category_id' => $category->id,
-                'visitor_purpose_id' => $purpose->id,
-                'registered_by' => $user->id,
+                'visitor_category_id' => $category?->id,
+                'visitor_purpose_id' => $purpose?->id,
+                'registered_by' => $user?->id,
+                'visitor_invitation_link_id' => $data['visitor_invitation_link_id'] ?? null,
+                'visitor_visit_group_id' => $data['visitor_visit_group_id'] ?? null,
                 'registration_method' => $method,
                 'visit_date' => $data['visit_date'],
                 'expected_arrival_at' => $data['expected_arrival_at'] ?? null,
@@ -93,6 +110,8 @@ class VisitorManagementImplement implements VisitorManagementService
                     ? ['pending_invitation_token' => Crypt::encryptString($qrToken)]
                     : null,
             ]);
+
+            $visit->monitorEmployees()->sync($data['monitor_employee_ids'] ?? []);
 
             if ($requiresApproval) {
                 VisitorApproval::create([
@@ -108,7 +127,7 @@ class VisitorManagementImplement implements VisitorManagementService
                 if ($hostUser) {
                     $hostUser->notify(new VisitorVisitNotification($visit, $requiresApproval ? 'approval' : 'invitation'));
 
-                    if (in_array($method, ['employee_invitation', 'shared_invitation'], true)) {
+                    if (in_array($method, ['employee_invitation', 'shared_invitation', 'walk_in', 'public_walk_in'], true)) {
                         $this->sendHostPushNotification($hostUser->id, $visit, $requiresApproval);
                     }
                 }
@@ -207,8 +226,12 @@ class VisitorManagementImplement implements VisitorManagementService
         return $code;
     }
 
-    private function authorizeRegistrationBranch(User $user, array $data): void
+    private function authorizeRegistrationBranch(?User $user, array $data): void
     {
+        if (!$user) {
+            return;
+        }
+
         if ($user->hasRole('admin') || $user->roles()->where('roles.id', 1)->exists()) {
             return;
         }
@@ -234,7 +257,7 @@ class VisitorManagementImplement implements VisitorManagementService
     {
         $visit->loadMissing('visitor');
         $sessions = Session::where('user_id', $userId)
-            ->where('device', 'android')
+            ->whereRaw('LOWER(device) IN (?, ?)', ['android', 'ios'])
             ->get();
 
         $data = [

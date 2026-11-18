@@ -11,16 +11,115 @@ use App\Models\VisitorPurpose;
 use App\Models\VisitorVisit;
 use App\Models\VisitorVisitLog;
 use App\Services\VisitorManagementService;
-use chillerlan\QRCode\QRCode;
-use chillerlan\QRCode\QROptions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class VisitorManagementController extends Controller
 {
     public function __construct(private VisitorManagementService $visitorService)
     {
+    }
+
+    public function publicWalkInForm()
+    {
+        return view('visitor.public-walk-in', [
+            'branches' => Branch::where('is_active', true)->orderBy('name')->get(),
+            'categories' => VisitorCategory::where('is_active', true)->orderBy('name')->get(),
+            'purposes' => VisitorPurpose::where('is_active', true)->orderBy('name')->get(),
+            'hosts' => Employee::with(['user:id,name', 'personal:id,fullname'])
+                ->where('is_active', true)
+                ->whereNotNull('user_id')
+                ->whereHas('user')
+                ->orderBy('id')
+                ->get(),
+        ]);
+    }
+
+    public function publicQrCode(string $token)
+    {
+        abort_unless(strlen($token) === 64, 404);
+        $visit = VisitorVisit::with('visitor')
+            ->where('qr_token_hash', hash('sha256', $token))
+            ->firstOrFail();
+
+        return response()->view('visitor.public-qr-code', [
+            'token' => $token,
+            'visit' => $visit,
+        ])->header('Cache-Control', 'private, no-store')
+            ->header('Referrer-Policy', 'no-referrer');
+    }
+
+    public function storePublicWalkIn(Request $request)
+    {
+        $validated = $request->validate([
+            'full_name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:40'],
+            'email' => ['required', 'email', 'max:255'],
+            'company' => ['nullable', 'string', 'max:255'],
+            'visitor_category_id' => ['nullable', Rule::exists('visitor_categories', 'id')->where('is_active', true)],
+            'visitor_purpose_id' => ['nullable', Rule::exists('visitor_purposes', 'id')->where('is_active', true)],
+            'branch_id' => ['required', Rule::exists('branches', 'id')->where('is_active', true)],
+            'host_employee_id' => [
+                'required',
+                Rule::exists('employees', 'id')->where('is_active', true)->whereNotNull('user_id'),
+            ],
+            'expected_departure_at' => ['nullable', 'date', 'after:now'],
+            'notes' => ['nullable', 'string', 'max:3000'],
+            'bring_group' => ['nullable', 'boolean'],
+            'group_members' => ['required_if:bring_group,1', 'array', 'min:1', 'max:20'],
+            'group_members.*.full_name' => ['required', 'string', 'max:255'],
+            'group_members.*.phone' => ['nullable', 'string', 'max:40'],
+            'group_members.*.email' => ['nullable', 'email', 'max:255'],
+        ]);
+        $groupMembers = $request->boolean('bring_group') ? ($validated['group_members'] ?? []) : [];
+        unset($validated['bring_group'], $validated['group_members']);
+
+        if (!empty($validated['expected_departure_at'])
+            && \Carbon\Carbon::parse($validated['expected_departure_at'])->toDateString() !== now()->toDateString()) {
+            return back()->withErrors([
+                'expected_departure_at' => 'Expected departure must be on the registration date.',
+            ])->withInput();
+        }
+
+        $category = !empty($validated['visitor_category_id'])
+            ? VisitorCategory::findOrFail($validated['visitor_category_id'])
+            : null;
+        if ($category?->requires_additional_info && empty($validated['notes'])) {
+            return back()->withErrors(['notes' => 'Notes are required for this visitor category.'])->withInput();
+        }
+
+        $groupId = $groupMembers ? (string) Str::uuid() : null;
+        $visitData = array_merge($validated, [
+            'visit_date' => now()->toDateString(),
+            'expected_arrival_at' => now(),
+            'visitor_visit_group_id' => $groupId,
+        ]);
+        $created = null;
+        DB::transaction(function () use ($visitData, $groupMembers, &$created) {
+            $created = $this->visitorService->createVisit(null, $visitData, 'public_walk_in', true, true);
+            foreach ($groupMembers as $member) {
+                $this->visitorService->createVisit(
+                    null,
+                    array_merge($visitData, [
+                        'full_name' => $member['full_name'],
+                        'phone' => $member['phone'] ?? null,
+                        'email' => $member['email'] ?? null,
+                        'create_distinct_visitor' => true,
+                    ]),
+                    'public_walk_in',
+                    true,
+                    true
+                );
+            }
+        });
+
+        return view('visitor.registration-submitted', [
+            'visit' => $created['visit'],
+            'groupMemberCount' => count($groupMembers),
+        ]);
     }
 
     public function dashboard()
@@ -50,6 +149,17 @@ class VisitorManagementController extends Controller
                 ->with(['visit.visitor', 'user'])
                 ->latest('created_at')->limit(10)->get(),
             'canUseDesk' => $this->canUseDesk(),
+        ]);
+    }
+
+    public function documentation()
+    {
+        return view('visitor.documentation', [
+            'title' => 'Visitor Management Guide',
+            'hasEmployeeProfile' => (bool) $this->user()->employee,
+            'canUseDesk' => $this->canUseDesk(),
+            'canManageVisits' => $this->canManageVisits(),
+            'isAdministrator' => $this->isAdministrator(),
         ]);
     }
 
@@ -106,17 +216,15 @@ class VisitorManagementController extends Controller
     public function store(StoreVisitorVisitRequest $request)
     {
         $data = $request->validated();
-        if ($request->hasFile('photo')) {
-            $data['photo_path'] = $request->file('photo')->store('visitor-photos');
+        if ($request->hasFile('attachment')) {
+            $data['photo_path'] = $request->file('attachment')->store('visitor-attachments');
         }
 
-        $created = $this->visitorService->createVisit($request->user(), $data, 'employee_invitation');
-        $qrSvg = $this->qrSvg($created['qr_token']);
+        $created = $this->visitorService->createVisit($request->user(), $data, 'employee_invitation', false);
 
         return redirect()->route('visitor.index')
             ->with('success', 'Visitor invitation created.')
             ->with('visitor_qr_token', $created['qr_token'])
-            ->with('visitor_qr_image', $this->qrDataUri($qrSvg))
             ->with('visitor_visit_code', $created['visit']->visit_code);
     }
 
@@ -213,8 +321,8 @@ class VisitorManagementController extends Controller
                 'company' => $visit->visitor->company,
                 'notes' => $visit->notes,
                 'phone' => $visit->visitor->phone,
-                'category' => $visit->category->name,
-                'purpose' => $visit->purpose->name,
+                'category' => $visit->category?->name,
+                'purpose' => $visit->purpose?->name,
                 'branch' => $visit->branch->name,
                 'host' => $visit->host->user?->name ?? '—',
                 'date' => $visit->visit_date->format('d M Y'),
@@ -238,37 +346,60 @@ class VisitorManagementController extends Controller
             'phone' => ['nullable', 'string', 'max:40', 'required_without:email'],
             'email' => ['nullable', 'email', 'max:255', 'required_without:phone'],
             'company' => ['nullable', 'string', 'max:255'],
-            'visitor_category_id' => ['required', Rule::exists('visitor_categories', 'id')->where('is_active', true)],
-            'visitor_purpose_id' => ['required', Rule::exists('visitor_purposes', 'id')->where('is_active', true)],
+            'visitor_category_id' => ['nullable', Rule::exists('visitor_categories', 'id')->where('is_active', true)],
+            'visitor_purpose_id' => ['nullable', Rule::exists('visitor_purposes', 'id')->where('is_active', true)],
             'branch_id' => ['required', Rule::exists('branches', 'id')->where('is_active', true)],
             'host_employee_id' => ['required', Rule::exists('employees', 'id')->where('is_active', true)],
-            'expected_departure_at' => ['required', 'date', 'after:now'],
+            'expected_departure_at' => ['nullable', 'date', 'after:now'],
             'notes' => ['nullable', 'string', 'max:3000'],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'bring_group' => ['nullable', 'boolean'],
+            'group_members' => ['required_if:bring_group,1', 'array', 'min:1', 'max:20'],
+            'group_members.*.full_name' => ['required', 'string', 'max:255'],
+            'group_members.*.phone' => ['nullable', 'string', 'max:40'],
+            'group_members.*.email' => ['nullable', 'email', 'max:255'],
         ]);
-        if (\Carbon\Carbon::parse($validated['expected_departure_at'])->toDateString() !== now()->toDateString()) {
+        $groupMembers = $request->boolean('bring_group') ? ($validated['group_members'] ?? []) : [];
+        unset($validated['bring_group'], $validated['group_members']);
+        if (!empty($validated['expected_departure_at'])
+            && \Carbon\Carbon::parse($validated['expected_departure_at'])->toDateString() !== now()->toDateString()) {
             return back()->withErrors(['expected_departure_at' => 'Walk-in visitors must depart on the registration date.'])->withInput();
         }
-        $category = VisitorCategory::findOrFail($validated['visitor_category_id']);
-        if ($category->requires_additional_info && empty($validated['notes'])) {
+        $category = !empty($validated['visitor_category_id'])
+            ? VisitorCategory::findOrFail($validated['visitor_category_id'])
+            : null;
+        if ($category?->requires_additional_info && empty($validated['notes'])) {
             return back()->withErrors(['notes' => 'Notes are required for this visitor category.'])->withInput();
-        }
-        if ($request->hasFile('photo')) {
-            $validated['photo_path'] = $request->file('photo')->store('visitor-photos');
         }
         $validated['visit_date'] = now()->toDateString();
         $validated['expected_arrival_at'] = now();
 
-        $created = $this->visitorService->createVisit($request->user(), $validated, 'walk_in');
-        $qrSvg = $this->qrSvg($created['qr_token']);
-
+        $groupId = $groupMembers ? (string) Str::uuid() : null;
+        $validated['visitor_visit_group_id'] = $groupId;
+        $created = null;
+        DB::transaction(function () use ($request, $validated, $groupMembers, &$created) {
+            $created = $this->visitorService->createVisit($request->user(), $validated, 'walk_in', true, true);
+            foreach ($groupMembers as $member) {
+                $this->visitorService->createVisit(
+                    $request->user(),
+                    array_merge($validated, [
+                        'full_name' => $member['full_name'],
+                        'phone' => $member['phone'] ?? null,
+                        'email' => $member['email'] ?? null,
+                        'create_distinct_visitor' => true,
+                    ]),
+                    'walk_in',
+                    true,
+                    true
+                );
+            }
+        });
         return redirect()->route('visitor.security-desk')
             ->with('success', $created['visit']->status === 'pending_confirmation'
                 ? 'Walk-in registered and is waiting for host approval.'
                 : 'Walk-in registered. Confirm identity before checking the visitor in.')
             ->with('visitor_qr_token', $created['qr_token'])
-            ->with('visitor_qr_image', $this->qrDataUri($qrSvg))
-            ->with('visitor_visit_code', $created['visit']->visit_code);
+            ->with('visitor_visit_code', $created['visit']->visit_code)
+            ->with('visitor_group_count', count($groupMembers));
     }
 
     public function checkIn(Request $request, VisitorVisit $visit)
@@ -375,8 +506,8 @@ class VisitorManagementController extends Controller
                     $this->safeCsvValue($visit->visitor->company),
                     $this->safeCsvValue($visit->branch->name),
                     $this->safeCsvValue($visit->host->user?->name),
-                    $this->safeCsvValue($visit->category->name),
-                    $this->safeCsvValue($visit->purpose->name),
+                    $this->safeCsvValue($visit->category?->name),
+                    $this->safeCsvValue($visit->purpose?->name),
                     $this->safeCsvValue($visit->visit_date->toDateString()),
                     $this->safeCsvValue($visit->check_in_at?->toDateTimeString()),
                     $this->safeCsvValue($visit->check_out_at?->toDateTimeString()),
@@ -563,7 +694,12 @@ class VisitorManagementController extends Controller
             return $query->where('branch_id', $branchId);
         }
 
-        return $query->where('registered_by', $this->user()->id);
+        $employeeId = $this->employee()->id;
+
+        return $query->where(function (Builder $builder) use ($employeeId) {
+            $builder->where('registered_by', $this->user()->id)
+                ->orWhereHas('monitorEmployees', fn (Builder $monitorQuery) => $monitorQuery->whereKey($employeeId));
+        });
     }
 
     private function pendingApprovals(): Builder
@@ -590,20 +726,6 @@ class VisitorManagementController extends Controller
             'cancelled' => 'Cancelled',
             'no_show' => 'No Show',
         ];
-    }
-
-    private function qrSvg(string $token): string
-    {
-        $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_MARKUP_SVG,
-            'scale' => 5,
-        ]);
-        return (new QRCode($options))->render($token);
-    }
-
-    private function qrDataUri(string $svg): string
-    {
-        return 'data:image/svg+xml;base64,' . base64_encode($svg);
     }
 
     private function safeCsvValue(?string $value): ?string

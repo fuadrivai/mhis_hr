@@ -85,6 +85,12 @@
                                         </li>
                                         <li
                                             class="{{ request()->routeIs('visitor.index') || request()->routeIs('visitor.history') ? 'current-page' : '' }}">
+                                        <li
+                                            class="{{ request()->routeIs('visitor.documentation') ? 'current-page' : '' }}">
+                                            <a href="{{ route('visitor.documentation') }}">User Guide</a>
+                                        </li>
+                                        <li
+                                            class="{{ request()->routeIs('visitor.index') || request()->routeIs('visitor.history') ? 'current-page' : '' }}">
                                             <a href="{{ route('visitor.index') }}">My Invitations / Visits</a>
                                         </li>
                                         @if ($visitorEmployee)
@@ -106,6 +112,10 @@
                                             <li
                                                 class="{{ request()->routeIs('visitor.security-desk*') ? 'current-page' : '' }}">
                                                 <a href="{{ route('visitor.security-desk') }}">Unified Visitor Desk</a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ route('visitor.public-walk-in') }}" target="_blank"
+                                                    rel="noopener">Public Walk-in Registration</a>
                                             </li>
                                         @endif
                                         @if ($canManageVisitors)

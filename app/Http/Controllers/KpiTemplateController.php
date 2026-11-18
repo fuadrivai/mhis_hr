@@ -34,9 +34,12 @@ class KpiTemplateController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:500',
             'managerial_targets' => 'nullable|array',
+            'managerial_targets.*.name' => 'nullable|string|max:500',
+            'managerial_targets.*.sub_targets.*.name' => 'nullable|string|max:500',
             'tal_targets' => 'nullable|array',
+            'tal_targets.*.name' => 'nullable|string|max:500',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -121,9 +124,12 @@ class KpiTemplateController extends Controller
         }
 
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:500',
             'managerial_targets' => 'nullable|array',
+            'managerial_targets.*.name' => 'nullable|string|max:500',
+            'managerial_targets.*.sub_targets.*.name' => 'nullable|string|max:500',
             'tal_targets' => 'nullable|array',
+            'tal_targets.*.name' => 'nullable|string|max:500',
         ]);
 
         DB::transaction(function () use ($request, $kpi_template) {

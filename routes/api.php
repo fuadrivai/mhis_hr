@@ -65,6 +65,8 @@ Route::name('api.')->group(function () {
         Route::prefix('visitor')->middleware(ResolveVisitorApiUser::class)->group(function () {
             Route::get('form-options', [VisitorInvitationApiController::class, 'formOptions']);
             Route::get('hosts', [VisitorInvitationApiController::class, 'hosts']);
+            Route::get('home', [VisitorInvitationApiController::class, 'home'])
+                ->name('visitor.home');
             Route::get('invitations', [VisitorInvitationApiController::class, 'index']);
             Route::get('monitoring', [VisitorInvitationApiController::class, 'monitoring']);
             Route::get('invitation-links', [VisitorInvitationLinkController::class, 'indexApi'])
@@ -78,6 +80,9 @@ Route::name('api.')->group(function () {
                 ->name('visitor.invitation-links.store');
             Route::get('invitations/{visit}', [VisitorInvitationApiController::class, 'show'])->whereNumber('visit');
             Route::post('invitations/{visit}/cancel', [VisitorInvitationApiController::class, 'cancel'])->whereNumber('visit');
+            Route::post('invitations/{visit}/approval', [VisitorInvitationApiController::class, 'processApproval'])
+                ->whereNumber('visit')
+                ->name('visitor.invitations.approval');
         });
 
         Route::get('school/calendar', [GsheetLinkApiController::class, 'getSchoolCalendar']);

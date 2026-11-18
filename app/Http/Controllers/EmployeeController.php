@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\EmployeeExport;
 use App\Models\Employee;
+use App\Models\Employment;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Imports\EmployeeImport;
 use App\Models\DocumentCategory;
@@ -21,6 +22,7 @@ use App\Services\PositionService;
 use App\Services\RelationshipService;
 use App\Services\ReligionService;
 use App\Services\ScheduleService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -122,6 +124,10 @@ class EmployeeController extends Controller
 
     public function index(Request $request)
     {
+        $request->validate([
+            'length_of_service' => 'nullable|in:all,0_to_5,less_than_1,1_to_3,3_to_5,5_to_10,more_than_10',
+        ]);
+
         $query =  Employee::with(['user', 'personal', 'employment'])->orderBy(
             Personal::select('fullname')->whereColumn('personals.id', 'employees.personal_id'),
             'asc'
@@ -198,6 +204,8 @@ class EmployeeController extends Controller
                 $query->with(['user', 'personal', 'employment']);
             }
         }
+
+        $this->applyLengthOfServiceFilter($query, $request->input('length_of_service'));
 
         $isActive = $request->input('is_active', '1');
         if ($isActive !== 'all') {
@@ -398,6 +406,7 @@ class EmployeeController extends Controller
             'position' => 'nullable|array',
             'position.*' => 'integer',
             'is_active' => 'nullable|in:all,0,1',
+            'length_of_service' => 'nullable|in:all,0_to_5,less_than_1,1_to_3,3_to_5,5_to_10,more_than_10',
         ]);
 
         $query = Employee::with(['personal', 'employment'])
@@ -437,10 +446,21 @@ class EmployeeController extends Controller
             $query->where('is_active', $request->input('is_active'));
         }
 
+        $this->applyLengthOfServiceFilter($query, $request->input('length_of_service'));
+
         return Excel::download(
             new EmployeeExport($query->get()),
             'employees-' . now()->format('Ymd_His') . '.xlsx'
         );
+    }
+
+    private function applyLengthOfServiceFilter(Builder $query, ?string $range): void
+    {
+        if ($range && $range !== 'all') {
+            $query->whereHas('employment', function (Builder $employmentQuery) use ($range) {
+                $employmentQuery->forLengthOfService($range);
+            });
+        }
     }
 
     public function personal($id)
