@@ -413,6 +413,7 @@
                                                     <li><a href="/setting/approval">Approval</a></li>
                                                     <li><a href="/setting/bank">Bank</a></li>
                                                 @endif
+                                            @endif
                                         </ul>
                                     </li>
                                 @endif
