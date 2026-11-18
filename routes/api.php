@@ -65,6 +65,8 @@ Route::name('api.')->group(function () {
         Route::prefix('visitor')->middleware(ResolveVisitorApiUser::class)->group(function () {
             Route::get('form-options', [VisitorInvitationApiController::class, 'formOptions']);
             Route::get('hosts', [VisitorInvitationApiController::class, 'hosts']);
+            Route::get('home', [VisitorInvitationApiController::class, 'home'])
+                ->name('visitor.home');
             Route::get('invitations', [VisitorInvitationApiController::class, 'index']);
             Route::get('monitoring', [VisitorInvitationApiController::class, 'monitoring']);
             Route::get('invitation-links', [VisitorInvitationLinkController::class, 'indexApi'])

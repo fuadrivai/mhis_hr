@@ -662,42 +662,142 @@ class VisitorMobileApiTest extends TestCase
     public function test_departure_after_filter_excludes_finished_visits_and_sorts_by_arrival(): void
     {
         $visitDate = now()->addDay();
-        $visits = [
-            ['name' => 'Arrives First', 'arrival' => '10:00', 'departure' => '11:00'],
-            ['name' => 'Arrives Second', 'arrival' => '11:00', 'departure' => '12:00'],
-            ['name' => 'Already Departed', 'arrival' => '08:00', 'departure' => '09:00'],
-        ];
+        $unknownDepartureId = $this->postJson('/api/visitor/invitations', $this->invitation([
+            'full_name' => 'Open Departure Visit',
+            'phone' => '0899999999',
+            'visit_date' => $visitDate->format('Y-m-d'),
+            'expected_arrival_date' => $visitDate->format('d F Y'),
+            'expected_arrival_time' => '09:00',
+            'expected_departure_date' => null,
+            'expected_departure_time' => null,
+        ]), $this->headers())->assertCreated()->json('data.id');
+        $scheduledVisitId = $this->postJson('/api/visitor/invitations', $this->invitation([
+            'full_name' => 'Scheduled Visit',
+            'phone' => '0888888888',
+            'visit_date' => $visitDate->format('Y-m-d'),
+            'expected_arrival_date' => $visitDate->format('d F Y'),
+            'expected_arrival_time' => '11:00',
+            'expected_departure_date' => $visitDate->format('d F Y'),
+            'expected_departure_time' => '12:30',
+        ]), $this->headers())->assertCreated()->json('data.id');
 
-        foreach ($visits as $index => $visit) {
-            $this->postJson('/api/visitor/invitations', $this->invitation([
-                'full_name' => $visit['name'],
-                'phone' => '08' . str_pad((string) ($index + 1), 9, '0', STR_PAD_LEFT),
-                'visit_date' => $visitDate->format('Y-m-d'),
-                'expected_arrival_date' => $visitDate->format('d F Y'),
-                'expected_arrival_time' => $visit['arrival'],
-                'expected_departure_date' => $visitDate->format('d F Y'),
-                'expected_departure_time' => $visit['departure'],
-            ]), $this->headers())->assertCreated();
-        }
-
-        $departureAfter = $visitDate->copy()->setTime(9, 0)->toIso8601String();
         foreach ([
             '/api/visitor/invitations' => 'host',
             '/api/visitor/monitoring' => 'creator',
         ] as $path => $user) {
-            $url = $path . '?visit_date=' . $visitDate->format('Y-m-d')
-                . '&departure_after=' . rawurlencode($departureAfter);
-            $response = $this->getJson($url, $this->headers($user))
-                ->assertOk()->assertJsonPath('total', 2);
+            $requestAt = fn (string $time) => $path . '?visit_date=' . $visitDate->format('Y-m-d')
+                . '&departure_after=' . rawurlencode($visitDate->copy()->setTimeFromTimeString($time)->toIso8601String());
 
-            $this->assertSame(
-                ['Arrives First', 'Arrives Second'],
-                array_column(array_column($response->json('data'), 'visitor'), 'full_name')
-            );
+            $this->getJson($requestAt('10:00'), $this->headers($user))
+                ->assertOk()->assertJsonPath('total', 1)
+                ->assertJsonPath('data.0.id', $unknownDepartureId)
+                ->assertJsonPath('data.0.expected_departure_at', null);
+
+            $this->getJson($requestAt('11:00'), $this->headers($user))
+                ->assertOk()->assertJsonPath('total', 1)
+                ->assertJsonPath('data.0.id', $scheduledVisitId);
+
+            $this->getJson($requestAt('12:30'), $this->headers($user))
+                ->assertOk()->assertJsonPath('total', 0);
         }
 
         $this->getJson('/api/visitor/invitations?departure_after=not-a-date', $this->headers('host'))
             ->assertUnprocessable();
+    }
+
+    public function test_today_view_returns_only_visits_active_at_the_current_time(): void
+    {
+        \Illuminate\Support\Carbon::setTestNow('2026-11-18 10:00:00');
+        try {
+            $visitDate = now()->toDateString();
+            $openDepartureId = $this->postJson('/api/visitor/invitations', $this->invitation([
+                'full_name' => 'Open Departure Visit',
+                'phone' => '0899999999',
+                'visit_date' => $visitDate,
+                'expected_arrival_date' => now()->format('d F Y'),
+                'expected_arrival_time' => '09:00',
+                'expected_departure_date' => null,
+                'expected_departure_time' => null,
+            ]), $this->headers())->assertCreated()->json('data.id');
+            $futureVisitId = $this->postJson('/api/visitor/invitations', $this->invitation([
+                'full_name' => 'Future Visit',
+                'phone' => '0888888888',
+                'visit_date' => $visitDate,
+                'expected_arrival_date' => now()->format('d F Y'),
+                'expected_arrival_time' => '11:00',
+                'expected_departure_date' => now()->format('d F Y'),
+                'expected_departure_time' => '12:30',
+            ]), $this->headers())->assertCreated()->json('data.id');
+
+            foreach ([
+                '/api/visitor/invitations' => 'host',
+                '/api/visitor/monitoring' => 'creator',
+            ] as $path => $user) {
+                $this->getJson($path . '?view=today', $this->headers($user))
+                    ->assertOk()->assertJsonPath('total', 1)
+                    ->assertJsonPath('data.0.id', $openDepartureId);
+            }
+
+            \Illuminate\Support\Carbon::setTestNow('2026-11-18 11:00:00');
+            foreach ([
+                '/api/visitor/invitations' => 'host',
+                '/api/visitor/monitoring' => 'creator',
+            ] as $path => $user) {
+                $this->getJson($path . '?view=today', $this->headers($user))
+                    ->assertOk()->assertJsonPath('total', 1)
+                    ->assertJsonPath('data.0.id', $futureVisitId);
+            }
+
+            \Illuminate\Support\Carbon::setTestNow('2026-11-18 12:30:00');
+            foreach ([
+                '/api/visitor/invitations' => 'host',
+                '/api/visitor/monitoring' => 'creator',
+            ] as $path => $user) {
+                $this->getJson($path . '?view=today', $this->headers($user))
+                    ->assertOk()->assertJsonPath('total', 0);
+            }
+        } finally {
+            \Illuminate\Support\Carbon::setTestNow();
+        }
+    }
+
+    public function test_home_endpoint_returns_one_active_invitation_and_monitoring_or_null(): void
+    {
+        \Illuminate\Support\Carbon::setTestNow('2026-11-18 10:00:00');
+        try {
+            $visitDate = now()->toDateString();
+            $invitationId = $this->postJson('/api/visitor/invitations', $this->invitation([
+                'full_name' => 'Current Host Invitation',
+                'phone' => '0899999999',
+                'host_employee_id' => 1,
+                'visit_date' => $visitDate,
+                'expected_arrival_date' => now()->format('d F Y'),
+                'expected_arrival_time' => '09:00',
+                'expected_departure_date' => null,
+                'expected_departure_time' => null,
+            ]), $this->headers())->assertCreated()->json('data.id');
+            $monitoringId = $this->postJson('/api/visitor/invitations', $this->invitation([
+                'full_name' => 'Current Monitored Visit',
+                'phone' => '0888888888',
+                'visit_date' => $visitDate,
+                'expected_arrival_date' => now()->format('d F Y'),
+                'expected_arrival_time' => '09:30',
+                'expected_departure_date' => now()->format('d F Y'),
+                'expected_departure_time' => '12:30',
+            ]), $this->headers())->assertCreated()->json('data.id');
+
+            $this->getJson('/api/visitor/home', $this->headers())
+                ->assertOk()
+                ->assertJsonPath('invitation.id', $invitationId)
+                ->assertJsonPath('invitation.expected_departure_at', null)
+                ->assertJsonPath('monitoring.id', $monitoringId);
+
+            $this->getJson('/api/visitor/home', $this->headers('other'))
+                ->assertOk()
+                ->assertExactJson(['invitation' => null, 'monitoring' => null]);
+        } finally {
+            \Illuminate\Support\Carbon::setTestNow();
+        }
     }
 
     public function test_creator_can_cancel_only_allowed_status_and_history_includes_it(): void

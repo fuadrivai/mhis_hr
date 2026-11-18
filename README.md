@@ -143,15 +143,26 @@ Keep `data.id` for the detail and cancellation endpoints. Approval remains avail
 
 **Lists:** `GET /api/visitor/invitations` lists visits for the authenticated host. `GET /api/visitor/monitoring` lists visits created by the authenticated user for another host. An invitation created by the user for themselves as host appears only in `invitations`. Both return a Laravel paginated object, with visits in `data` and pagination fields such as `current_page`, `last_page`, `per_page`, and `total`. Query parameters are optional:
 
-- `view=all|today|upcoming|history` (default `all`): today uses the application's timezone; upcoming contains future `expected` or `pending_confirmation` visits; history contains `completed`, `rejected`, `cancelled`, and `no_show`.
+- `view=all|today|upcoming|history` (default `all`): `today` returns visits active at the current time in the application's timezone; future arrivals are omitted, visits with a departure at or before now are omitted, and visits without a departure remain active until a later visit for the same host and date starts. `upcoming` contains future `expected` or `pending_confirmation` visits; `history` contains `completed`, `rejected`, `cancelled`, and `no_show`.
 - `status=pending_confirmation|expected|rejected|checked_in|completed|cancelled|no_show`.
 - `query` searches visitor name, email, or phone using a partial match. It can be a single name, email address, or phone number.
 - `visit_date=YYYY-MM-DD` filters an exact visit date; `from=YYYY-MM-DD` and `to=YYYY-MM-DD` filter an inclusive date range.
-- `departure_after` accepts a date-time (ISO 8601 recommended), excludes visits whose `expected_departure_at` is at or before that time, and orders the remaining visits by expected arrival ascending. Combine it with `visit_date` to show today's visits that have not yet departed, and refresh the filter as the current time changes.
+- `departure_after` accepts a date-time (ISO 8601 recommended) and applies the same active-visit time-window rules as `view=today` at the supplied time. Combine it with `visit_date` to query an active window on another date. The same behavior applies to `GET /api/visitor/monitoring`.
 - `search` is retained as a backward-compatible alias for `query` and also matches an exact visit code.
 - `per_page` (1–100; default 20) and `page`.
 
 Filters may be combined. By default, results are ordered by visit date descending, then ID descending; when `departure_after` is supplied, results are ordered by expected arrival ascending, then ID ascending.
+
+**Mobile home summary:** `GET /api/visitor/home` returns at most one currently active visit for the authenticated employee as host and one visit they created for another host or monitor. The response is not paginated; either item is `null` when no visit is active:
+
+```json
+{
+  "invitation": null,
+  "monitoring": null
+}
+```
+
+Each non-null value uses the same visit object shape as the list and detail endpoints. The endpoint uses the application's current time and selects the most recently arrived active visit for each section.
 
 **Detail:** `GET /api/visitor/invitations/{id}` is accessible to the host and creator and returns `{"data": ...}`. Each list item and detail uses the same shape. `can_cancel` is false for a host who is not also the creator:
 
