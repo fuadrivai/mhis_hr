@@ -32,4 +32,9 @@ class TimeOff extends Model
     {
         return $this->hasMany(LeaveAllocation::class);
     }
+
+    public function balanceGroup()
+    {
+        return $this->belongsTo(TimeoffBalanceGroup::class, 'balance_group_id');
+    }
 }

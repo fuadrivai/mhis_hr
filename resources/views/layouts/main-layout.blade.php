@@ -64,48 +64,59 @@
 
                                 <?php
                                 $isAdmin = auth()->user()->hasRole('admin') || auth()->user()->roles->contains('id', 1);
+                                $isHrd = (bool) optional(auth()->user()->employee)->is_hrd;
                                 $isRole3 = auth()->user()->roles->contains('id', 3);
                                 $isRecruitmentMonitor = auth()->user()->isRecruitmentMonitor();
                                 $canAccessRecruitment = auth()->user()->canAccessRecruitment();
                                 $isWhatsappChatter = \App\Models\WhatsappChatter::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
                                 $isWhatsappMonitor = \App\Models\WhatsappMonitor::where('employee_id', auth()->user()->employee->id ?? 0)->exists();
                                 $visitorEmployee = auth()->user()->employee;
-                                $canUseVisitorDesk = $isAdmin || auth()->user()->hasRole('security') || auth()->user()->hasRole('ga') || auth()->user()->hasRole('hrd') || (bool) ($visitorEmployee?->is_hrd);
-                                $canManageVisitors = $isAdmin || auth()->user()->hasRole('ga') || auth()->user()->hasRole('hrd') || auth()->user()->hasRole('visitor-manager') || (bool) ($visitorEmployee?->is_hrd);
+                                $canUseVisitorDesk = $isAdmin || auth()->user()->hasRole('security') || auth()->user()->hasRole('ga') || auth()->user()->hasRole('hrd') || (bool) $visitorEmployee?->is_hrd;
+                                $canManageVisitors = $isAdmin || auth()->user()->hasRole('ga') || auth()->user()->hasRole('hrd') || auth()->user()->hasRole('visitor-manager') || (bool) $visitorEmployee?->is_hrd;
                                 ?>
 
                                 <li class="{{ Request::is('visitor*') ? 'active' : '' }}">
-                                    <a><i class="fa fa-users"></i> Visitor Management <span class="fa fa-chevron-down"></span></a>
-                                    <ul class="nav child_menu" style="display: {{ Request::is('visitor*') ? 'block' : 'none' }}">
+                                    <a><i class="fa fa-users"></i> Visitor Management <span
+                                            class="fa fa-chevron-down"></span></a>
+                                    <ul class="nav child_menu"
+                                        style="display: {{ Request::is('visitor*') ? 'block' : 'none' }}">
                                         <li class="{{ request()->routeIs('visitor.dashboard') ? 'current-page' : '' }}">
                                             <a href="{{ route('visitor.dashboard') }}">Dashboard</a>
                                         </li>
-                                        <li class="{{ request()->routeIs('visitor.index') || request()->routeIs('visitor.history') ? 'current-page' : '' }}">
+                                        <li
+                                            class="{{ request()->routeIs('visitor.index') || request()->routeIs('visitor.history') ? 'current-page' : '' }}">
                                             <a href="{{ route('visitor.index') }}">My Invitations / Visits</a>
                                         </li>
                                         @if ($visitorEmployee)
-                                            <li class="{{ request()->routeIs('visitor.create') ? 'current-page' : '' }}">
+                                            <li
+                                                class="{{ request()->routeIs('visitor.create') ? 'current-page' : '' }}">
                                                 <a href="{{ route('visitor.create') }}">New Invitation</a>
                                             </li>
-                                            <li class="{{ request()->routeIs('visitor.invitation-links.*') ? 'current-page' : '' }}">
-                                                <a href="{{ route('visitor.invitation-links.index') }}">Guest Registration Links</a>
+                                            <li
+                                                class="{{ request()->routeIs('visitor.invitation-links.*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('visitor.invitation-links.index') }}">Guest
+                                                    Registration Links</a>
                                             </li>
                                         @endif
-                                        <li class="{{ request()->routeIs('visitor.approvals') ? 'current-page' : '' }}">
+                                        <li
+                                            class="{{ request()->routeIs('visitor.approvals') ? 'current-page' : '' }}">
                                             <a href="{{ route('visitor.approvals') }}">Approvals</a>
                                         </li>
                                         @if ($canUseVisitorDesk)
-                                            <li class="{{ request()->routeIs('visitor.security-desk*') ? 'current-page' : '' }}">
+                                            <li
+                                                class="{{ request()->routeIs('visitor.security-desk*') ? 'current-page' : '' }}">
                                                 <a href="{{ route('visitor.security-desk') }}">Unified Visitor Desk</a>
                                             </li>
                                         @endif
                                         @if ($canManageVisitors)
-                                            <li class="{{ request()->routeIs('visitor.reports*') ? 'current-page' : '' }}">
+                                            <li
+                                                class="{{ request()->routeIs('visitor.reports*') ? 'current-page' : '' }}">
                                                 <a href="{{ route('visitor.reports') }}">Reports</a>
                                             </li>
                                         @endif
                                         @if ($isAdmin)
-                                            <li class="{{ request()->routeIs('visitor.settings*') ? 'current-page' : '' }}">
+                                            <li
+                                                class="{{ request()->routeIs('visitor.settings*') ? 'current-page' : '' }}">
                                                 <a href="{{ route('visitor.settings') }}">Visitor Settings</a>
                                             </li>
                                         @endif
@@ -114,7 +125,8 @@
 
                                 @if ($isWhatsappChatter)
                                     <li class={{ Request::is('whatsapp/chat*') ? 'current-page' : '' }}>
-                                        <a href="{{ route('whatsapp.chat') }}"><i class="fa fa-whatsapp"></i> WhatsApp Chat </a>
+                                        <a href="{{ route('whatsapp.chat') }}"><i class="fa fa-whatsapp"></i> WhatsApp
+                                            Chat </a>
                                     </li>
                                 @endif
 
@@ -126,7 +138,8 @@
                                             style="display: {{ Request::is('announcement*') ? 'block' : 'none' }}">
                                             <li class={{ Request::is('announcement*') ? 'current-page' : '' }}><a
                                                     href="/announcement">Announcement</a></li>
-                                            <li class={{ Request::is('announcement/category*') ? 'current-page' : '' }}>
+                                            <li
+                                                class={{ Request::is('announcement/category*') ? 'current-page' : '' }}>
                                                 <a href="/announcement/category">Category</a>
                                             </li>
                                         </ul>
@@ -183,45 +196,68 @@
                                             Recruitment <span class="fa fa-chevron-down"></span></a>
                                         <ul class="nav child_menu"
                                             style="display: {{ Request::is('recruitment*') ? 'block' : 'none' }}">
-                                            <li class="{{ request()->routeIs('recruitment.index') && request()->route('section') === 'dashboard' ? 'current-page' : '' }}">
-                                                <a href="{{ route('recruitment.index', ['section' => 'dashboard']) }}">Dashboard</a>
+                                            <li
+                                                class="{{ request()->routeIs('recruitment.index') && request()->route('section') === 'dashboard' ? 'current-page' : '' }}">
+                                                <a
+                                                    href="{{ route('recruitment.index', ['section' => 'dashboard']) }}">Dashboard</a>
                                             </li>
-                                            <li class="{{ Request::is('recruitment/job-openings*') ? 'current-page' : '' }}">
-                                                <a href="{{ route('recruitment.job-openings.index') }}">Job Openings</a>
+                                            <li
+                                                class="{{ Request::is('recruitment/job-openings*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('recruitment.job-openings.index') }}">Job
+                                                    Openings</a>
                                             </li>
                                             <li class="{{ Request::is('recruitment/candidates*') ? 'active' : '' }}">
                                                 <a>Candidates <span class="fa fa-chevron-down"></span></a>
                                                 <ul class="nav child_menu"
                                                     style="display: {{ Request::is('recruitment/candidates*') ? 'block' : 'none' }}">
-                                                    <li class="{{ request()->routeIs('recruitment.candidates') ? 'current-page' : '' }}">
-                                                        <a href="{{ route('recruitment.candidates') }}">Candidate Database</a>
+                                                    <li
+                                                        class="{{ request()->routeIs('recruitment.candidates') ? 'current-page' : '' }}">
+                                                        <a href="{{ route('recruitment.candidates') }}">Candidate
+                                                            Database</a>
                                                     </li>
-                                                    <li class="{{ request()->routeIs('recruitment.candidates.form') ? 'current-page' : '' }}">
-                                                        <a href="{{ route('recruitment.candidates.form') }}">Candidate Registration</a>
+                                                    <li
+                                                        class="{{ request()->routeIs('recruitment.candidates.form') ? 'current-page' : '' }}">
+                                                        <a href="{{ route('recruitment.candidates.form') }}">Candidate
+                                                            Registration</a>
                                                     </li>
                                                 </ul>
                                             </li>
-                                            <li class="{{ Request::is('recruitment/my-interviews*') ? 'current-page' : '' }}">
-                                                <a href="{{ route('recruitment.my-interviews.index') }}">My Interviews</a>
+                                            <li
+                                                class="{{ Request::is('recruitment/my-interviews*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('recruitment.my-interviews.index') }}">My
+                                                    Interviews</a>
                                             </li>
-                                            <li class="{{ Request::is('recruitment/my-approvals*') ? 'current-page' : '' }}">
-                                                <a href="{{ route('recruitment.my-approvals.index') }}">My Approvals</a>
+                                            <li
+                                                class="{{ Request::is('recruitment/my-approvals*') ? 'current-page' : '' }}">
+                                                <a href="{{ route('recruitment.my-approvals.index') }}">My
+                                                    Approvals</a>
                                             </li>
-                                            <li class="{{ request()->routeIs('recruitment.index') && request()->route('section') === 'reports' ? 'current-page' : '' }}">
-                                                <a href="{{ route('recruitment.index', ['section' => 'reports']) }}">Reports & Analytics</a>
+                                            <li
+                                                class="{{ request()->routeIs('recruitment.index') && request()->route('section') === 'reports' ? 'current-page' : '' }}">
+                                                <a href="{{ route('recruitment.index', ['section' => 'reports']) }}">Reports
+                                                    & Analytics</a>
                                             </li>
                                             <li class="{{ Request::is('recruitment/settings*') ? 'active' : '' }}">
                                                 <a>Settings <span class="fa fa-chevron-down"></span></a>
                                                 <ul class="nav child_menu"
                                                     style="display: {{ Request::is('recruitment/settings*') ? 'block' : 'none' }}">
-                                                    <li class="{{ request()->routeIs('recruitment.settings.job-requirements*') ? 'current-page' : '' }}">
-                                                        <a href="{{ route('recruitment.settings.job-requirements') }}">Job Requirements</a>
+                                                    <li
+                                                        class="{{ request()->routeIs('recruitment.settings.job-requirements*') ? 'current-page' : '' }}">
+                                                        <a
+                                                            href="{{ route('recruitment.settings.job-requirements') }}">Job
+                                                            Requirements</a>
                                                     </li>
-                                                    <li class="{{ request()->routeIs('recruitment.settings.evaluation-competencies*') ? 'current-page' : '' }}">
-                                                        <a href="{{ route('recruitment.settings.evaluation-competencies.index') }}">Evaluation Competencies</a>
+                                                    <li
+                                                        class="{{ request()->routeIs('recruitment.settings.evaluation-competencies*') ? 'current-page' : '' }}">
+                                                        <a
+                                                            href="{{ route('recruitment.settings.evaluation-competencies.index') }}">Evaluation
+                                                            Competencies</a>
                                                     </li>
-                                                    <li class="{{ request()->routeIs('recruitment.settings.rejection-reasons*') ? 'current-page' : '' }}">
-                                                        <a href="{{ route('recruitment.settings.rejection-reasons.index') }}">Rejection Reasons</a>
+                                                    <li
+                                                        class="{{ request()->routeIs('recruitment.settings.rejection-reasons*') ? 'current-page' : '' }}">
+                                                        <a
+                                                            href="{{ route('recruitment.settings.rejection-reasons.index') }}">Rejection
+                                                            Reasons</a>
                                                     </li>
                                                 </ul>
                                             </li>
@@ -231,13 +267,15 @@
 
                                 @if (!$canAccessRecruitment && auth()->user()?->isAssignedInterviewer())
                                     <li class="{{ Request::is('recruitment/my-interviews*') ? 'current-page' : '' }}">
-                                        <a href="{{ route('recruitment.my-interviews.index') }}"><i class="fa fa-calendar-check-o"></i> My Interviews</a>
+                                        <a href="{{ route('recruitment.my-interviews.index') }}"><i
+                                                class="fa fa-calendar-check-o"></i> My Interviews</a>
                                     </li>
                                 @endif
 
                                 @if (!$canAccessRecruitment && auth()->user()?->isAssignedOfferApprover())
                                     <li class="{{ Request::is('recruitment/my-approvals*') ? 'current-page' : '' }}">
-                                        <a href="{{ route('recruitment.my-approvals.index') }}"><i class="fa fa-check-square-o"></i> My Approvals</a>
+                                        <a href="{{ route('recruitment.my-approvals.index') }}"><i
+                                                class="fa fa-check-square-o"></i> My Approvals</a>
                                     </li>
                                 @endif
 
@@ -268,7 +306,8 @@
                                     <ul class="nav child_menu"
                                         style="display: {{ Request::is('assessment*') ? 'block' : 'none' }}">
                                         <li class={{ Request::is('assessment/my*') ? 'current-page' : '' }}><a
-                                                href="{{ route('employee.assessment.index') }}">My Assessments</a></li>
+                                                href="{{ route('employee.assessment.index') }}">My Assessments</a>
+                                        </li>
                                         <li class={{ Request::is('assessment/approvals*') ? 'current-page' : '' }}><a
                                                 href="{{ route('assessment.approvals.index') }}">Approvals</a></li>
                                         <?php $isAssessmentMonitor = \App\Models\AssessmentMonitor::where('employee_id', auth()->user()->employee->id ?? 0)->exists(); ?>
@@ -284,7 +323,9 @@
 
                                 @if ($isWhatsappMonitor)
                                     <li class={{ Request::is('whatsapp/monitoring*') ? 'current-page' : '' }}>
-                                        <a href="{{ route('whatsapp.monitoring') }}"><i class="fa fa-eye"></i> WhatsApp Monitoring </a>
+                                        <a href="{{ route('whatsapp.monitoring') }}"><i class="fa fa-eye"></i>
+                                            WhatsApp
+                                            Monitoring </a>
                                     </li>
                                 @endif
 
@@ -300,7 +341,7 @@
                                     </li>
                                 @endif --}}
 
-                                @if ($isAdmin || $isRole3 || $isWhatsappMonitor)
+                                @if ($isAdmin || $isHrd || $isRole3 || $isWhatsappMonitor)
                                     <li class={{ Request::is('setting*') ? 'active' : '' }}><a><i
                                                 class="fa fa-gears"></i>
                                             Settings <span class="fa fa-chevron-down"></span></a>
@@ -312,17 +353,21 @@
                                                         <li><a href="/setting/branch">Branch</a></li>
                                                     @endif
                                                     @if ($isAdmin || $isWhatsappMonitor)
-                                                        <li><a href="{{ route('whatsapp.setting.index') }}">WhatsApp Settings</a></li>
+                                                        <li><a href="{{ route('whatsapp.setting.index') }}">WhatsApp
+                                                                Settings</a></li>
                                                     @endif
                                                     @if ($isAdmin)
                                                         <li><a href="/setting/organization">Organization</a></li>
                                                         <li><a href="/setting/position">Job Position</a></li>
                                                         <li><a href="/setting/level">Job Level</a></li>
                                                         <li><a href="/setting/religion">Religion</a></li>
-                                                        <li><a href="{{ route('setting.company.sop.index') }}">SOP</a></li>
+                                                        <li><a href="{{ route('setting.company.sop.index') }}">SOP</a>
+                                                        </li>
                                                         <li><a href="/setting/reprimand-type">Reprimand Type</a></li>
                                                     @endif
-                                                    <li><a href="/setting/kpi-template">KPI Template</a></li>
+                                                    @if ($isAdmin)
+                                                        <li><a href="/setting/kpi-template">KPI Template</a></li>
+                                                    @endif
                                                     @if ($isAdmin)
                                                         <li><a href="/setting/lesson-plan">Lesson Plan Settings</a>
                                                         </li>
@@ -335,28 +380,39 @@
                                                 </ul>
                                             </li>
                                             @if ($isAdmin)
-                                                <li class="{{ request()->routeIs('settings.recruitment-monitors*') ? 'current-page' : '' }}">
-                                                    <a href="{{ route('settings.recruitment-monitors') }}">Recruitment Monitors</a>
+                                                <li
+                                                    class="{{ request()->routeIs('settings.recruitment-monitors*') ? 'current-page' : '' }}">
+                                                    <a href="{{ route('settings.recruitment-monitors') }}">Recruitment
+                                                        Monitors</a>
                                                 </li>
-                                                <li class={{ Request::is('setting*') ? 'active' : '' }}><a>Time<span
-                                                            class="fa fa-chevron-down"></span></a>
-                                                    <?php
-                                                    $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*') || Request::is('setting/timeoff*') || Request::is('setting/holiday*') || Request::is('setting/location*');
-                                                    ?>
-                                                    <ul style="display: {{ $isBlock ? 'block' : 'none' }}"
-                                                        class="nav child_menu">
-                                                        <li><a href="/setting/schedule">Schedule</a></li>
-                                                        <li><a href="/setting/timeoff">Time off</a></li>
-                                                        <li><a href="/setting/holiday">Holiday</a></li>
-                                                        <li><a href="/setting/leave/allocation">Leave Allocation</a>
-                                                        </li>
-                                                        <li><a href="/setting/location">Live Attendance</a></li>
-                                                    </ul>
-                                                </li>
-                                                <li><a href="/setting/academic-year">Academic Year</a></li>
-                                                <li><a href="/setting/approval">Approval</a></li>
-                                                <li><a href="/setting/bank">Bank</a></li>
-                                            @endif
+                                                @if ($isAdmin || $isHrd)
+                                                    <li class={{ Request::is('setting*') ? 'active' : '' }}>
+                                                        <a>Time<span class="fa fa-chevron-down"></span></a>
+                                                        <?php
+                                                        $isBlock = Request::is('setting/schedule*') || Request::is('setting/shift*') || Request::is('setting/timeoff*') || Request::is('setting/time/hourly-time-off*') || Request::is('setting/holiday*') || Request::is('setting/location*');
+                                                        ?>
+                                                        <ul style="display: {{ $isBlock ? 'block' : 'none' }}"
+                                                            class="nav child_menu">
+                                                            @if ($isAdmin)
+                                                                <li><a href="/setting/schedule">Schedule</a></li>
+                                                                <li><a href="/setting/timeoff">Time off</a></li>
+                                                                <li><a href="/setting/holiday">Holiday</a></li>
+                                                                <li><a href="/setting/leave/allocation">Leave
+                                                                        Allocation</a></li>
+                                                                <li><a href="/setting/location">Live Attendance</a>
+                                                                </li>
+                                                            @endif
+                                                            <li><a
+                                                                    href="{{ route('setting.hourly-time-off.index') }}">Hourly
+                                                                    Time Off</a></li>
+                                                        </ul>
+                                                    </li>
+                                                @endif
+                                                @if ($isAdmin)
+                                                    <li><a href="/setting/academic-year">Academic Year</a></li>
+                                                    <li><a href="/setting/approval">Approval</a></li>
+                                                    <li><a href="/setting/bank">Bank</a></li>
+                                                @endif
                                         </ul>
                                     </li>
                                 @endif

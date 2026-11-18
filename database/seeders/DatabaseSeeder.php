@@ -42,5 +42,10 @@ class DatabaseSeeder extends Seeder
             'password' => '$2y$10$zMzXBaCLSTLnNJnPIYsN6OJHisOlgA/g6LW2kWsYN11Zq4aF2FjDS',
         ]);
         $salludin->roles()->syncWithoutDetaching([1]);
+        $this->call([
+            RelationshipSeeder::class,
+            DocumentCategorySeeder::class,
+            HourlyTimeOffBalanceSeeder::class,
+        ]);
     }
 }

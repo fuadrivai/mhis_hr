@@ -9,6 +9,7 @@ use App\Services\HolidayService;
 use App\Services\JobOpeningService;
 use App\Services\JobRequirementService;
 use App\Services\RecruitmentMonitorService;
+use App\Services\HourlyTimeOffBalanceService;
 use App\Services\Implement\AcademicYearImplement;
 use App\Services\Implement\ApprovalRequestImplement;
 use App\Services\Implement\CandidateRegistrationImplement;
@@ -16,6 +17,7 @@ use App\Services\Implement\HolidayImplement;
 use App\Services\Implement\JobOpeningImplement;
 use App\Services\Implement\JobRequirementImplement;
 use App\Services\Implement\RecruitmentMonitorImplement;
+use App\Services\Implement\HourlyTimeOffBalanceImplement;
 use App\Services\Implement\LeaveAllocationImplement;
 use App\Services\Implement\RoleImplement;
 use App\Services\Implement\SopImplement;
@@ -80,6 +82,7 @@ class AppServiceProvider extends ServiceProvider
         RecruitmentOnboardingService::class => RecruitmentOnboardingImplement::class,
         RecruitmentReportService::class => RecruitmentReportImplement::class,
         VisitorManagementService::class => VisitorManagementImplement::class,
+        HourlyTimeOffBalanceService::class => HourlyTimeOffBalanceImplement::class,
     ];
 
     public function register()
