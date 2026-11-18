@@ -11,8 +11,6 @@ use App\Models\VisitorPurpose;
 use App\Models\VisitorVisit;
 use App\Models\VisitorVisitLog;
 use App\Services\VisitorManagementService;
-use chillerlan\QRCode\QRCode;
-use chillerlan\QRCode\QROptions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +36,20 @@ class VisitorManagementController extends Controller
                 ->orderBy('id')
                 ->get(),
         ]);
+    }
+
+    public function publicQrCode(string $token)
+    {
+        abort_unless(strlen($token) === 64, 404);
+        $visit = VisitorVisit::with('visitor')
+            ->where('qr_token_hash', hash('sha256', $token))
+            ->firstOrFail();
+
+        return response()->view('visitor.public-qr-code', [
+            'token' => $token,
+            'visit' => $visit,
+        ])->header('Cache-Control', 'private, no-store')
+            ->header('Referrer-Policy', 'no-referrer');
     }
 
     public function storePublicWalkIn(Request $request)
@@ -209,12 +221,10 @@ class VisitorManagementController extends Controller
         }
 
         $created = $this->visitorService->createVisit($request->user(), $data, 'employee_invitation', false);
-        $qrSvg = $this->qrSvg($created['qr_token']);
 
         return redirect()->route('visitor.index')
             ->with('success', 'Visitor invitation created.')
             ->with('visitor_qr_token', $created['qr_token'])
-            ->with('visitor_qr_image', $this->qrDataUri($qrSvg))
             ->with('visitor_visit_code', $created['visit']->visit_code);
     }
 
@@ -383,14 +393,11 @@ class VisitorManagementController extends Controller
                 );
             }
         });
-        $qrSvg = $this->qrSvg($created['qr_token']);
-
         return redirect()->route('visitor.security-desk')
             ->with('success', $created['visit']->status === 'pending_confirmation'
                 ? 'Walk-in registered and is waiting for host approval.'
                 : 'Walk-in registered. Confirm identity before checking the visitor in.')
             ->with('visitor_qr_token', $created['qr_token'])
-            ->with('visitor_qr_image', $this->qrDataUri($qrSvg))
             ->with('visitor_visit_code', $created['visit']->visit_code)
             ->with('visitor_group_count', count($groupMembers));
     }
@@ -719,20 +726,6 @@ class VisitorManagementController extends Controller
             'cancelled' => 'Cancelled',
             'no_show' => 'No Show',
         ];
-    }
-
-    private function qrSvg(string $token): string
-    {
-        $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_MARKUP_SVG,
-            'scale' => 5,
-        ]);
-        return (new QRCode($options))->render($token);
-    }
-
-    private function qrDataUri(string $svg): string
-    {
-        return 'data:image/svg+xml;base64,' . base64_encode($svg);
     }
 
     private function safeCsvValue(?string $value): ?string

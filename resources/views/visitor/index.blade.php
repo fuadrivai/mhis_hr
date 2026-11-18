@@ -19,7 +19,7 @@
                     </div>
                 </div>
                 <div class="visitor-created-qr">
-                    <img src="{{ session('visitor_qr_image') }}" alt="Visitor QR code">
+                    <div id="visitor-qr-code" data-token="{{ session('visitor_qr_token') }}" role="img" aria-label="Visitor QR code"></div>
                     <div class="visitor-token-wrap">
                         <code id="new-visitor-token">{{ session('visitor_qr_token') }}</code>
                         <button type="button" class="btn btn-default btn-sm" id="copy-visitor-token" aria-label="Copy invitation token">
@@ -283,13 +283,20 @@
             margin: 4px 0 0;
         }
 
-        .visitor-created-qr img {
-            width: 92px;
-            height: 92px;
+        .visitor-created-qr #visitor-qr-code {
+            display: block;
+            width: 160px;
+            height: 160px;
             padding: 5px;
             border: 1px solid var(--visitor-line);
             border-radius: 5px;
             background: #fff;
+        }
+
+        .visitor-created-qr #visitor-qr-code svg {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
 
         .visitor-token-wrap {
@@ -645,9 +652,9 @@
                 gap: 10px;
             }
 
-            .visitor-created-qr img {
-                width: 76px;
-                height: 76px;
+            .visitor-created-qr #visitor-qr-code {
+                width: 136px;
+                height: 136px;
             }
 
             .visitor-token-wrap code {
@@ -666,8 +673,23 @@
             }
         }
     </style>
+    <script src="{{ asset('plugins/html5-qrcode/html5-qrcode.min.js') }}"></script>
     <script>
         $(function () {
+            var qrContainer = document.getElementById('visitor-qr-code');
+            if (qrContainer) {
+                var library = window.__Html5QrcodeLibrary__;
+                var writer = library && library.ZXing && library.ZXing.BrowserQRCodeSvgWriter;
+                if (writer) {
+                    var svg = new writer().write(qrContainer.dataset.token, 220, 220);
+                    svg.setAttribute('viewBox', '0 0 ' + svg.getAttribute('width') + ' ' + svg.getAttribute('height'));
+                    svg.setAttribute('shape-rendering', 'crispEdges');
+                    qrContainer.appendChild(svg);
+                } else {
+                    qrContainer.textContent = 'QR code could not be generated.';
+                }
+            }
+
             $('#copy-visitor-token').on('click', function () {
                 var button = this;
                 var token = document.getElementById('new-visitor-token').textContent.trim();

@@ -948,14 +948,24 @@ class VisitorMobileApiTest extends TestCase
         ]), $this->headers())->assertCreated()->json('data.id');
         $visit = VisitorVisit::with(['visitor', 'branch', 'host.user', 'purpose'])->findOrFail($id);
 
-        $guestMail = (new VisitorInvitationForGuest($visit, 'qr-token'))->toMail(new \stdClass());
+        $qrToken = str_repeat('a', 64);
+        $guestMail = (new VisitorInvitationForGuest($visit, $qrToken))->toMail(new \stdClass());
         $this->assertSame('email-template.visitor-notification', $guestMail->view['html']);
         $guestHtml = $this->renderVisitorMail($guestMail);
         $this->assertStringContainsString('Visitor Invitation', $guestHtml);
         $this->assertStringContainsString('Visit date', $guestHtml);
         $this->assertStringContainsString('Meeting location', $guestHtml);
-        $this->assertStringContainsString('Visitor invitation QR code', $guestHtml);
+        $this->assertStringContainsString('Open your visitor QR code', $guestHtml);
+        $this->assertStringContainsString(route('visitor.public-qr', ['token' => $qrToken]), $guestHtml);
         $this->assertStringContainsString('#f9f7f4', $guestHtml);
+
+        VisitorVisit::whereKey($id)->update(['qr_token_hash' => hash('sha256', $qrToken)]);
+        $this->get(route('visitor.public-qr', ['token' => $qrToken]))
+            ->assertOk()
+            ->assertSee('Your visitor QR code')
+            ->assertSee('id="visitor-qr-code"', false)
+            ->assertSee('html5-qrcode.min.js');
+        $this->get(route('visitor.public-qr', ['token' => str_repeat('b', 64)]))->assertNotFound();
 
         $hostMail = (new VisitorVisitNotification($visit, 'invitation'))->toMail((object) ['name' => 'Host']);
         $this->assertSame('email-template.visitor-notification', $hostMail->view['html']);

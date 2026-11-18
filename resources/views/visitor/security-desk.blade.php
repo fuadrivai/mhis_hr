@@ -162,6 +162,21 @@
             border-radius: 5px;
         }
 
+        #visitor-qr-code {
+            display: inline-block;
+            width: 160px;
+            height: 160px;
+            margin: 8px 0;
+            padding: 6px;
+            background: #fff;
+        }
+
+        #visitor-qr-code svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
         @media (max-width: 767px) {
             #walk-in-registration .x_title,
             #walk-in-registration .x_content {
@@ -186,7 +201,7 @@
                     <p>This request also includes {{ session('visitor_group_count') }} companion registration(s). Each person needs host approval.</p>
                 @endif
                 <p>One-time QR/scanner token. Save it securely; it will not be shown again.</p>
-                <img src="{{ session('visitor_qr_image') }}" alt="Visitor QR code" style="width:160px;height:160px;background:#fff;padding:6px">
+                <div id="visitor-qr-code" data-token="{{ session('visitor_qr_token') }}" role="img" aria-label="Visitor QR code"></div>
                 <code id="new-visitor-token">{{ session('visitor_qr_token') }}</code>
             </div>
         @endif
@@ -474,8 +489,23 @@
 @endsection
 
 @section('content-script')
+    <script src="{{ asset('plugins/html5-qrcode/html5-qrcode.min.js') }}"></script>
     <script>
         $(function () {
+            var qrContainer = document.getElementById('visitor-qr-code');
+            if (qrContainer) {
+                var library = window.__Html5QrcodeLibrary__;
+                var writer = library && library.ZXing && library.ZXing.BrowserQRCodeSvgWriter;
+                if (writer) {
+                    var svg = new writer().write(qrContainer.dataset.token, 220, 220);
+                    svg.setAttribute('viewBox', '0 0 ' + svg.getAttribute('width') + ' ' + svg.getAttribute('height'));
+                    svg.setAttribute('shape-rendering', 'crispEdges');
+                    qrContainer.appendChild(svg);
+                } else {
+                    qrContainer.textContent = 'QR code could not be generated.';
+                }
+            }
+
             var searchUrl = @json(route('visitor.security-desk.search'));
             var checkInUrl = @json(route('visitor.check-in', ['visit' => '__VISIT__']));
             var checkOutUrl = @json(route('visitor.check-out', ['visit' => '__VISIT__']));

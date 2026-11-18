@@ -98,6 +98,9 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
     Route::post('visitor/public-walk-in', [VisitorManagementController::class, 'storePublicWalkIn'])
         ->middleware('throttle:5,1')
         ->name('visitor.public-walk-in.store');
+    Route::get('visitor/qr/{token}', [VisitorManagementController::class, 'publicQrCode'])
+        ->middleware('throttle:30,1')
+        ->name('visitor.public-qr');
 
 
     Route::group(['middleware' => 'auth'], function () {
