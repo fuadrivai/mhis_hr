@@ -106,10 +106,7 @@
 
                     <div id="modalAnnouncementAttachmentWrapper" class="mb-3 d-none">
                         <strong>Attachment</strong>
-                        <div class="mt-2">
-                            <img id="modalAnnouncementAttachment" src="" alt="Announcement attachment"
-                                class="img-fluid rounded border" style="max-height: 320px; object-fit: contain;">
-                        </div>
+                        <div id="modalAnnouncementAttachment" class="mt-2"></div>
                     </div>
 
                     <div>
@@ -220,10 +217,33 @@
                 $('#modalAnnouncementContent').html(announcement.content || '<em>No content</em>');
 
                 if (announcement.attachment) {
-                    $('#modalAnnouncementAttachment').attr('src', announcement.attachment);
+                    const $attachment = $('#modalAnnouncementAttachment').empty();
+                    if (/\.pdf(?:[?#]|$)/i.test(announcement.attachment)) {
+                        $attachment.append($('<iframe>', {
+                            src: announcement.attachment + '#toolbar=0',
+                            title: 'PDF announcement attachment',
+                            class: 'w-100 rounded border',
+                            css: { height: '420px' }
+                        }));
+                    } else {
+                        $attachment.append($('<img>', {
+                            src: announcement.attachment,
+                            alt: 'Announcement attachment',
+                            class: 'img-fluid rounded border',
+                            css: { maxHeight: '320px', objectFit: 'contain' }
+                        }));
+                    }
+                    $attachment.append(
+                        $('<a>', {
+                            href: announcement.attachment,
+                            target: '_blank',
+                            rel: 'noopener noreferrer',
+                            class: 'd-inline-block mt-2'
+                        }).text('Open attachment')
+                    );
                     $('#modalAnnouncementAttachmentWrapper').removeClass('d-none');
                 } else {
-                    $('#modalAnnouncementAttachment').attr('src', '');
+                    $('#modalAnnouncementAttachment').empty();
                     $('#modalAnnouncementAttachmentWrapper').addClass('d-none');
                 }
 

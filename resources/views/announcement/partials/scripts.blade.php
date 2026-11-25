@@ -43,23 +43,54 @@
             $('#customAudienceCard').removeClass('is-hidden');
         }
 
+        let attachmentPreviewUrl = null;
+        const $preview = $('#attachmentPreview');
+        const originalPreview = $preview.html();
+
         function toggleAttachmentPreview(file) {
             const $previewWrapper = $('#attachmentPreviewWrapper');
-            const $previewImage = $('#attachmentPreview');
 
             if (!file) {
-                $previewImage.attr('src', '');
-                $previewWrapper.addClass('d-none');
+                if (attachmentPreviewUrl) {
+                    URL.revokeObjectURL(attachmentPreviewUrl);
+                    attachmentPreviewUrl = null;
+                }
+                $preview.html(originalPreview);
+                $previewWrapper.toggleClass('d-none', !originalPreview.trim());
                 return;
             }
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                $previewImage.attr('src', event.target.result);
-                $previewWrapper.removeClass('d-none');
-            };
+            if (attachmentPreviewUrl) {
+                URL.revokeObjectURL(attachmentPreviewUrl);
+            }
+            attachmentPreviewUrl = URL.createObjectURL(file);
 
-            reader.readAsDataURL(file);
+            const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+            $preview.empty();
+            if (isPdf) {
+                $preview.append($('<iframe>', {
+                    src: attachmentPreviewUrl + '#toolbar=0',
+                    title: 'PDF attachment preview',
+                    class: 'w-100 rounded border',
+                    css: { height: '220px' }
+                }));
+            } else {
+                $preview.append($('<img>', {
+                    src: attachmentPreviewUrl,
+                    alt: 'Attachment preview',
+                    class: 'img-fluid rounded border',
+                    css: { maxHeight: '220px', objectFit: 'contain' }
+                }));
+            }
+            $preview.append(
+                $('<a>', {
+                    href: attachmentPreviewUrl,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    class: 'd-inline-block mt-2'
+                }).text('Open attachment')
+            );
+            $previewWrapper.removeClass('d-none');
         }
 
         $(document).on('change', '.audience-option', toggleAudienceCard);

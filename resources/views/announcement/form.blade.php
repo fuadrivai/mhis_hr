@@ -20,6 +20,8 @@
     $sendPushNotification = (bool) old('send_push_notification', $announcement->send_push_notification ?? true);
     $attachmentPreview =
         $announcement && $announcement->attachment ? asset('storage/' . $announcement->attachment) : null;
+    $attachmentPreviewIsPdf = $announcement && $announcement->attachment
+        && strtolower(pathinfo($announcement->attachment, PATHINFO_EXTENSION)) === 'pdf';
 @endphp
 
 <div class="card shadow-sm mb-4">
@@ -59,14 +61,25 @@
                 <label for="attachment" class="form-label">Attachment</label>
                 <input type="file" name="attachment" id="attachment"
                     class="form-control @error('attachment') is-invalid @enderror"
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                    accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
                 @error('attachment')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
 
                 <div id="attachmentPreviewWrapper" class="mt-3 {{ $attachmentPreview ? '' : 'd-none' }}">
-                    <img id="attachmentPreview" src="{{ $attachmentPreview ?? '' }}" alt="Attachment preview"
-                        class="img-fluid rounded border" style="max-height: 220px; object-fit: cover;">
+                    <div id="attachmentPreview">
+                        @if ($attachmentPreview)
+                            @if ($attachmentPreviewIsPdf)
+                                <iframe src="{{ $attachmentPreview }}#toolbar=0" title="PDF attachment preview"
+                                    class="w-100 rounded border" style="height: 220px;"></iframe>
+                            @else
+                                <img src="{{ $attachmentPreview }}" alt="Attachment preview"
+                                    class="img-fluid rounded border" style="max-height: 220px; object-fit: contain;">
+                            @endif
+                            <a href="{{ $attachmentPreview }}" target="_blank" rel="noopener noreferrer"
+                                class="d-inline-block mt-2">Open attachment</a>
+                        @endif
+                    </div>
                 </div>
             </div>
 

@@ -49,7 +49,14 @@ class SendAnnouncementEmail implements ShouldQueue
             );
 
             if (file_exists($attachmentFullPath)) {
-                $mail->attach($attachmentFullPath);
+                $mimeType = strtolower(pathinfo($attachmentFullPath, PATHINFO_EXTENSION)) === 'pdf'
+                    ? 'application/pdf'
+                    : (mime_content_type($attachmentFullPath) ?: 'application/octet-stream');
+
+                $mail->attach($attachmentFullPath, [
+                    'as' => basename($announcement->attachment),
+                    'mime' => $mimeType,
+                ]);
             }
         }
 
