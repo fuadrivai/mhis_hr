@@ -18,8 +18,10 @@ class EmployeeKpiController extends Controller
             if (!$user->employee || !$user->employee->employment || !$employee->employment) {
                 abort(403, 'Unauthorized action.');
             }
-            if ($user->employee->employment->branch_id != $employee->employment->branch_id ||
-                $user->employee->employment->organization_id != $employee->employment->organization_id) {
+            if ($user->employee->employment->branch_id != $employee->employment->branch_id) {
+                abort(403, 'Unauthorized action.');
+            }
+            if (!$user->isHeadOfSchool() && $user->employee->employment->organization_id != $employee->employment->organization_id) {
                 abort(403, 'Unauthorized action.');
             }
         }

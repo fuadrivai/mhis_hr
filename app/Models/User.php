@@ -107,6 +107,18 @@ class User extends Authenticatable implements JWTSubject
         return \App\Models\OfferApprovalStep::where('approver_employee_id', $this->employee->id)->exists();
     }
 
+    public function isHeadOfSchool(): bool
+    {
+        $positionName = $this->employee?->employment?->job_position?->name
+            ?? $this->employee?->employment?->position?->name;
+
+        if (!$positionName) {
+            return false;
+        }
+
+        return str_contains(strtolower($positionName), 'head of school');
+    }
+
     public function hasRole($role)
     {
         return $this->roles()->where('name', $role)->exists();

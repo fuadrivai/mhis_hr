@@ -94,9 +94,12 @@ class EmployeeController extends Controller
             if ($user->employee && $user->employee->employment) {
                 $branchId = $user->employee->employment->branch_id;
                 $orgId = $user->employee->employment->organization_id;
-                $employees->whereHas('employment', function ($q) use ($branchId, $orgId) {
-                    $q->where('branch_id', $branchId)
-                      ->where('organization_id', $orgId);
+                $isHos = $user->isHeadOfSchool();
+                $employees->whereHas('employment', function ($q) use ($branchId, $orgId, $isHos) {
+                    $q->where('branch_id', $branchId);
+                    if (!$isHos) {
+                        $q->where('organization_id', $orgId);
+                    }
                 });
             } else {
                 $employees->where('id', 0);
@@ -138,9 +141,12 @@ class EmployeeController extends Controller
             if ($user->employee && $user->employee->employment) {
                 $branchId = $user->employee->employment->branch_id;
                 $orgId = $user->employee->employment->organization_id;
-                $query->whereHas('employment', function ($q) use ($branchId, $orgId) {
-                    $q->where('branch_id', $branchId)
-                      ->where('organization_id', $orgId);
+                $isHos = $user->isHeadOfSchool();
+                $query->whereHas('employment', function ($q) use ($branchId, $orgId, $isHos) {
+                    $q->where('branch_id', $branchId);
+                    if (!$isHos) {
+                        $q->where('organization_id', $orgId);
+                    }
                 });
             } else {
                 // If user has role 3 but no employee data, restrict to none
@@ -420,9 +426,12 @@ class EmployeeController extends Controller
             if ($user->employee && $user->employee->employment) {
                 $branchId = $user->employee->employment->branch_id;
                 $organizationId = $user->employee->employment->organization_id;
-                $query->whereHas('employment', function ($query) use ($branchId, $organizationId) {
-                    $query->where('branch_id', $branchId)
-                        ->where('organization_id', $organizationId);
+                $isHos = $user->isHeadOfSchool();
+                $query->whereHas('employment', function ($query) use ($branchId, $organizationId, $isHos) {
+                    $query->where('branch_id', $branchId);
+                    if (!$isHos) {
+                        $query->where('organization_id', $organizationId);
+                    }
                 });
             } else {
                 $query->where('id', 0);
@@ -598,9 +607,12 @@ class EmployeeController extends Controller
             if ($user->employee && $user->employee->employment) {
                 $branchId = $user->employee->employment->branch_id;
                 $orgId = $user->employee->employment->organization_id;
-                $query->whereHas('employment', function ($q) use ($branchId, $orgId) {
-                    $q->where('branch_id', $branchId)
-                      ->where('organization_id', $orgId);
+                $isHos = $user->isHeadOfSchool();
+                $query->whereHas('employment', function ($q) use ($branchId, $orgId, $isHos) {
+                    $q->where('branch_id', $branchId);
+                    if (!$isHos) {
+                        $q->where('organization_id', $orgId);
+                    }
                 });
             } else {
                 $query->where('id', 0);

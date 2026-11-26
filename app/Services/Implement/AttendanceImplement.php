@@ -28,9 +28,12 @@ class AttendanceImplement implements AttendanceService
             if ($user->employee && $user->employee->employment) {
                 $branchId = $user->employee->employment->branch_id;
                 $orgId = $user->employee->employment->organization_id;
-                $attendances->whereHas('employee.employment', function ($q) use ($branchId, $orgId) {
-                    $q->where('branch_id', $branchId)
-                      ->where('organization_id', $orgId);
+                $isHos = $user->isHeadOfSchool();
+                $attendances->whereHas('employee.employment', function ($q) use ($branchId, $orgId, $isHos) {
+                    $q->where('branch_id', $branchId);
+                    if (!$isHos) {
+                        $q->where('organization_id', $orgId);
+                    }
                 });
             } else {
                 $attendances->where('id', 0);

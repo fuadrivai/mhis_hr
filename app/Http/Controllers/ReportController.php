@@ -191,9 +191,12 @@ class ReportController extends Controller
         if ($user && $user->roles->contains('id', 3)) {
             $employee = $user->employee;
             if ($employee && $employee->employment) {
-                $query->whereHas('employment', function ($q) use ($employee) {
-                    $q->where('branch_id', $employee->employment->branch_id)
-                        ->where('organization_id', $employee->employment->organization_id);
+                $isHos = $user->isHeadOfSchool();
+                $query->whereHas('employment', function ($q) use ($employee, $isHos) {
+                    $q->where('branch_id', $employee->employment->branch_id);
+                    if (!$isHos) {
+                        $q->where('organization_id', $employee->employment->organization_id);
+                    }
                 });
             } else {
                 $query->whereKey(0);
